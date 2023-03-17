@@ -3,6 +3,6 @@
 ################################################################################
 
 /.vs
-/CSharp-Logger/.vs/CSharp-Logger
+/CSharp-Logger/.vs
 /CSharp-Logger/obj
 /CSharp-Logger/bin

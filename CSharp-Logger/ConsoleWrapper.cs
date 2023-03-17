@@ -4,7 +4,7 @@ using System.Text;
 namespace YYHEggEgg.Logger
 {
     /// <summary>
-    /// 
+    /// A wrapper for Console to provide a stable command line.
     /// </summary>
     public class ConsoleWrapper
     {
@@ -55,17 +55,15 @@ namespace YYHEggEgg.Logger
         }
 
         /// <summary>
-        /// 
+        /// The command line input prefix. When you invoke <see cref="ConsoleWrapper.ReadLine()"/> or <see cref="ConsoleWrapper.ReadLineAsync()"/>, <see cref="ConsoleWrapper"/> will add a prefix to the user's input.
+        /// <para>For example, if this is set to "&gt; ", then user will see "&gt; " at the bottom of the console.</para>
         /// </summary>
         public static string InputPrefix { get; set; }
         private static object PrefixLock = "YYHEggEgg.Logger";
         #endregion
 
         #region Read & Write
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
+        #region ReadLine
         public static async Task<string> ReadLineAsync()
         {
             lock (PrefixLock)
@@ -88,6 +86,30 @@ namespace YYHEggEgg.Logger
 
             return result;
         }
+
+        public static string ReadLine()
+        {
+            lock (PrefixLock)
+            {
+                isReading = true;
+                ClearWrittingArea();
+                Console.Write(InputPrefix);
+            }
+
+            string? result;
+            while (!readqueue.TryDequeue(out result))
+            {
+                Thread.Sleep(RefreshTicks);
+            }
+
+            lock (PrefixLock)
+            {
+                isReading = false;
+            }
+
+            return result;
+        }
+        #endregion
 
         #region WriteLine
         private static void BeginWrite()
