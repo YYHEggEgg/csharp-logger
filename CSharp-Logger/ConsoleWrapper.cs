@@ -14,7 +14,6 @@ namespace YYHEggEgg.Logger
         public static event EventHandler? ShutDown; // 退出事件
 
         private static bool isReading;
-        private static bool AddPrefix;
         public static int RefreshTicks { get; set; }
         private static StringBuilder input;
         private static int cursor;
@@ -72,7 +71,6 @@ namespace YYHEggEgg.Logger
             lock (PrefixLock)
             {
                 isReading = true;
-                AddPrefix = true;
                 ClearWrittingArea();
                 Console.Write(InputPrefix);
             }
@@ -85,7 +83,6 @@ namespace YYHEggEgg.Logger
 
             lock (PrefixLock)
             {
-                AddPrefix = false;
                 isReading = false;
             }
 
@@ -100,7 +97,6 @@ namespace YYHEggEgg.Logger
                 if (isReading)
                 {
                     ClearWrittingArea();
-                    AddPrefix = false;
                 }
             }
         }
@@ -109,7 +105,6 @@ namespace YYHEggEgg.Logger
         {
             lock (PrefixLock)
             {
-                AddPrefix = true;
                 Console.Write(InputPrefix);
                 lock (PrefixLock)
                 {
