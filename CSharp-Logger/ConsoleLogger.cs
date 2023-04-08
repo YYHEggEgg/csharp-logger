@@ -45,26 +45,34 @@ namespace YYHEggEgg.Logger
 
             _customConfig = conf;
             RefreshLogTicks = 100;
-            string dir = Environment.CurrentDirectory;
-            Directory.CreateDirectory("logs");
+            string? dir = conf.Use_Working_Directory ? Environment.CurrentDirectory : Environment.ProcessPath;
+            #region Fallback 
+            if (dir == null)
+            {
+                dir = Environment.CurrentDirectory;
+                // qlog will be handled when BackgroundUpdate started, so it's a safe invoke
+                Warn($"Environment.ProgramPath isn't accessible so fallback to Working directory ({dir})!", "Logger");
+            }
+            #endregion
+            Directory.CreateDirectory($"{dir}/logs");
 
             #region Handle Past Log
-            if (File.Exists("logs/latest.log"))
+            if (File.Exists($"{dir}/logs/latest.log"))
             {
-                FileInfo info = new("logs/latest.log");
-                File.Move("logs/latest.log", $"logs/{info.LastWriteTime:yyyy-MM-dd_HH-mm-ss}.log");
+                FileInfo info = new($"{dir}/logs/latest.log");
+                File.Move($"{dir}/logs/latest.log", $"{dir}/logs/{info.LastWriteTime:yyyy-MM-dd_HH-mm-ss}.log");
             }
-            if (File.Exists("logs/latest.debug.log"))
+            if (File.Exists($"{dir}/logs/latest.debug.log"))
             {
-                FileInfo info = new("logs/latest.debug.log");
-                File.Move("logs/latest.debug.log", $"logs/{info.LastWriteTime:yyyy-MM-dd_HH-mm-ss}.debug.log");
+                FileInfo info = new($"{dir}/logs/latest.debug.log");
+                File.Move($"{dir}/logs/latest.debug.log", $"{dir}/logs/{info.LastWriteTime:yyyy-MM-dd_HH-mm-ss}.debug.log");
             }
             #endregion
 
             #region Compress Past Logs
             List<string> logs = new();
             string belongDate = "";
-            foreach (var logfile in Directory.EnumerateFiles("logs"))
+            foreach (var logfile in Directory.EnumerateFiles($"{dir}/logs"))
             {
                 // Get Date
                 FileInfo loginfo = new(logfile);
@@ -80,7 +88,7 @@ namespace YYHEggEgg.Logger
                     if (belongDate != "")
                     {
                         string newzipfile = Tools.AddNumberedSuffixToPath(
-                            $"logs/log.{belongDate}.zip");
+                            $"{dir}/logs/log.{belongDate}.zip");
                         Tools.CompressFiles(newzipfile, logs);
                         // Delete original files
 #pragma warning disable CS0168 // 声明了变量，但从未使用过
@@ -107,11 +115,11 @@ namespace YYHEggEgg.Logger
             }
             #endregion
 
-            _logPath = "logs/latest.log";
+            _logPath = $"{dir}/logs/latest.log";
             logwriter = new(_logPath, true);
             logwriter.AutoFlush = true;
 #if DEBUG
-            _logPath_debug = "logs/latest.debug.log";
+            _logPath_debug = $"{dir}/logs/latest.debug.log";
             logwriter_debug = new(_logPath_debug, true);
 #endif
             Task.Run(BackgroundUpdate);

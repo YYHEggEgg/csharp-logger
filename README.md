@@ -4,7 +4,13 @@ You can download it on nuget.org by searching [EggEgg.CSharp-Logger](https://www
 
 [![NuGet](https://img.shields.io/nuget/v/EggEgg.CSharp-Logger.svg)](https://www.nuget.org/packages/EggEgg.CSharp-Logger)
 
-# Features
+## Update
+### v2.1.0
+You can now set `LoggerConfig(use_Working_Directory)` to specify whether the log files will be storaged at the working directory or the program path. For more information, see the description of this variable.
+
+Notice that the previous versions use the working directory.
+
+## Features
 - Common logger implements        
   Usage: Firstly `Log.Initialize(LoggerConfig)`, then `Log.Info(content, sender)`, `Log.Erro(...)`, `Log.Warn(...)`, `Log.Dbug(...)`.   
 - **Color output Support**   
