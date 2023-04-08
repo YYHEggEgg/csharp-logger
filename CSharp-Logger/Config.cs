@@ -18,7 +18,6 @@ namespace YYHEggEgg.Logger
         /// If the Logger uses <see cref="Console"/> or <see cref="ConsoleWrapper"/> implements. <para/>
         /// Generally, <see cref="Console"/> is enough. But if you wants to read the user's input while outputing logs parallel (e.g. making a command line program), you'll need <see cref="ConsoleWrapper"/>.<para/>
         /// If you decided to use <see cref="ConsoleWrapper"/>, you can set the value of <see cref="ConsoleWrapper.InputPrefix"/> as a waiting-input prefix, just like <c>mysql> </c> or <c>ubuntu ~$ </c>, and use <see cref="ConsoleWrapper.ReadLineAsync"/> to read inputs from the user.<para/>
-        /// Or if you want to get your output with color, you may use <see cref="ConsoleWrapper"/> implement. The usage is described at <see cref="ConsoleWrapper.WriteLine(string)"/>.<para/>
         /// But if your program won't output anything until get input from the user, or <b>the input string is expected to be very large</b>, you should use common <see cref="Console"/> implements.<para/>
         /// No matter you decide to use either <see cref="Console"/> or <see cref="ConsoleWrapper"/>, <b>DON'T MIX THEM!</b> The side-effect has never been tested!
         /// </summary>
