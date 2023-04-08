@@ -1,5 +1,8 @@
 # csharp-logger
-A bussy but convenient C# Logger implement.
+A bussy but convenient C# Logger implement.    
+You can download it on nuget.org by searching [EggEgg.CSharp-Logger](https://www.nuget.org/packages/EggEgg.CSharp-Logger).
+
+[![NuGet](https://img.shields.io/nuget/v/EggEgg.CSharp-Logger.svg)](https://www.nuget.org/packages/EggEgg.CSharp-Logger)
 
 # Features
 - Common logger implements        
