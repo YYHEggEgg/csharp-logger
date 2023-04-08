@@ -16,19 +16,31 @@
     <PackageProjectUrl>https://github.com/YYHEggEgg/csharp-logger</PackageProjectUrl>
     <RepositoryUrl>https://github.com/YYHEggEgg/csharp-logger</RepositoryUrl>
     <PackageTags>Log CommandLine</PackageTags>
-    <PackageReleaseNotes>test version</PackageReleaseNotes>
+    <PackageReleaseNotes>Changes in v2.0.0:
+- Published as a nuget package
+- Supported output with colors
+- Supported custom config
+- Bugfixs</PackageReleaseNotes>
     <IncludeSymbols>False</IncludeSymbols>
     <PackageId>EggEgg.$(AssemblyName)</PackageId>
     <Product>EggEgg.$(AssemblyName)</Product>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Update="Properties\Resources.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Resources.resx</DependentUpon>
-    </Compile>
+    <None Include="..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
   </ItemGroup>
+
+	<ItemGroup>
+		<Compile Update="Properties\Resources.Designer.cs">
+			<DesignTime>True</DesignTime>
+			<AutoGen>True</AutoGen>
+			<DependentUpon>Resources.resx</DependentUpon>
+		</Compile>
+	</ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Update="Properties\Resources.resx">
