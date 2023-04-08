@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Text;
 
+#pragma warning disable CS8618 // 在退出构造函数时，不可为 null 的字段必须包含非 null 值。请考虑声明为可以为 null。
 namespace YYHEggEgg.Logger
 {
     /// <summary>
@@ -11,15 +12,23 @@ namespace YYHEggEgg.Logger
         private static List<string> lines; // 记录每行输入的列表
         private static int currentLine; // 当前所在行的标记
         private static ConcurrentQueue<string> readqueue = new();
-        public static event EventHandler? ShutDown; // 退出事件
+        public static event EventHandler? ShutDownRequest; // 退出事件
 
         private static bool isReading;
         public static int RefreshTicks { get; set; }
         private static StringBuilder input;
         private static int cursor;
+        private static bool _initialized = false;
 
-        static ConsoleWrapper()
+        /// <summary>
+        /// This method has SIDE EFFECT, so don't use <see cref="Console"/> after invoked it.
+        /// <para/> If initialized before, the method will return immediately.
+        /// </summary>
+        public static void Initialize()
         {
+            if (_initialized) return;
+            _initialized = true;
+
             lines = new List<string>();
             currentLine = 0;
             Console.CancelKeyPress += Console_CancelKeyPress;
@@ -34,10 +43,15 @@ namespace YYHEggEgg.Logger
             Task.Run(BackgroundUpdate);
         }
 
+        private static void AssertInitialized()
+        {
+            if (!_initialized) Initialize();
+        }
+
         private static void Console_CancelKeyPress(object? sender, ConsoleCancelEventArgs e)
         {
             e.Cancel = true;
-            ShutDown?.Invoke(null, EventArgs.Empty);
+            ShutDownRequest?.Invoke(null, EventArgs.Empty);
         }
 
         #region Refresh Prefix
@@ -194,7 +208,7 @@ namespace YYHEggEgg.Logger
             }
             catch
             {
-                Log.Erro("Fatal Error. Search for \"resolving color\" in log file for more infomation.", "Logger");
+                Log.Erro("Fatal Error. Search for \"resolving color\" in log file for more infomation.", nameof(ConsoleWrapper));
             }
         }
 
@@ -330,8 +344,8 @@ namespace YYHEggEgg.Logger
                         keyInfo.Key == ConsoleKey.C && keyInfo.Modifiers == ConsoleModifiers.Control
                     ) // 触发ShutDown事件
                     {
-                        ShutDown?.Invoke(null, EventArgs.Empty);
-                        return;
+                        ShutDownRequest?.Invoke(null, EventArgs.Empty);
+                        // return;
                     }
                     #region 主要处理光标的操作
                     else if (
@@ -380,7 +394,8 @@ namespace YYHEggEgg.Logger
                         }
                     }
                     #endregion
-                    else
+                    else if (keyInfo.Key != ConsoleKey.LeftWindows 
+                        && keyInfo.Key != ConsoleKey.RightWindows)
                     {
                         input.Insert(cursor, keyInfo.KeyChar);
                         cursor++;
@@ -416,65 +431,6 @@ namespace YYHEggEgg.Logger
             }
         }
         #endregion
-
-        #region Color Util
-        /// <summary>
-        /// Try to remove the color info of the input (the xml format info)
-        /// </summary>
-        /// <param name="input"></param>
-        /// <param name="output"></param>
-        /// <returns></returns>
-        public static bool TryRemoveColorInfo(string input, out string output)
-        {
-            try
-            {
-                int startIndex = 0;
-                output = string.Empty;
-
-                while (true)
-                {
-                    int colorStart = input.IndexOf("<color=", startIndex); //查找下一个彩色文字的起始位置
-                    if (colorStart == -1) //若未找到，输出剩余部分并退出循环
-                    {
-                        output = input.Substring(startIndex, input.Length - startIndex);
-                        return true;
-                    }
-
-                    int colorEnd = input.IndexOf(">", colorStart); //查找彩色文字的结束位置
-                    if (colorEnd == -1) //若未找到，输出剩余部分并退出循环
-                    {
-                        output = input.Substring(startIndex, input.Length - startIndex);
-                        return true;
-                    }
-
-                    string colorCode = input.Substring(colorStart + 7, colorEnd - colorStart - 7); //提取颜色代码
-                    ConsoleColor color;
-
-                    if (Enum.TryParse(colorCode, out color)) //尝试将字符串颜色代码解析为ConsoleColor枚举类型
-                    {
-                        output += input.Substring(startIndex, colorStart - startIndex); //输出彩色文字前的部分
-                        int textStart = colorEnd + 1;
-                        int textEnd = input.IndexOf("</color>", textStart); //查找彩色文字结束标记
-                        if (textEnd == -1) //若未找到，输出剩余部分并退出循环
-                        {
-                            output += input.Substring(textStart, input.Length - textStart);
-                            return true;
-                        }
-                        output += input.Substring(textStart, textEnd - textStart); //输出彩色文字
-                        startIndex = textEnd + 8; //继续查找下一个彩色文字的起始位置
-                    }
-                    else //解析失败，跳过此次查找
-                    {
-                        startIndex = colorEnd + 1;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                output = ex.ToString();
-                return false;
-            }
-        }
-        #endregion
     }
 }
+#pragma warning restore CS8618 // 在退出构造函数时，不可为 null 的字段必须包含非 null 值。请考虑声明为可以为 null。

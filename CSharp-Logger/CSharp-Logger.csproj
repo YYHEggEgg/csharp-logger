@@ -5,6 +5,36 @@
     <RootNamespace>YYHEggEgg.Logger</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>False</GenerateDocumentationFile>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Title>EggEgg.CSharp-Logger</Title>
+    <Version>1.0.53-alpha</Version>
+    <Authors>YYHEggEgg</Authors>
+    <Company>YYHEggEgg</Company>
+    <Description>A easy logger that supports log and command-line input.</Description>
+    <Copyright>Copyright (c) 2023 EggEgg</Copyright>
+    <PackageProjectUrl>https://github.com/YYHEggEgg/csharp-logger</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/YYHEggEgg/csharp-logger</RepositoryUrl>
+    <PackageTags>Log CommandLine</PackageTags>
+    <PackageReleaseNotes>test version</PackageReleaseNotes>
+    <IncludeSymbols>False</IncludeSymbols>
+    <PackageId>EggEgg.$(AssemblyName)</PackageId>
+    <Product>EggEgg.$(AssemblyName)</Product>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Update="Properties\Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
 
 </Project>
