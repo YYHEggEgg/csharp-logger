@@ -44,6 +44,7 @@ namespace YYHEggEgg.Logger
             _initialized = true;
 
             _customConfig = conf;
+            if (conf.Use_Console_Wrapper) ConsoleWrapper.Initialize();
             RefreshLogTicks = 100;
             string? dir = null;
             if (conf.Use_Working_Directory) 
@@ -206,6 +207,9 @@ namespace YYHEggEgg.Logger
         }
 
         private static ConcurrentQueue<LogDetail> qlog = new();
+        /// <summary>
+        /// It should refer to milliseconds not ticks, but it won't change since it has been published.
+        /// </summary>
         public static int RefreshLogTicks { get; set; }
 
         private static async Task BackgroundUpdate()

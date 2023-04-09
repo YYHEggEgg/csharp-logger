@@ -15,6 +15,9 @@ namespace YYHEggEgg.Logger
         public static event EventHandler? ShutDownRequest; // 退出事件
 
         private static bool isReading;
+        /// <summary>
+        /// It should refer to milliseconds not ticks, but it won't change since it has been published.
+        /// </summary>
         public static int RefreshTicks { get; set; }
         private static StringBuilder input;
         private static int cursor;
@@ -80,6 +83,8 @@ namespace YYHEggEgg.Logger
         #region ReadLine
         public static async Task<string> ReadLineAsync()
         {
+            AssertInitialized();
+
             lock (PrefixLock)
             {
                 isReading = true;
@@ -103,6 +108,8 @@ namespace YYHEggEgg.Logger
 
         public static string ReadLine()
         {
+            AssertInitialized();
+
             lock (PrefixLock)
             {
                 isReading = true;
@@ -219,6 +226,8 @@ namespace YYHEggEgg.Logger
         /// <param name="input">输出至控制台的文字。支持使用颜色，在文本中加入xml标签即可：&lt;color=Red&gt;红色文字&lt;&#47;color&gt;。颜色代码必须为<see cref="ConsoleColor"/>中的有效值，如"Red"、"Green"等。</param>
         public static void WriteLine(string input)
         {
+            AssertInitialized();
+
             writelines.Enqueue(input);
         }
 
@@ -228,6 +237,8 @@ namespace YYHEggEgg.Logger
         /// <param name="input">输出至控制台的文字。支持使用颜色，在文本中加入xml标签即可：&lt;color=Red&gt;红色文字&lt;&#47;color&gt;。颜色代码必须为<see cref="ConsoleColor"/>中的有效值，如"Red"、"Green"等。</param>
         public static void WriteLine(string input1, string input2)
         {
+            AssertInitialized();
+
             writelines.Enqueue(input1);
             writelines.Enqueue(input2);
         }
@@ -238,6 +249,8 @@ namespace YYHEggEgg.Logger
         /// <param name="input">输出至控制台的文字。支持使用颜色，在文本中加入xml标签即可：&lt;color=Red&gt;红色文字&lt;&#47;color&gt;。颜色代码必须为<see cref="ConsoleColor"/>中的有效值，如"Red"、"Green"等。</param>
         public static void WriteLine(string input1, string input2, string input3)
         {
+            AssertInitialized();
+
             writelines.Enqueue(input1);
             writelines.Enqueue(input2);
             writelines.Enqueue(input3);
@@ -249,6 +262,8 @@ namespace YYHEggEgg.Logger
         /// <param name="input">输出至控制台的文字。支持使用颜色，在文本中加入xml标签即可：&lt;color=Red&gt;红色文字&lt;&#47;color&gt;。颜色代码必须为<see cref="ConsoleColor"/>中的有效值，如"Red"、"Green"等。</param>
         public static void WriteLine(IEnumerable<string> inputs)
         {
+            AssertInitialized();
+
             foreach (var input in inputs) writelines.Enqueue(input);
         }
 

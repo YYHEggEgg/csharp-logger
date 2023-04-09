@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace YYHEggEgg.Logger
 {
-    public class LoggerConfig
+    public struct LoggerConfig
     {
         /// <summary>
         /// The maximum line length to output to the console. <para/>
@@ -39,7 +39,9 @@ namespace YYHEggEgg.Logger
         /// </summary>
         public LoggerConfig(int max_Output_Char_Count = 16 * 1024,
                             bool use_Console_Wrapper = false,
-                            bool use_Working_Directory = false)
+                            // Though not recommended, previous versions use Working Directory as default,
+                            // so the default value is set to true.
+                            bool use_Working_Directory = true)
         {
             Max_Output_Char_Count = max_Output_Char_Count;
             Use_Console_Wrapper = use_Console_Wrapper;
