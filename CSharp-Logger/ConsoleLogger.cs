@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using YYHEggEgg.Logger.Utils;
@@ -34,8 +35,7 @@ namespace YYHEggEgg.Logger
         private static StreamWriter logwriter_debug;
 #endif
         /// <summary>
-        /// This method has SIDE EFFECT, so don't use <see cref="Console"/> after invoked it.
-        /// <para/> If initialized before, the method will return immediately.
+        /// Initialize the logger. If initialized before, the method will return immediately.
         /// </summary>
         public static void Initialize(LoggerConfig conf)
         {
@@ -45,15 +45,24 @@ namespace YYHEggEgg.Logger
 
             _customConfig = conf;
             RefreshLogTicks = 100;
-            string? dir = conf.Use_Working_Directory ? Environment.CurrentDirectory : Environment.ProcessPath;
-            #region Fallback 
-            if (dir == null)
-            {
+            string? dir = null;
+            if (conf.Use_Working_Directory) 
                 dir = Environment.CurrentDirectory;
-                // qlog will be handled when BackgroundUpdate started, so it's a safe invoke
-                Warn($"Environment.ProgramPath isn't accessible so fallback to Working directory ({dir})!", "Logger");
+            else 
+            {
+                // If using dotnet .dll to launch,
+                // Environment.ProgramPath will return the path of dotnet.exe
+                string assemblyPath = Assembly.GetExecutingAssembly().Location;
+                dir = Path.GetDirectoryName(assemblyPath);
+                #region Fallback 
+                if (dir == null)
+                {
+                    dir = Environment.CurrentDirectory;
+                    // qlog will be handled when BackgroundUpdate started, so it's a safe invoke
+                    Warn($"Assembly directory isn't accessible so fallback to Working directory ({dir})!", "Logger");
+                }
+                #endregion
             }
-            #endregion
             Directory.CreateDirectory($"{dir}/logs");
 
             #region Handle Past Log
