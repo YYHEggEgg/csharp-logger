@@ -6,6 +6,11 @@
 [![NuGet](https://img.shields.io/nuget/v/EggEgg.CSharp-Logger.svg)](https://www.nuget.org/packages/EggEgg.CSharp-Logger)
 
 ## 更新
+### v2.1.3
+修复了 Debug 日志记录的问题。
+
+在之前的版本中 `Log.Dbug` 实际上不可用。
+
 ### v2.1.2
 修复了 `ConsoleWrapper` 初始化的问题。
 
