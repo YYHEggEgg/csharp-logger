@@ -5,6 +5,9 @@ You can download it on nuget.org by searching [EggEgg.CSharp-Logger](https://www
 [![NuGet](https://img.shields.io/nuget/v/EggEgg.CSharp-Logger.svg)](https://www.nuget.org/packages/EggEgg.CSharp-Logger)
 
 ## Update
+### v2.1.4 
+Implemented more methods for LogTraceListener.
+
 ### v2.1.3
 Bugfix about Debug LogLevel.
 
