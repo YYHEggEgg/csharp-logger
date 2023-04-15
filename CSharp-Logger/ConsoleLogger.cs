@@ -29,11 +29,11 @@ namespace YYHEggEgg.Logger
         public static string _logPath;
         public static string LogPath => _logPath;
         private static StreamWriter logwriter;
-#if DEBUG
+
         public static string _logPath_debug;
         public static string LogPath_debug => _logPath_debug;
         private static StreamWriter logwriter_debug;
-#endif
+
         /// <summary>
         /// Initialize the logger. If initialized before, the method will return immediately.
         /// </summary>
@@ -112,9 +112,7 @@ namespace YYHEggEgg.Logger
                         }
                         catch (Exception ex)
                         {
-#if DEBUG
-                            Console.WriteLine(ex);
-#endif
+                            if (_customConfig.Is_Debug_LogLevel) Console.WriteLine(ex);
                         }
 #pragma warning restore CS0168 // 声明了变量，但从未使用过
                     }
@@ -128,10 +126,11 @@ namespace YYHEggEgg.Logger
             _logPath = $"{dir}/logs/latest.log";
             logwriter = new(_logPath, true);
             logwriter.AutoFlush = true;
-#if DEBUG
-            _logPath_debug = $"{dir}/logs/latest.debug.log";
-            logwriter_debug = new(_logPath_debug, true);
-#endif
+            if (conf.Is_Debug_LogLevel)
+            {
+                _logPath_debug = $"{dir}/logs/latest.debug.log";
+                logwriter_debug = new(_logPath_debug, true);
+            }
             Task.Run(BackgroundUpdate);
         }
 
@@ -151,9 +150,10 @@ namespace YYHEggEgg.Logger
         public static void Dbug(string content, string? sender = null)
         {
             AssertInitialized();
-#if DEBUG
-            qlog.Enqueue(new LogDetail(content, LogLevel.Debug, sender));
-#endif
+            if (_customConfig.Is_Debug_LogLevel)
+            {
+                qlog.Enqueue(new LogDetail(content, LogLevel.Debug, sender));
+            }
         }
 
         /// <summary>
@@ -252,19 +252,21 @@ namespace YYHEggEgg.Logger
         /// <returns></returns>
         private static string WriteLog(LogDetail log)
         {
-            Debug.Assert(_customConfig.Use_Console_Wrapper);
             string nowtime = log.create_time.ToString("HH:mm:ss");
             string header = GetLogInfo(log.level, log.sender);
             string res = $"{nowtime}{header}{log.content}";
             if (Tools.TryRemoveColorInfo(res, out string fileres))
             {
-#if DEBUG
-                if (log.level != LogLevel.Debug)
-#endif
+                if (_customConfig.Is_Debug_LogLevel)
+                {
+                    if (log.level != LogLevel.Debug)
+                        logwriter.WriteLine(fileres);
+                    logwriter_debug.WriteLine(fileres);
+                }
+                else
+                {
                     logwriter.WriteLine(fileres);
-#if DEBUG
-                logwriter_debug.WriteLine(fileres);
-#endif
+                }
             }
             else
             {

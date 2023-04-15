@@ -32,6 +32,12 @@ namespace YYHEggEgg.Logger
         /// Notice that Logger will still use the working directory when <see cref="Environment.ProcessPath"/> isn't accessible, or more clearly, when <see cref="Environment.ProcessPath"/><c> == null</c>. If it happens, you'll receive a warning. 
         /// </summary>
         public readonly bool Use_Working_Directory;
+        /// <summary>
+        /// Whether the Logger records debug messages.
+        /// Noticed that the reference projects' DEBUG/RELEASE won't affect the logger's implements at all.
+        /// A log level will be added in future, but it's not a hotfix should do.
+        /// </summary>
+        public readonly bool Is_Debug_LogLevel;
 
         /// <summary>
         /// Because of efficiency reasons, all features are defined as readonly variables and can only be set in this constructor. <para/>
@@ -41,11 +47,13 @@ namespace YYHEggEgg.Logger
                             bool use_Console_Wrapper = false,
                             // Though not recommended, previous versions use Working Directory as default,
                             // so the default value is set to true.
-                            bool use_Working_Directory = true)
+                            bool use_Working_Directory = true,
+                            bool is_Debug_LogLevel = true)
         {
             Max_Output_Char_Count = max_Output_Char_Count;
             Use_Console_Wrapper = use_Console_Wrapper;
             Use_Working_Directory = use_Working_Directory;
+            Is_Debug_LogLevel = is_Debug_LogLevel;
         }
     }
 }

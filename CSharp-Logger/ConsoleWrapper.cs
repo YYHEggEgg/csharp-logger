@@ -5,7 +5,7 @@ using System.Text;
 namespace YYHEggEgg.Logger
 {
     /// <summary>
-    /// A wrapper for Console to provide a stable command line.
+    /// A wrapper for Console to provide a stable command line.f
     /// </summary>
     public class ConsoleWrapper
     {
