@@ -5,7 +5,7 @@ VisualStudioVersion = 17.3.32804.467
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CSharp-Logger", "CSharp-Logger.csproj", "{17AE999B-1D6B-4D41-8EE8-EDE165ED22D7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Logger-test", "..\Logger-test\Logger-test.csproj", "{941FE88C-2B2E-4221-B990-0A3F8A440AEF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Logger-test", "..\Logger-test\Logger-test.csproj", "{941FE88C-2B2E-4221-B990-0A3F8A440AEF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

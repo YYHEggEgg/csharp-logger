@@ -5,25 +5,11 @@ You can download it on nuget.org by searching [EggEgg.CSharp-Logger](https://www
 [![NuGet](https://img.shields.io/nuget/v/EggEgg.CSharp-Logger.svg)](https://www.nuget.org/packages/EggEgg.CSharp-Logger)
 
 ## Update
-### v2.1.4 
-Implemented more methods for LogTraceListener.
-
-### v2.1.3
-Bugfix about Debug LogLevel.
-
-In previous versions, `Log.Dbug` actually isn't working.
-
-### v2.1.2
-Bugfix about `ConsoleWrapper` initialize.
-
-Also, changed `LoggerConfig`:
-- Changed it to struct, for the config should be immutable since Logger is initialized.
-- Changed the default value of `use_Working_Directory` to `true` for compatiable reasons.
-
-### v2.1.1
-You can now set `LoggerConfig(use_Working_Directory)` to specify whether the log files will be storaged at the working directory or the program path. For more information, see the description of this variable.
-
-Notice that the previous versions use the working directory.
+### v2.2.0
+- Obsoleted the `is_Debug_LogLevel` config paramter.  
+  Use `Global_Minimum_LogLevel` and `Console_Minimum_LogLevel` instead. You can now control logging output better by them.  
+- Added `Verbose` and `None` LogLevel. `Log.Verb` is avaliable now.
+- Other bugfix and improvements.
 
 ## Features
 - Common logger implements        

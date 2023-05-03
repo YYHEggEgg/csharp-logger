@@ -12,10 +12,32 @@ namespace YYHEggEgg.Logger
 {
     public enum LogLevel
     {
+        // Some of details here refer to: https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.logging.loglevel
+        /// <summary>
+        /// Logs that contain the most detailed messages. These messages may contain sensitive application data. These messages are disabled by default and should never be enabled in a production environment.
+        /// </summary>
+        Verbose = -1,
+        /// <summary>
+        /// Logs that are used for interactive investigation during development. These logs should primarily contain information useful for debugging and have no long-term value.
+        /// </summary>
         Debug = 0,
+        /// <summary>
+        /// Logs that are used for interactive investigation during development. These logs should primarily contain information useful for debugging and have no long-term value.
+        /// </summary>
         Information = 1,
+        /// <summary>
+        /// Logs that highlight an abnormal or unexpected event in the application flow, but do not otherwise cause the application execution to stop.
+        /// </summary>
         Warning = 2,
-        Error = 3
+        /// <summary>
+        /// Logs that highlight an abnormal or unexpected event in the application flow, but do not otherwise cause the application execution to stop.
+        /// </summary>
+        Error = 3,
+        // Fatal = 4,
+        /// <summary>
+        /// Not used for writing log messages. Specifies that a logging category should not write any messages.
+        /// </summary>
+        None = 5
     }
 
     public static class Log
@@ -112,7 +134,7 @@ namespace YYHEggEgg.Logger
                         }
                         catch (Exception ex)
                         {
-                            if (_customConfig.Is_Debug_LogLevel) Console.WriteLine(ex);
+                            if (_customConfig.Console_Minimum_LogLevel <= LogLevel.Debug) Console.WriteLine(ex);
                         }
 #pragma warning restore CS0168 // 声明了变量，但从未使用过
                     }
@@ -126,7 +148,7 @@ namespace YYHEggEgg.Logger
             _logPath = $"{dir}/logs/latest.log";
             logwriter = new(_logPath, true);
             logwriter.AutoFlush = true;
-            if (conf.Is_Debug_LogLevel)
+            if (conf.Console_Minimum_LogLevel <= LogLevel.Debug)
             {
                 _logPath_debug = $"{dir}/logs/latest.debug.log";
                 logwriter_debug = new(_logPath_debug, true);
@@ -143,54 +165,77 @@ namespace YYHEggEgg.Logger
 
         #region Logger
         /// <summary>
-        /// Put a log with Debug Level to the handle queue. Only output when built with DEBUG.
+        /// Put a log with Verbose Level to the handle queue. Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/> <= <see cref="LogLevel.Verbose"/>. Notice that messages put here will only be written to <c>latest.debug.log</c>.
+        /// </summary>
+        /// <param name="content">The log content.</param>
+        /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>
+        public static void Verb(string content, string? sender = null)
+        {
+            AssertInitialized();
+            if (_customConfig.Global_Minimum_LogLevel == LogLevel.Verbose)
+            {
+                qlog.Enqueue(new LogDetail(content, LogLevel.Verbose, sender));
+            }
+        }
+
+        /// <summary>
+        /// Put a log with Debug Level to the handle queue. Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/> <= <see cref="LogLevel.Debug"/>. Notice that messages put here will only be written to <c>latest.debug.log</c>.
         /// </summary>
         /// <param name="content">The log content.</param>
         /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>
         public static void Dbug(string content, string? sender = null)
         {
             AssertInitialized();
-            if (_customConfig.Is_Debug_LogLevel)
+            if (_customConfig.Global_Minimum_LogLevel <= LogLevel.Debug)
             {
                 qlog.Enqueue(new LogDetail(content, LogLevel.Debug, sender));
             }
         }
 
         /// <summary>
-        /// Put a log with Info Level to the handle queue.
+        /// Put a log with Info Level to the handle queue. Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/> <= <see cref="LogLevel.Information"/>. 
         /// </summary>
         /// <param name="content">The log content.</param>
         /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>
         public static void Info(string content, string? sender = null)
         {
             AssertInitialized();
-            qlog.Enqueue(new LogDetail(content, LogLevel.Information, sender));
+            if (_customConfig.Global_Minimum_LogLevel <= LogLevel.Information)
+            {
+                qlog.Enqueue(new LogDetail(content, LogLevel.Information, sender));
+            }
         }
 
         /// <summary>
-        /// Put a log with Warning Level to the handle queue.
+        /// Put a log with Warning Level to the handle queue. Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/> <= <see cref="LogLevel.Warning"/>. 
         /// </summary>
         /// <param name="content">The log content.</param>
         /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>
         public static void Warn(string content, string? sender = null)
         {
             AssertInitialized();
-            qlog.Enqueue(new LogDetail(content, LogLevel.Warning, sender));
+            if (_customConfig.Global_Minimum_LogLevel <= LogLevel.Warning)
+            {
+                qlog.Enqueue(new LogDetail(content, LogLevel.Warning, sender));
+            }
         }
 
         /// <summary>
-        /// Put a log with Error Level to the handle queue.
+        /// Put a log with Error Level to the handle queue. Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/> <= <see cref="LogLevel.Error"/>. 
         /// </summary>
         /// <param name="content">The log content.</param>
         /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>
         public static void Erro(string content, string? sender = null)
         {
             AssertInitialized();
-            qlog.Enqueue(new LogDetail(content, LogLevel.Error, sender));
+            if (_customConfig.Global_Minimum_LogLevel <= LogLevel.Error)
+            {
+                qlog.Enqueue(new LogDetail(content, LogLevel.Error, sender));
+            }
         }
 
         #region Background Refresh
-        public struct LogDetail 
+        private struct LogDetail 
         {
             public LogLevel level;
             public string content;
@@ -211,6 +256,9 @@ namespace YYHEggEgg.Logger
         /// It should refer to milliseconds not ticks, but it won't change since it has been published.
         /// </summary>
         public static int RefreshLogTicks { get; set; }
+        private static Stopwatch watch = new();
+        // see https://learn.microsoft.com/zh-cn/dotnet/api/system.threading.tasks.task.delay?view=net-7.0#system-threading-tasks-task-delay(system-timespan)
+        private static readonly TimeSpan waitStandard = TimeSpan.FromMilliseconds(15);
 
         private static async Task BackgroundUpdate()
         {
@@ -221,26 +269,44 @@ namespace YYHEggEgg.Logger
                 return;
             }
 
+            watch.Start();
+
             if (_customConfig.Use_Console_Wrapper)
             {
-                List<string> logs = new(qlog.Count + 1);
-                logs.Add(WriteLog(_log));
+                string _consoleOutput = WriteLog(_log);
+                if (_log.level >= _customConfig.Console_Minimum_LogLevel)
+                {
+                    ConsoleWrapper.WriteLine(_consoleOutput);
+                }
                 while (qlog.TryDequeue(out LogDetail log))
                 {
-                    logs.Add(WriteLog(log));
+                    string consoleOutput = WriteLog(log);
+                    if (log.level >= _customConfig.Console_Minimum_LogLevel)
+                    {
+                        ConsoleWrapper.WriteLine(consoleOutput);
+                    }
                 }
-                ConsoleWrapper.WriteLine(logs);
             }
             else
             {
-                WriteColorLine(WriteLog(_log));
+                string _consoleOutput = WriteLog(_log);
+                if (_log.level >= _customConfig.Console_Minimum_LogLevel)
+                {
+                    WriteColorLine(_consoleOutput);
+                }
                 while (qlog.TryDequeue(out LogDetail log))
                 {
-                    WriteColorLine(WriteLog(log));
+                    string consoleOutput = WriteLog(log);
+                    if (log.level >= _customConfig.Console_Minimum_LogLevel)
+                    {
+                        WriteColorLine(consoleOutput);
+                    }
                 }
             }
 
-            await Task.Delay(RefreshLogTicks);
+            watch.Stop();
+            TimeSpan relaxSpan = TimeSpan.FromMilliseconds(RefreshLogTicks) - watch.Elapsed;
+            if (relaxSpan >= waitStandard) await Task.Delay(relaxSpan);
             await Task.Run(BackgroundUpdate);
         }
         #endregion
@@ -257,9 +323,9 @@ namespace YYHEggEgg.Logger
             string res = $"{nowtime}{header}{log.content}";
             if (Tools.TryRemoveColorInfo(res, out string fileres))
             {
-                if (_customConfig.Is_Debug_LogLevel)
+                if (_customConfig.Global_Minimum_LogLevel <= LogLevel.Debug)
                 {
-                    if (log.level != LogLevel.Debug)
+                    if (log.level >= LogLevel.Information)
                         logwriter.WriteLine(fileres);
                     logwriter_debug.WriteLine(fileres);
                 }
@@ -288,6 +354,9 @@ namespace YYHEggEgg.Logger
             string rtn = " <";
             switch (level)
             {
+                case LogLevel.Verbose:
+                    rtn += "<color=Magenta>Verb</color>";
+                    break;
                 case LogLevel.Debug:
                     rtn += "<color=Cyan>Dbug</color>";
                     break;

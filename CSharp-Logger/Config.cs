@@ -33,11 +33,16 @@ namespace YYHEggEgg.Logger
         /// </summary>
         public readonly bool Use_Working_Directory;
         /// <summary>
-        /// Whether the Logger records debug messages.
-        /// Noticed that the reference projects' DEBUG/RELEASE won't affect the logger's implements at all.
-        /// A log level will be added in future, but it's not a hotfix should do.
+        /// The minimum <see cref="LogLevel"/> that will be handled. <para/>
+        /// Log messages with smaller <see cref="LogLevel"/> will be ignored at all.
         /// </summary>
-        public readonly bool Is_Debug_LogLevel;
+        public readonly LogLevel Global_Minimum_LogLevel;
+        /// <summary>
+        /// The maximum LogLevel that will be output to the console. <para/>
+        /// Log messages with smaller <see cref="LogLevel"/> won't be output to console, but will exist in the log file. <para/>
+        /// Notice that this cannot be smaller than <see cref="Global_Minimum_LogLevel"/>.
+        /// </summary>
+        public readonly LogLevel Console_Minimum_LogLevel;
 
         /// <summary>
         /// Because of efficiency reasons, all features are defined as readonly variables and can only be set in this constructor. <para/>
@@ -48,12 +53,18 @@ namespace YYHEggEgg.Logger
                             // Though not recommended, previous versions use Working Directory as default,
                             // so the default value is set to true.
                             bool use_Working_Directory = true,
-                            bool is_Debug_LogLevel = true)
+                            LogLevel global_Minimum_LogLevel = LogLevel.Debug,
+                            LogLevel console_Minimum_LogLevel = LogLevel.Information)
         {
             Max_Output_Char_Count = max_Output_Char_Count;
             Use_Console_Wrapper = use_Console_Wrapper;
             Use_Working_Directory = use_Working_Directory;
-            Is_Debug_LogLevel = is_Debug_LogLevel;
+            if (console_Minimum_LogLevel < global_Minimum_LogLevel)
+            {
+                throw new ArgumentException("The LogLevel output to console cannot be smaller than the global minimum LogLevel.", nameof(console_Minimum_LogLevel));
+            }
+            Global_Minimum_LogLevel = global_Minimum_LogLevel;
+            Console_Minimum_LogLevel = console_Minimum_LogLevel;
         }
     }
 }

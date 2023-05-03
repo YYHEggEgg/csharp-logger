@@ -8,7 +8,7 @@
     <GenerateDocumentationFile>False</GenerateDocumentationFile>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Title>EggEgg.CSharp-Logger</Title>
-    <Version>2.1.4</Version>
+    <Version>2.2.0</Version>
     <Authors>YYHEggEgg</Authors>
     <Company>YYHEggEgg</Company>
     <Description>A easy logger that supports log and command-line input.</Description>
@@ -16,15 +16,18 @@
     <PackageProjectUrl>https://github.com/YYHEggEgg/csharp-logger</PackageProjectUrl>
     <RepositoryUrl>https://github.com/YYHEggEgg/csharp-logger</RepositoryUrl>
     <PackageTags>Log CommandLine</PackageTags>
-    <PackageReleaseNotes>Changes in v2.0.0:
-- Published as a nuget package
-- Supported output with colors
-- Supported custom config
-- Bugfixs</PackageReleaseNotes>
+    <PackageReleaseNotes>
+		Changes in v2.2.0
+		- Obsoleted the `is_Debug_LogLevel` config paramter.
+		Use `Global_Minimum_LogLevel` and `Console_Minimum_LogLevel` instead. You can now control logging output better by them.
+		- Added `Verbose` and `None` LogLevel. `Log.Verb` is avaliable now.
+		- Other bugfix and improvements.
+	</PackageReleaseNotes>
     <IncludeSymbols>False</IncludeSymbols>
     <PackageId>EggEgg.$(AssemblyName)</PackageId>
     <Product>EggEgg.$(AssemblyName)</Product>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+	<PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
   <ItemGroup>
