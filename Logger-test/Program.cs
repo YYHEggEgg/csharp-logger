@@ -4,7 +4,7 @@ using YYHEggEgg.Logger;
 // See https://aka.ms/new-console-template for more information
 
 Log.Initialize(new LoggerConfig(
-    max_Output_Char_Count: -1,
+    max_Output_Char_Count: 1024,
     use_Console_Wrapper: true,
     use_Working_Directory: true,
 #if DEBUG

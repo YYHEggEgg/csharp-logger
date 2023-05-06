@@ -134,7 +134,7 @@ namespace YYHEggEgg.Logger
                         }
                         catch (Exception ex)
                         {
-                            if (_customConfig.Console_Minimum_LogLevel <= LogLevel.Debug) Console.WriteLine(ex);
+                            if (_customConfig.Global_Minimum_LogLevel <= LogLevel.Debug) Console.WriteLine(ex);
                         }
 #pragma warning restore CS0168 // 声明了变量，但从未使用过
                     }
@@ -148,7 +148,7 @@ namespace YYHEggEgg.Logger
             _logPath = $"{dir}/logs/latest.log";
             logwriter = new(_logPath, true);
             logwriter.AutoFlush = true;
-            if (conf.Console_Minimum_LogLevel <= LogLevel.Debug)
+            if (conf.Global_Minimum_LogLevel <= LogLevel.Debug)
             {
                 _logPath_debug = $"{dir}/logs/latest.debug.log";
                 logwriter_debug = new(_logPath_debug, true);
