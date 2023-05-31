@@ -43,6 +43,14 @@ namespace YYHEggEgg.Logger
         /// Notice that this cannot be smaller than <see cref="Global_Minimum_LogLevel"/>.
         /// </summary>
         public readonly LogLevel Console_Minimum_LogLevel;
+        /// <summary>
+        /// Whether the debug.log writer will flush automatically. It decides the value of <see cref="StreamWriter.AutoFlush"/>. <para/>
+        /// Some programs has a high amount of Verbose output, so they may not have the writer flush immediately. <para/>
+        /// Most programs need a immediate output and don't care about performance loss caused by this. <para/>
+        /// Though it's recommended to set it to true, the default value is false because of compatiable reasons. <para/>
+        /// For now, the unflushed parts of the log will be lost. More optimization will come in further versions. 
+        /// </summary>
+        public readonly bool Debug_LogWriter_AutoFlush;
 
         /// <summary>
         /// Because of efficiency reasons, all features are defined as readonly variables and can only be set in this constructor. <para/>
@@ -54,7 +62,8 @@ namespace YYHEggEgg.Logger
                             // so the default value is set to true.
                             bool use_Working_Directory = true,
                             LogLevel global_Minimum_LogLevel = LogLevel.Debug,
-                            LogLevel console_Minimum_LogLevel = LogLevel.Information)
+                            LogLevel console_Minimum_LogLevel = LogLevel.Information,
+                            bool debug_LogWriter_AutoFlush = false)
         {
             Max_Output_Char_Count = max_Output_Char_Count;
             Use_Console_Wrapper = use_Console_Wrapper;
@@ -65,6 +74,7 @@ namespace YYHEggEgg.Logger
             }
             Global_Minimum_LogLevel = global_Minimum_LogLevel;
             Console_Minimum_LogLevel = console_Minimum_LogLevel;
+            Debug_LogWriter_AutoFlush = debug_LogWriter_AutoFlush;
         }
     }
 }

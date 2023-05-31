@@ -8,7 +8,7 @@
     <GenerateDocumentationFile>False</GenerateDocumentationFile>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Title>EggEgg.CSharp-Logger</Title>
-    <Version>2.2.1</Version>
+    <Version>2.2.2</Version>
     <Authors>YYHEggEgg</Authors>
     <Company>YYHEggEgg</Company>
     <Description>A easy logger that supports log and command-line input.</Description>
@@ -17,11 +17,11 @@
     <RepositoryUrl>https://github.com/YYHEggEgg/csharp-logger</RepositoryUrl>
     <PackageTags>Log CommandLine</PackageTags>
     <PackageReleaseNotes>
-		Changes in v2.2.0
-		- Obsoleted the `is_Debug_LogLevel` config paramter.
-		Use `Global_Minimum_LogLevel` and `Console_Minimum_LogLevel` instead. You can now control logging output better by them.
-		- Added `Verbose` and `None` LogLevel. `Log.Verb` is avaliable now.
-		- Other bugfix and improvements.
+		Changes in v2.2.2
+		- Have some bugfix about auto compress logs. 
+    - Added `debug_LogWriter_AutoFlush` config paramter.
+      Though it's recommended to set it to true, the default value is false because of compatiable reasons.
+      For now, the unflushed parts of the log will be lost. More optimization will come in further versions. 
 	</PackageReleaseNotes>
     <IncludeSymbols>False</IncludeSymbols>
     <PackageId>EggEgg.$(AssemblyName)</PackageId>

@@ -8,4 +8,5 @@
 /CSharp-Logger/bin
 /Logger-test/bin
 /Logger-test/obj
+/Logger-test/logs
 /Logger-Benchmark

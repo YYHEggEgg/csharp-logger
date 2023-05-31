@@ -9,11 +9,12 @@ Log.Initialize(new LoggerConfig(
     use_Working_Directory: true,
 #if DEBUG
     global_Minimum_LogLevel: LogLevel.Verbose,
-    console_Minimum_LogLevel: LogLevel.Debug
+    console_Minimum_LogLevel: LogLevel.Debug,
 #else
     global_Minimum_LogLevel: LogLevel.Information,
-    console_Minimum_LogLevel: LogLevel.Warning
+    console_Minimum_LogLevel: LogLevel.Warning,
 #endif
+    debug_LogWriter_AutoFlush: true
     ));
 
 // 1. Dbug test
@@ -31,17 +32,17 @@ Log.Info("<color=Blue>blue text</color>-<>>><<<color=Yellow>yelolow text</color>
 ConsoleWrapper.ReadLine();
 
 // 3. High output amout test
-StringBuilder sb = new();
-for (int i = 0; i < 1000; i++) sb.AppendLine($"Batching message part {i}");
-string BatchingMessage = sb.ToString();
+// StringBuilder sb = new();
+// for (int i = 0; i < 1000; i++) sb.AppendLine($"Batching message part {i}");
+// string BatchingMessage = sb.ToString();
 
-ConsoleWrapper.InputPrefix = "Present for test prefix > ";
-_ = ConsoleWrapper.ReadLineAsync();
+// ConsoleWrapper.InputPrefix = "Present for test prefix > ";
+// _ = ConsoleWrapper.ReadLineAsync();
 
-Log.Warn(BatchingMessage);
-Parallel.For(0, 1000, i =>
-{
-    Log.Warn(BatchingMessage);
-});
+// Log.Warn(BatchingMessage);
+// Parallel.For(0, 1000, i =>
+// {
+//     Log.Warn(BatchingMessage);
+// });
 
-ConsoleWrapper.ReadLine();
+// ConsoleWrapper.ReadLine();

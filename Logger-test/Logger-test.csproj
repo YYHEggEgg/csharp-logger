@@ -1,5 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <ItemGroup>
+    <ProjectReference Include="..\CSharp-Logger\CSharp-Logger.csproj" />
+  </ItemGroup>
+
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net6.0</TargetFramework>
@@ -8,8 +12,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="EggEgg.CSharp-Logger" Version="2.2.0.52-beta" />
-  </ItemGroup>
+  <!-- <ItemGroup> -->
+    <!-- <PackageReference Include="EggEgg.CSharp-Logger" Version="2.2.0.52-beta" /> -->
+  <!-- </ItemGroup> -->
 
 </Project>
