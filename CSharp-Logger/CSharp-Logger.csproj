@@ -8,7 +8,7 @@
     <GenerateDocumentationFile>False</GenerateDocumentationFile>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Title>EggEgg.CSharp-Logger</Title>
-    <Version>2.2.2</Version>
+    <Version>2.2.3</Version>
     <Authors>YYHEggEgg</Authors>
     <Company>YYHEggEgg</Company>
     <Description>A easy logger that supports log and command-line input.</Description>
@@ -16,13 +16,10 @@
     <PackageProjectUrl>https://github.com/YYHEggEgg/csharp-logger</PackageProjectUrl>
     <RepositoryUrl>https://github.com/YYHEggEgg/csharp-logger</RepositoryUrl>
     <PackageTags>Log CommandLine</PackageTags>
-    <PackageReleaseNotes>
-		Changes in v2.2.2
-		- Have some bugfix about auto compress logs. 
-    - Added `debug_LogWriter_AutoFlush` config paramter.
-      Though it's recommended to set it to true, the default value is false because of compatiable reasons.
-      For now, the unflushed parts of the log will be lost. More optimization will come in further versions. 
-	</PackageReleaseNotes>
+    <PackageReleaseNotes>Changes in v2.2.3
+- Added `logLevelWrite` and `logLevelFail` paramter for the `LogTraceListener`.  
+  They will be used for invoking `TraceListener.Write` and `TraceListener.Fail` as the logLevel param.
+- Also, added a method `Log.PushLog(string, LogLevel, string?)` to log with any LogLevel at runtime.</PackageReleaseNotes>
     <IncludeSymbols>False</IncludeSymbols>
     <PackageId>EggEgg.$(AssemblyName)</PackageId>
     <Product>EggEgg.$(AssemblyName)</Product>

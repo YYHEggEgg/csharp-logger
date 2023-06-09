@@ -5,6 +5,12 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
 [![NuGet](https://img.shields.io/nuget/v/EggEgg.CSharp-Logger.svg)](https://www.nuget.org/packages/EggEgg.CSharp-Logger)
 
 ## Update
+
+### v2.2.3
+- Added `logLevelWrite` and `logLevelFail` paramter for the `LogTraceListener`.  
+  They will be used for invoking `TraceListener.Write` and `TraceListener.Fail` as the logLevel param.
+- Also, added a method `Log.PushLog(string, LogLevel, string?)` to log with any LogLevel at runtime.
+
 ### v2.2.2
 - Have some bugfix about auto compress logs. 
 - Added `debug_LogWriter_AutoFlush` config paramter.

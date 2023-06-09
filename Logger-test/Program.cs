@@ -26,6 +26,9 @@ Log.Dbug("this should not be output in RELEASE!");
 Log.Verb("Verbose should not appear at all!", "TESTSender");
 #endif
 
+Log.PushLog("Push a warning log!", LogLevel.Warning, "TSETSender");
+Log.PushLog("Push a verbose log!", LogLevel.Verbose, "TSESTender");
+
 // 2. Color test
 Log.Erro("<color=Blue>blue text</color>-<>>><<<color=Yellow>yelolow text</color>/<><color=FF>no color text</color>");
 Log.Info("<color=Blue>blue text</color>-<>>><<<color=Yellow>yelolow text</color>/<><color=FF>no color text</color>", "Should not output if Release");

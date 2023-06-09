@@ -332,6 +332,21 @@ namespace YYHEggEgg.Logger
             }
         }
 
+        /// <summary>
+        /// Put a log with a certain Level to the handle queue. Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/> <= <paramref name="logLevel"/>. 
+        /// </summary>
+        /// <param name="content">The log content.</param>
+        /// <param name="logLevel">The <see cref="LogLevel"/> of this log message.</param>
+        /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>
+        public static void PushLog(string content, LogLevel logLevel, string? sender = null)
+        {
+            AssertInitialized();
+            if (_customConfig.Global_Minimum_LogLevel <= logLevel)
+            {
+                qlog.Enqueue(new LogDetail(content, logLevel, sender));
+            }
+        }
+
         #region Background Refresh
         private struct LogDetail
         {
