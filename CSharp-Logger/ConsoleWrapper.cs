@@ -44,6 +44,12 @@ namespace YYHEggEgg.Logger
 
             Task.Run(BackgroundReadkey);
             Task.Run(BackgroundUpdate);
+            AppDomain.CurrentDomain.ProcessExit += (_, _) =>
+            {
+                InputPrefix = string.Empty;
+                Thread.Sleep(1000);
+                ending = true;
+            };
         }
 
         private static void AssertInitialized()
@@ -409,7 +415,7 @@ namespace YYHEggEgg.Logger
                         }
                     }
                     #endregion
-                    else if (keyInfo.Key != ConsoleKey.LeftWindows 
+                    else if (keyInfo.Key != ConsoleKey.LeftWindows
                         && keyInfo.Key != ConsoleKey.RightWindows)
                     {
                         input.Insert(cursor, keyInfo.KeyChar);
@@ -425,24 +431,36 @@ namespace YYHEggEgg.Logger
 
         private static ConcurrentQueue<string> writelines = new();
 
+        private static bool ending = false;
         private static async Task BackgroundUpdate()
         {
-            try
+            while (!ending)
             {
-                while (true)
+                try
                 {
-                    BeginWrite();
-                    var arr = writelines.ToArray();
-                    writelines.Clear();
-                    foreach (var line in arr)
-                        InnerWriteLine(line);
-                    EndWrite();
-                    await Task.Delay(10);
+                    string? prev_input = null;
+                    int refresh_limit = 0;
+                    var inputnow = input.ToString();
+                    if (inputnow == prev_input && refresh_limit <= 500)
+                    {
+                        await Task.Delay(50);
+                        refresh_limit += 50;
+                        continue;
+                    }
+                    else
+                    {
+                        refresh_limit = 0;
+                        BeginWrite();
+                        var arr = writelines.ToArray();
+                        writelines.Clear();
+                        foreach (var line in arr)
+                            InnerWriteLine(line);
+                        EndWrite();
+                        prev_input = inputnow;
+                        await Task.Delay(10);
+                    }
                 }
-            }
-            finally
-            {
-                await Task.Run(BackgroundUpdate);
+                catch { }
             }
         }
         #endregion

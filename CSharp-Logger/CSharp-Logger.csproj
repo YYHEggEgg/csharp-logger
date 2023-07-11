@@ -15,7 +15,7 @@
     <Copyright>Copyright (c) 2023 EggEgg</Copyright>
     <PackageProjectUrl>https://github.com/YYHEggEgg/csharp-logger</PackageProjectUrl>
     <RepositoryUrl>https://github.com/YYHEggEgg/csharp-logger</RepositoryUrl>
-    <PackageTags>Log CommandLine</PackageTags>
+    <PackageTags>Log;CLI</PackageTags>
     <PackageReleaseNotes>Changes in v2.2.3
 - Added `logLevelWrite` and `logLevelFail` paramter for the `LogTraceListener`.  
   They will be used for invoking `TraceListener.Write` and `TraceListener.Fail` as the logLevel param.
@@ -32,6 +32,10 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="TextCopy" Version="6.2.1" />
   </ItemGroup>
 
 	<ItemGroup>

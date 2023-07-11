@@ -30,6 +30,7 @@ Log.PushLog("Push a warning log!", LogLevel.Warning, "TSETSender");
 Log.PushLog("Push a verbose log!", LogLevel.Verbose, "TSESTender");
 
 // 2. Color test
+ConsoleWrapper.InputPrefix = "WrapperCLI> ";
 Log.Erro("<color=Blue>blue text</color>-<>>><<<color=Yellow>yelolow text</color>/<><color=FF>no color text</color>");
 Log.Info("<color=Blue>blue text</color>-<>>><<<color=Yellow>yelolow text</color>/<><color=FF>no color text</color>", "Should not output if Release");
 ConsoleWrapper.ReadLine();
@@ -49,3 +50,7 @@ ConsoleWrapper.ReadLine();
 // });
 
 // ConsoleWrapper.ReadLine();
+
+// 4. Sudden terminate test
+Log.Info($"The clearup succeed!");
+Environment.Exit(0);

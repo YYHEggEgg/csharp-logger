@@ -252,6 +252,7 @@ namespace YYHEggEgg.Logger
                 logwriter_debug.AutoFlush = _customConfig.Debug_LogWriter_AutoFlush;
             }
             Task.Run(BackgroundUpdate);
+            AppDomain.CurrentDomain.ProcessExit += ClearUpLogQueue;
         }
 
         private static void AssertInitialized()
@@ -375,52 +376,59 @@ namespace YYHEggEgg.Logger
 
         private static async Task BackgroundUpdate()
         {
-            if (!qlog.TryDequeue(out LogDetail _log))
+            while (true)
             {
-                await Task.Delay(RefreshLogTicks);
-                await Task.Run(BackgroundUpdate);
-                return;
+                if (qlog.IsEmpty)
+                {
+                    await Task.Delay(RefreshLogTicks);
+                    continue;
+                }
+
+                watch.Start();
+                InnerWriteLogs();
+
+                watch.Stop();
+                TimeSpan relaxSpan = TimeSpan.FromMilliseconds(RefreshLogTicks) - watch.Elapsed;
+                if (relaxSpan >= waitStandard) await Task.Delay(relaxSpan);
             }
+        }
 
-            watch.Start();
-
+        #region Write Methods
+        private static void InnerWriteLogs(int limit = int.MaxValue)
+        {
+            int totalHandled = 0;
             if (_customConfig.Use_Console_Wrapper)
             {
-                string _consoleOutput = WriteLog(_log);
-                if (_log.level >= _customConfig.Console_Minimum_LogLevel)
-                {
-                    ConsoleWrapper.WriteLine(_consoleOutput);
-                }
-                while (qlog.TryDequeue(out LogDetail log))
+                while (totalHandled < limit && qlog.TryDequeue(out LogDetail log))
                 {
                     string consoleOutput = WriteLog(log);
                     if (log.level >= _customConfig.Console_Minimum_LogLevel)
                     {
                         ConsoleWrapper.WriteLine(consoleOutput);
                     }
+                    totalHandled++;
                 }
             }
             else
             {
-                string _consoleOutput = WriteLog(_log);
-                if (_log.level >= _customConfig.Console_Minimum_LogLevel)
-                {
-                    WriteColorLine(_consoleOutput);
-                }
-                while (qlog.TryDequeue(out LogDetail log))
+                while (totalHandled < limit && qlog.TryDequeue(out LogDetail log))
                 {
                     string consoleOutput = WriteLog(log);
                     if (log.level >= _customConfig.Console_Minimum_LogLevel)
                     {
                         WriteColorLine(consoleOutput);
                     }
+                    totalHandled++;
                 }
             }
+        }
+        #endregion
 
-            watch.Stop();
-            TimeSpan relaxSpan = TimeSpan.FromMilliseconds(RefreshLogTicks) - watch.Elapsed;
-            if (relaxSpan >= waitStandard) await Task.Delay(relaxSpan);
-            await Task.Run(BackgroundUpdate);
+        private static void ClearUpLogQueue(object? o, EventArgs e)
+        {
+            Thread.Sleep(500);
+            var restlimit = qlog.Count;
+            InnerWriteLogs(restlimit);
         }
         #endregion
 
