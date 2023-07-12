@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Text;
+using TextCopy;
 
 #pragma warning disable CS8618 // 在退出构造函数时，不可为 null 的字段必须包含非 null 值。请考虑声明为可以为 null。
 namespace YYHEggEgg.Logger
@@ -160,6 +161,15 @@ namespace YYHEggEgg.Logger
                     if (isReading)
                     {
                         Console.Write(input);
+                        #region Corner case: new line handle
+                        // Researches show that the cursor don't switch to the
+                        // next line when it reaches the end of a line.
+                        if (((InputPrefix.Length + cursor) % Console.WindowWidth == 0) 
+                            && (Console.CursorLeft == Console.WindowWidth - 1))
+                        {
+                            Console.SetCursorPosition(0, Console.CursorTop + 1);
+                        }
+                        #endregion
                         RecoverCursor();
                     }
                 }
@@ -309,18 +319,20 @@ namespace YYHEggEgg.Logger
                 Console.CursorTop + calcCursor / Console.WindowWidth);
         }
 
+        private static int last_input_len = 0;
         private static void ClearWrittingArea()
         {
-            int occupiedLength = InputPrefix.Length + input.Length;
-            while (occupiedLength > 0)
+            int occupiedLength = InputPrefix.Length + last_input_len;
+            while (occupiedLength >= 0)
             {
                 ClearThisLine();
                 occupiedLength -= Console.WindowWidth;
-                if (occupiedLength > 0)
+                if (occupiedLength >= 0)
                 {
                     Console.SetCursorPosition(0, Console.CursorTop - 1);
                 }
             }
+            last_input_len = input.Length;
         }
         #endregion
 
@@ -373,9 +385,10 @@ namespace YYHEggEgg.Logger
                         keyInfo.Key == ConsoleKey.V && keyInfo.Modifiers == ConsoleModifiers.Control
                     ) // 粘贴剪贴板内容
                     {
-                        // Automatically handled by .NET Console
-                        //pasteText = Clipboard.GetText();
-                        //isCtrlV = true;
+                        string? res = await ClipboardService.GetTextAsync();
+                        if (string.IsNullOrEmpty(res)) continue;
+                        input.Insert(cursor, res);
+                        cursor += res.Length;
                     }
                     else if (keyInfo.Key == ConsoleKey.Backspace) // 处理退格
                     {
@@ -395,16 +408,19 @@ namespace YYHEggEgg.Logger
                     else if (keyInfo.Key == ConsoleKey.Home)
                     {
                         cursor = 0;
+                        cursor_moved_refresh = true;
                     }
                     else if (keyInfo.Key == ConsoleKey.End)
                     {
                         cursor = input.Length;
+                        cursor_moved_refresh = true;
                     }
                     else if (keyInfo.Key == ConsoleKey.LeftArrow)
                     {
                         if (cursor > 0)
                         {
                             cursor--;
+                            cursor_moved_refresh = true;
                         }
                     }
                     else if (keyInfo.Key == ConsoleKey.RightArrow)
@@ -412,6 +428,7 @@ namespace YYHEggEgg.Logger
                         if (cursor < input.Length)
                         {
                             cursor++;
+                            cursor_moved_refresh = true;
                         }
                     }
                     #endregion
@@ -432,24 +449,22 @@ namespace YYHEggEgg.Logger
         private static ConcurrentQueue<string> writelines = new();
 
         private static bool ending = false;
+        private static bool cursor_moved_refresh = false;
         private static async Task BackgroundUpdate()
         {
+            string? prev_input = null;
             while (!ending)
             {
                 try
                 {
-                    string? prev_input = null;
-                    int refresh_limit = 0;
                     var inputnow = input.ToString();
-                    if (inputnow == prev_input && refresh_limit <= 500)
+                    if (inputnow == prev_input && writelines.Count == 0 && !cursor_moved_refresh)
                     {
                         await Task.Delay(50);
-                        refresh_limit += 50;
                         continue;
                     }
                     else
                     {
-                        refresh_limit = 0;
                         BeginWrite();
                         var arr = writelines.ToArray();
                         writelines.Clear();
@@ -457,6 +472,7 @@ namespace YYHEggEgg.Logger
                             InnerWriteLine(line);
                         EndWrite();
                         prev_input = inputnow;
+                        cursor_moved_refresh = false;
                         await Task.Delay(10);
                     }
                 }

@@ -376,7 +376,7 @@ namespace YYHEggEgg.Logger
 
         private static async Task BackgroundUpdate()
         {
-            while (true)
+            while (!_ending)
             {
                 if (qlog.IsEmpty)
                 {
@@ -424,11 +424,14 @@ namespace YYHEggEgg.Logger
         }
         #endregion
 
+        private static bool _ending = false;
         private static void ClearUpLogQueue(object? o, EventArgs e)
         {
             Thread.Sleep(500);
-            var restlimit = qlog.Count;
-            InnerWriteLogs(restlimit);
+            _ending = true;
+            if (!_customConfig.Debug_LogWriter_AutoFlush &&
+                _customConfig.Global_Minimum_LogLevel <= LogLevel.Debug)
+                logwriter_debug?.Flush();
         }
         #endregion
 
