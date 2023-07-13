@@ -8,7 +8,7 @@
     <GenerateDocumentationFile>False</GenerateDocumentationFile>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Title>EggEgg.CSharp-Logger</Title>
-    <Version>2.8.52-beta</Version>
+    <Version>2.8.53-beta</Version>
     <Authors>YYHEggEgg</Authors>
     <Company>YYHEggEgg</Company>
     <Description>A easy logger that supports log and command-line input.</Description>
@@ -22,6 +22,7 @@
 - Added ConsoleWrapper paste text feature.
 - Fixed the issue that the console can't be scrolled when ConsoleWrapper is waiting for input.
 - Fixed the bug that the console wrapper will produce `InputPrefix` repeatedly when exiting.
+- Fixed the issue that the log writing thread blocks when user selecting chars in the console. 
 - Other logger and ConsoleWrapper improvements.</PackageReleaseNotes>
     <IncludeSymbols>False</IncludeSymbols>
     <PackageId>EggEgg.$(AssemblyName)</PackageId>

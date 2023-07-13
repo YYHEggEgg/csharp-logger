@@ -5,7 +5,7 @@ using YYHEggEgg.Logger;
 
 Log.Initialize(new LoggerConfig(
     max_Output_Char_Count: 1024,
-    use_Console_Wrapper: true,
+    use_Console_Wrapper: false,
     use_Working_Directory: true,
 #if DEBUG
     global_Minimum_LogLevel: LogLevel.Verbose,

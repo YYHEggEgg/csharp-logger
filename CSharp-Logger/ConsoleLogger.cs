@@ -252,6 +252,7 @@ namespace YYHEggEgg.Logger
                 logwriter_debug.AutoFlush = _customConfig.Debug_LogWriter_AutoFlush;
             }
             Task.Run(BackgroundUpdate);
+            Task.Run(BackgroundWriteConsole);
             AppDomain.CurrentDomain.ProcessExit += ClearUpLogQueue;
             AppDomain.CurrentDomain.ProcessExit += PendTime;
         }
@@ -400,31 +401,28 @@ namespace YYHEggEgg.Logger
         }
 
         #region Write Methods
-        private static void InnerWriteLogs(int limit = int.MaxValue)
+        private static void InnerWriteLogs()
         {
-            int totalHandled = 0;
             if (_customConfig.Use_Console_Wrapper)
             {
-                while (totalHandled < limit && qlog.TryDequeue(out LogDetail log))
+                while (qlog.TryDequeue(out LogDetail log))
                 {
                     string consoleOutput = WriteLog(log);
                     if (log.level >= _customConfig.Console_Minimum_LogLevel)
                     {
                         ConsoleWrapper.WriteLine(consoleOutput);
                     }
-                    totalHandled++;
                 }
             }
             else
             {
-                while (totalHandled < limit && qlog.TryDequeue(out LogDetail log))
+                while (qlog.TryDequeue(out LogDetail log))
                 {
                     string consoleOutput = WriteLog(log);
                     if (log.level >= _customConfig.Console_Minimum_LogLevel)
                     {
-                        WriteColorLine(consoleOutput);
+                        qconsole_strings.Enqueue(consoleOutput);
                     }
-                    totalHandled++;
                 }
             }
         }
@@ -447,12 +445,25 @@ namespace YYHEggEgg.Logger
             if (!_customConfig.Debug_LogWriter_AutoFlush &&
                 _customConfig.Global_Minimum_LogLevel <= LogLevel.Debug)
                 logwriter_debug?.Flush();
+            if (!_customConfig.Use_Console_Wrapper)
+            {
+                _console_ending = true;
+                total = 0;
+                while (!_console_cleared_up && total <= 1000)
+                {
+                    await Task.Delay(50);
+                    total += 50;
+                }
+                _console_cleared_up = true;
+            }
         }
 
         private static void PendTime(object? o, EventArgs e)
         {
             int total = 0;
-            while ((!_clearup_completed || !ConsoleWrapper._clearup_completed) && total <= 1500)
+            while ((!_clearup_completed || 
+                ((_customConfig.Use_Console_Wrapper && !ConsoleWrapper._clearup_completed)
+                || (!_customConfig.Use_Console_Wrapper && !_console_cleared_up))) && total <= 1500)
             {
                 Thread.Sleep(50);
                 total += 50;
@@ -582,6 +593,35 @@ namespace YYHEggEgg.Logger
             catch
             {
                 Erro("Fatal Error. Search for \"resolving color\" in log file for more infomation.", "Logger");
+            }
+        }
+
+        private static bool _console_ending = false;
+        private static bool _console_cleared_up = false;
+        private static ConcurrentQueue<string> qconsole_strings = new();
+        /// <summary>
+        /// Console.Write will pend as the user selected content in the console. But the file I/O shouldn't be pended.
+        /// </summary>
+        /// <returns></returns>
+        private static async Task BackgroundWriteConsole()
+        {
+            while (true)
+            {
+                if (qconsole_strings.IsEmpty)
+                {
+                    if (_console_ending)
+                    {
+                        _console_cleared_up = true;
+                        return;
+                    }
+                    await Task.Delay(50);
+                    continue;
+                }
+
+                while (qconsole_strings.TryDequeue(out string? str))
+                {
+                    WriteColorLine(str);
+                }
             }
         }
         #endregion

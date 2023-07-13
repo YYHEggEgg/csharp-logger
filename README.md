@@ -6,22 +6,14 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
 
 ## Update
 
-### v2.2.3
-- Added `logLevelWrite` and `logLevelFail` paramter for the `LogTraceListener`.  
-  They will be used for invoking `TraceListener.Write` and `TraceListener.Fail` as the logLevel param.
-- Also, added a method `Log.PushLog(string, LogLevel, string?)` to log with any LogLevel at runtime.
-
-### v2.2.2
-- Have some bugfix about auto compress logs. 
-- Added `debug_LogWriter_AutoFlush` config paramter.
-  Though it's recommended to set it to true, the default value is false because of compatiable reasons.
-  For now, the unflushed parts of the log will be lost. More optimization will come in further versions. 
-
-### v2.2.0
-- Obsoleted the `is_Debug_LogLevel` config paramter.  
-  Use `Global_Minimum_LogLevel` and `Console_Minimum_LogLevel` instead. You can now control logging output better by them.  
-- Added `Verbose` and `None` LogLevel. `Log.Verb` is avaliable now.
-- Other bugfix and improvements.
+### v3.0.0
+- Fixed the unflushed logs lost when the program is exiting.
+- Fixed the debug.log file unflushed bug when the program is exiting.
+- Added ConsoleWrapper paste text feature.
+- Fixed the issue that the console can't be scrolled when ConsoleWrapper is waiting for input.
+- Fixed the bug that the console wrapper will produce `InputPrefix` repeatedly when exiting.
+- Fixed the issue that the log writing thread blocks when user selecting chars in the console. 
+- Other logger and ConsoleWrapper improvements.
 
 ## Features
 - Common logger implements        
@@ -31,7 +23,7 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
   The Color value should be a valid value in [ConsoleColor](https://learn.microsoft.com/en-us/dotnet/api/system.consolecolor), e.g. "Red", "Green".   
   Recognized color tags will be removed in the log file.  
 - **Parallel input Support**         
-  if you wants to read the user's input while outputing logs parallel (e.g. making a command interacting program), `ConsoleWrapper` is provided.    
+  if you wants to read the user's input while outputing logs parallel (e.g. making a CLI program), `ConsoleWrapper` is provided.    
   You can set the value of `ConsoleWrapper.InputPrefix` as a waiting-input prefix, just like `mysql> ` or `ubuntu ~$ `, and use `ConsoleWrapper.ReadLineAsync` to read inputs from the user.    
   _Notice that it will impact the performance when the user's input is very large. It's disabled as default, and you can enable it by `LoggerConfig(use_Console_Wrapper: true)`.
 - Output amount limit       
