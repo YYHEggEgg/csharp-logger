@@ -14,6 +14,7 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
 - Fixed the issue where the `ConsoleWrapper.ReadLine` series of methods would repeatedly output the `InputPrefix` content when the program ends.
 - Fixed the issue where the log processing thread would be blocked when the user selects content on the console while using the default configuration of logging with the native `Console`.
 - Fixed the issue where the automatic log compression feature ignored logs with empty content.
+- Fixed the issue where logs with empty content were ignored when the automatic log compression feature was unable to compress into an existing log compression package and created a new zip file.
 - Other fixes and improvements related to the logger and `ConsoleWrapper`.
 - Known issue: Significant problems exist with the functionality of using the Home/End keys in `ConsoleWrapper` when there are multiple lines of input.    
   This will be fixed in the next major version after thorough testing.

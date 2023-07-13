@@ -8,10 +8,10 @@
     <GenerateDocumentationFile>False</GenerateDocumentationFile>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Title>EggEgg.CSharp-Logger</Title>
-    <Version>2.8.54-beta</Version>
+    <Version>3.0.0</Version>
     <Authors>YYHEggEgg</Authors>
     <Company>YYHEggEgg</Company>
-    <Description>A easy logger that supports log and command-line input.</Description>
+    <Description>A easy logger that supports log and CLI interacting.</Description>
     <Copyright>Copyright (c) 2023 EggEgg</Copyright>
     <PackageProjectUrl>https://github.com/YYHEggEgg/csharp-logger</PackageProjectUrl>
     <RepositoryUrl>https://github.com/YYHEggEgg/csharp-logger</RepositoryUrl>
@@ -24,6 +24,7 @@
 - Fixed the issue where the `ConsoleWrapper.ReadLine` series of methods would repeatedly output the `InputPrefix` content when the program ends.
 - Fixed the issue where the log processing thread would be blocked when the user selects content on the console while using the default configuration of logging with the native `Console`.
 - Fixed the issue where the automatic log compression feature ignored logs with empty content.
+- Fixed the issue where logs with empty content were ignored when the automatic log compression feature was unable to compress into an existing log compression package and created a new zip file.
 - Other fixes and improvements related to the logger and `ConsoleWrapper`.
 - Known issue: Significant problems exist with the functionality of using the Home/End keys in `ConsoleWrapper` when there are multiple lines of input.    
   This will be fixed in the next major version after thorough testing.</PackageReleaseNotes>
