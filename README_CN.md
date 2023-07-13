@@ -6,18 +6,16 @@
 [![NuGet](https://img.shields.io/nuget/v/EggEgg.CSharp-Logger.svg)](https://www.nuget.org/packages/EggEgg.CSharp-Logger)
 
 ## 更新
-### v2.2.2
-- 修复了在特定情况下，自动压缩日志会出现错误压缩文件的问题。
-- 加入了 Config 初始化参数 `debug_LogWriter_AutoFlush`。  
-  尽管它最好被设置为 `true`，为了与之前的版本保持一致，其在构造函数中的默认值为 `false`。
-  For now, the unflushed parts of the log will be lost. More optimization will come in further versions. 
-  目前在版本中，`StreamWriter` 缓冲区中未写入磁盘的部分在关闭程序后会丢失。未来的版本中会针对其进行优化。
-
-### v2.2.0
-- 弃用了 Config 初始化参数 `is_Debug_LogLevel`。  
-  使用 `Global_Minimum_LogLevel` 与 `Console_Minimum_LogLevel` 来达到同样的效果。它们可以对 Logger 的输出进行更精细的控制。
-- 加入了日志级别 `Verbose` 与 `None`。现在已经支持 `Log.Verb`。
-- 修复了一些问题并进行了一些优化。
+### v3.0.0
+- 修复了等待队列中的未处理日志会在程序关闭时丢失的问题。
+- 修复了 `debug.log` 日志在 `Debug_LogWriter_AutoFlush` 设为 `false` 时，终止程序造成未写入磁盘的日志丢失的问题。
+- 正常支持了 `ConsoleWrapper` 按 Ctrl+V 粘贴文本的功能。
+- 修复了使用 `ConsoleWrapper.ReadLine` 系列方法时，控制台无法滚动查看上下内容的问题。
+- 修复了 `ConsoleWrapper.ReadLine` 系列方法在程序结束时，会异常重复输出 `InputPrefix` 内容的问题。
+- 修复了在使用原生 `Console` 输出日志（即不使用 `ConsoleWrapper` 的默认配置）时，当用户选择控制台上的内容时，日志处理线程会被阻塞的问题。
+- 修复了自动压缩日志功能忽略内容为空的日志的问题。
+- 其他有关 logger 与 `ConsoleWrapper` 的功能修复与改进。
+- 已知 `ConsoleWrapper` 使用 Home/End 键的功能在输入有多行的情况下存在显著问题。由于涉及底层代码，将会在充分测试后在下一个主要版本修复。
 
 ## 功能
 - 基础日志实现        
@@ -27,7 +25,7 @@
   颜色值应该是 [ConsoleColor](https://learn.microsoft.com/en-us/dotnet/api/system.consolecolor) 中的有效值，例如"Red"、"Green"。   
   识别到的颜色标记将在日志文件中被删除。  
 - **并行输入支持**         
-  如果您想在输出日志的同时读取用户的输入（例如制作支持命令交互的程序），则提供了 `ConsoleWrapper`。    
+  如果您想在输出日志的同时读取用户的输入（例如制作支持 CLI 交互的程序），则提供了 `ConsoleWrapper`。    
   您可以将 `ConsoleWrapper.InputPrefix` 的值设置为等待输入的前缀，就像 `mysql>` 或 `ubuntu ~$`，并使用 `ConsoleWrapper.ReadLineAsync` 读取输入。    
   _请注意，当用户的输入非常大时，它会影响性能。它默认是禁用的，您可以通过 `LoggerConfig(use_Console_Wrapper: true)`来启用它。
 - 输出数量限制       

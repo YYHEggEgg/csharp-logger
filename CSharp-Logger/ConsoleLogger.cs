@@ -150,8 +150,8 @@ namespace YYHEggEgg.Logger
                                 string logFilePath = pair.filePath;
                                 string logFileName = Path.GetFileName(logFilePath);
 
-                                // 检查文件是否存在并且大小大于零以防出现空文件
-                                if (File.Exists(logFilePath) && new FileInfo(logFilePath).Length > 0)
+                                // 检查文件是否存在
+                                if (File.Exists(logFilePath))
                                 {
                                     // 添加日志文件到压缩存档
                                     ZipArchiveEntry zipEntry = archive.CreateEntry(logFileName, CompressionLevel.Fastest);

@@ -7,13 +7,16 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
 ## Update
 
 ### v3.0.0
-- Fixed the unflushed logs lost when the program is exiting.
-- Fixed the debug.log file unflushed bug when the program is exiting.
-- Added ConsoleWrapper paste text feature.
-- Fixed the issue that the console can't be scrolled when ConsoleWrapper is waiting for input.
-- Fixed the bug that the console wrapper will produce `InputPrefix` repeatedly when exiting.
-- Fixed the issue that the log writing thread blocks when user selecting chars in the console. 
-- Other logger and ConsoleWrapper improvements.
+- Fixed the issue where unprocessed logs in the waiting queue would be lost when the program is closed.
+- Fixed the issue where `debug.log` were not written to disk when `Debug_LogWriter_AutoFlush` is set to `false` and the program is terminated.
+- Properly supported the functionality of pasting text using Ctrl+V in `ConsoleWrapper`.
+- Fixed the issue where the console could not scroll to view previous input/output when using the `ConsoleWrapper.ReadLine` series of methods.
+- Fixed the issue where the `ConsoleWrapper.ReadLine` series of methods would repeatedly output the `InputPrefix` content when the program ends.
+- Fixed the issue where the log processing thread would be blocked when the user selects content on the console while using the default configuration of logging with the native `Console`.
+- Fixed the issue where the automatic log compression feature ignored logs with empty content.
+- Other fixes and improvements related to the logger and `ConsoleWrapper`.
+- Known issue: Significant problems exist with the functionality of using the Home/End keys in `ConsoleWrapper` when there are multiple lines of input.    
+  This will be fixed in the next major version after thorough testing.
 
 ## Features
 - Common logger implements        
