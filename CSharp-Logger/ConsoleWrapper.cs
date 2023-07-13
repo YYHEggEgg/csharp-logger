@@ -45,11 +45,27 @@ namespace YYHEggEgg.Logger
 
             Task.Run(BackgroundReadkey);
             Task.Run(BackgroundUpdate);
-            AppDomain.CurrentDomain.ProcessExit += (_, _) =>
+            AppDomain.CurrentDomain.ProcessExit += async (_, _) =>
             {
                 InputPrefix = string.Empty;
-                Thread.Sleep(1000);
+                await Task.Delay(50);
+                int total = 0;
+                if (Log._ending)
+                {
+                    while (!Log._clearup_completed && total <= 300)
+                    {
+                        await Task.Delay(50);
+                        total += 50;
+                    }
+                }
                 ending = true;
+                total = 0;
+                while (!_clearup_completed && total <= 1000)
+                {
+                    await Task.Delay(50);
+                    total += 50;
+                }
+                _clearup_completed = true;
             };
         }
 
@@ -449,6 +465,7 @@ namespace YYHEggEgg.Logger
         private static ConcurrentQueue<string> writelines = new();
 
         private static bool ending = false;
+        internal static bool _clearup_completed = false;
         private static bool cursor_moved_refresh = false;
         private static async Task BackgroundUpdate()
         {
@@ -460,6 +477,11 @@ namespace YYHEggEgg.Logger
                     var inputnow = input.ToString();
                     if (inputnow == prev_input && writelines.Count == 0 && !cursor_moved_refresh)
                     {
+                        if (ending)
+                        {
+                            _clearup_completed = true;
+                            return;
+                        }
                         await Task.Delay(50);
                         continue;
                     }

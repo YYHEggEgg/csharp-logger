@@ -253,6 +253,7 @@ namespace YYHEggEgg.Logger
             }
             Task.Run(BackgroundUpdate);
             AppDomain.CurrentDomain.ProcessExit += ClearUpLogQueue;
+            AppDomain.CurrentDomain.ProcessExit += PendTime;
         }
 
         private static void AssertInitialized()
@@ -376,10 +377,15 @@ namespace YYHEggEgg.Logger
 
         private static async Task BackgroundUpdate()
         {
-            while (!_ending)
+            while (true)
             {
                 if (qlog.IsEmpty)
                 {
+                    if (_ending)
+                    {
+                        _clearup_completed = true;
+                        return;
+                    }
                     await Task.Delay(RefreshLogTicks);
                     continue;
                 }
@@ -423,15 +429,34 @@ namespace YYHEggEgg.Logger
             }
         }
         #endregion
+        #endregion
 
-        private static bool _ending = false;
-        private static void ClearUpLogQueue(object? o, EventArgs e)
+        #region Clear up
+        internal static bool _ending = false;
+        internal static bool _clearup_completed = false;
+        private static async void ClearUpLogQueue(object? o, EventArgs e)
         {
-            Thread.Sleep(500);
             _ending = true;
+            int total = 0;
+            while (!_clearup_completed && total <= 300)
+            {
+                await Task.Delay(50);
+                total += 50;
+            }
+            _clearup_completed = true;
             if (!_customConfig.Debug_LogWriter_AutoFlush &&
                 _customConfig.Global_Minimum_LogLevel <= LogLevel.Debug)
                 logwriter_debug?.Flush();
+        }
+
+        private static void PendTime(object? o, EventArgs e)
+        {
+            int total = 0;
+            while ((!_clearup_completed || !ConsoleWrapper._clearup_completed) && total <= 1500)
+            {
+                Thread.Sleep(50);
+                total += 50;
+            }
         }
         #endregion
 

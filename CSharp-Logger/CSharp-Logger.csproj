@@ -8,7 +8,7 @@
     <GenerateDocumentationFile>False</GenerateDocumentationFile>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Title>EggEgg.CSharp-Logger</Title>
-    <Version>2.2.3</Version>
+    <Version>2.8.52-beta</Version>
     <Authors>YYHEggEgg</Authors>
     <Company>YYHEggEgg</Company>
     <Description>A easy logger that supports log and command-line input.</Description>
@@ -16,15 +16,18 @@
     <PackageProjectUrl>https://github.com/YYHEggEgg/csharp-logger</PackageProjectUrl>
     <RepositoryUrl>https://github.com/YYHEggEgg/csharp-logger</RepositoryUrl>
     <PackageTags>Log;CLI</PackageTags>
-    <PackageReleaseNotes>Changes in v2.2.3
-- Added `logLevelWrite` and `logLevelFail` paramter for the `LogTraceListener`.  
-  They will be used for invoking `TraceListener.Write` and `TraceListener.Fail` as the logLevel param.
-- Also, added a method `Log.PushLog(string, LogLevel, string?)` to log with any LogLevel at runtime.</PackageReleaseNotes>
+    <PackageReleaseNotes>Changes in v3.0.0
+- Fixed the unflushed logs lost when the program is exiting.
+- Fixed the debug.log file unflushed bug when the program is exiting.
+- Added ConsoleWrapper paste text feature.
+- Fixed the issue that the console can't be scrolled when ConsoleWrapper is waiting for input.
+- Fixed the bug that the console wrapper will produce `InputPrefix` repeatedly when exiting.
+- Other logger and ConsoleWrapper improvements.</PackageReleaseNotes>
     <IncludeSymbols>False</IncludeSymbols>
     <PackageId>EggEgg.$(AssemblyName)</PackageId>
     <Product>EggEgg.$(AssemblyName)</Product>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-	<PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
   <ItemGroup>
