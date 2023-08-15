@@ -6,6 +6,24 @@
 [![NuGet](https://img.shields.io/nuget/v/EggEgg.CSharp-Logger.svg)](https://www.nuget.org/packages/EggEgg.CSharp-Logger)
 
 ## 更新
+### v4.0.0 - Preview 1 (v3.0.50)
+这个版本几乎重新实现了整个 logger，将静态类 `Log` 的主要功能提取并封装到了 `BaseLogger`。原有的功能不受影响，并修复了一些 bug，但可能会遇到一些中断性变更。
+
+注意，尽管 `BaseLogger` 是一套完整的日志实现，想要使用它也必须调用 `Log.Initialize`。此外，尽管可以为每个 `BaseLogger` 提供不同的初始化 `LoggerConfig`，其关键的字段必须与 `Log.Initialize` 时提供的版本统一，以保持整个程序中 Logger 的各项行为一致。  
+现阶段受影响的字段有：`Use_Console_Wrapper`、`Use_Working_Directory`。
+
+主要更改：
+- 修复了由于计时算法缺陷，日志处理后台任务在处理完日志后不会等待规定时间的问题。
+- 修复了在大多数情况下，清理所等待的时间（1.5s）会达到最大值，且仍有可能无法完成控制台清理的问题。
+
+### 中断性变更
+- 现在如果用户在 `Log.Initialize` 时指示使用程序路径（为 `LoggerConfig.Use_Working_Directory` 提供了 `false`），并且其无法访问，相比之前的实现，其不会发出警告程序会 fallback 到工作目录。同理，在压缩过往日志文件时如果出现了错误也不会有警告提示。
+- 现在调用 `ConsoleWrapper.WriteLine` 的任何重载**都会先分析其中的颜色信息**，将结果加入内部处理队列后才返回给调用方（之前会将其加入内部队列，由单独的后台任务处理），其可能引发额外的时间消耗。开发者正在寻求其他方案以及改进分析算法的性能。
+- 重要：在新版本中，不仅有 `latest.log` 与 `latest.debug.log`，而是**任何在 `logs` 文件夹下符合通配符 `latest.*.log` 的**日志文件都会在调用 `Log.Initialize` 进行过往日志处理时被重命名为最后一次进行写入的时间。  
+  它们也同样受日志自动压缩的影响，但这实际上与过往的行为一致。
+- 现在在程序结束时，给予 Logger 的离开时间为 1000ms，而给予控制台输出（无论是普通输出还是 `ConsoleWrapper`）的离开时间为 500ms（其一定在 Logger 清理工作完毕后才进行）。在以前的版本中，这两个数字分别是 300ms 和 1200ms。
+- 前修复的问题“`ConsoleWrapper.ReadLine` 系列方法在程序结束时，会异常重复输出 `InputPrefix` 内容”有恢复的可能。
+
 ### v3.0.0
 - 修复了等待队列中的未处理日志会在程序关闭时丢失的问题。
 - 修复了 `debug.log` 日志在 `Debug_LogWriter_AutoFlush` 设为 `false` 时，终止程序造成未写入磁盘的日志丢失的问题。

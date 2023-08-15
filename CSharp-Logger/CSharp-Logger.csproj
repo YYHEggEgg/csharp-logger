@@ -36,6 +36,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="ColorLineUtil.cs~RF33577e.TMP" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="..\README.md">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>

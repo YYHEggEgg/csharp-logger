@@ -1,11 +1,10 @@
-﻿using System.Text;
-using YYHEggEgg.Logger;
+﻿using YYHEggEgg.Logger;
 
 // See https://aka.ms/new-console-template for more information
 
 Log.Initialize(new LoggerConfig(
     max_Output_Char_Count: 1024,
-    use_Console_Wrapper: false,
+    use_Console_Wrapper: true,
     use_Working_Directory: true,
 #if DEBUG
     global_Minimum_LogLevel: LogLevel.Verbose,
@@ -30,11 +29,11 @@ Log.PushLog("Push a warning log!", LogLevel.Warning, "TSETSender");
 Log.PushLog("Push a verbose log!", LogLevel.Verbose, "TSESTender");
 
 // 2. Color test
-//ConsoleWrapper.InputPrefix = "WrapperCLI> ";
+ConsoleWrapper.InputPrefix = "WrapperCLI> ";
 Log.Erro("<color=Blue>blue text</color>-<>>><<<color=Yellow>yelolow text</color>/<><color=FF>no color text</color>");
 Log.Info("<color=Blue>blue text</color>-<>>><<<color=Yellow>yelolow text</color>/<><color=FF>no color text</color>", "Should not output if Release");
-//string res = ConsoleWrapper.ReadLine();
-//Log.Warn(res, "ReadLine");
+string res = ConsoleWrapper.ReadLine();
+Log.Warn(res, "ReadLine");
 //ConsoleWrapper.ReadLine();
 
 // 3. High output amout test
