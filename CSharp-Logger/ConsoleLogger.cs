@@ -99,6 +99,41 @@ namespace YYHEggEgg.Logger
         #endregion
 
         /// <summary>
+        /// Get a channel instance that can write all logs with the same <paramref name="sender"/>.
+        /// </summary>
+        /// <param name="sender">The sender provided to the channel. It can be
+        /// modified with <see cref="LoggerChannel.LogSender"/>.</param>
+        /// <returns></returns>
+        public static LoggerChannel GetChannel(string? sender)
+        {
+            AssertInitialized();
+#pragma warning disable CS8604 // 引用类型参数可能为 null。
+            return new LoggerChannel(_baseLogger, sender);
+#pragma warning restore CS8604 // 引用类型参数可能为 null。
+        }
+
+        /// <summary>
+        /// Add an existing <see cref="LogFileStream"/> to the logger.
+        /// </summary>
+        /// <param name="fileStreamName"></param>
+        public static void AddLogFile(string fileStreamName)
+        {
+            AssertInitialized();
+            _baseLogger.AddLogFile(fileStreamName);
+        }
+
+        /// <summary>
+        /// Create a log file and build a log file stream for it, with the given <see cref="LogFileConfig"/>.
+        /// </summary>
+        /// <param name="newFileStreamConfig"></param>
+        /// <exception cref="ArgumentException"></exception>
+        public static void AddLogFile(LogFileConfig newFileStreamConfig)
+        {
+            AssertInitialized();
+            _baseLogger.AddLogFile(newFileStreamConfig);
+        }
+
+        /// <summary>
         /// Put a log with Verbose Level to the handle queue. Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/> <= <see cref="LogLevel.Verbose"/>. Notice that messages put here will only be written to <c>latest.debug.log</c>.
         /// </summary>
         /// <param name="content">The log content.</param>

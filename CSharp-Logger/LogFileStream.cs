@@ -209,7 +209,7 @@ namespace YYHEggEgg.Logger
             }
         }
 
-        private static ConcurrentDictionary<string, LogFileStream> fileStreams;
+        private static ConcurrentDictionary<string, LogFileStream> fileStreams = new();
 
         public static LogFileStream GetInitedInstance(string fileStreamName)
         {

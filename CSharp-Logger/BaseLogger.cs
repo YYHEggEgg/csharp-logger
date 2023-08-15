@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using YYHEggEgg.Logger.Utils;
 
-#pragma warning disable CS8618 // 在退出构造函数时，不可为 null 的字段必须包含非 null 值。请考虑声明为可以为 null。
 namespace YYHEggEgg.Logger
 {
     public class BaseLogger
@@ -176,6 +175,7 @@ namespace YYHEggEgg.Logger
             AddLogFile(fileStreamName2);
         }
         public BaseLogger(LoggerConfig conf, IEnumerable<LogFileConfig> newFileStreamConfs_enumerable, IEnumerable<string> fileStreamNames_enumerable)
+            : this(conf)
         {
             foreach (var newFileStreamConf in newFileStreamConfs_enumerable)
                 AddLogFile(newFileStreamConf);
@@ -195,6 +195,11 @@ namespace YYHEggEgg.Logger
             writeTargetFiles.Add(LogFileStream.GetInitedInstance(fileStreamName));
         }
 
+        /// <summary>
+        /// Create a log file and build a log file stream for it, with the given <see cref="LogFileConfig"/>.
+        /// </summary>
+        /// <param name="newFileStreamConfig"></param>
+        /// <exception cref="ArgumentException"></exception>
         public void AddLogFile(LogFileConfig newFileStreamConfig)
         {
             if (newFileStreamConfig.FileIdentifier == LogFileStream.GlobalLog_Reserved)
@@ -212,6 +217,17 @@ namespace YYHEggEgg.Logger
         #endregion
 
         #region Logger
+        /// <summary>
+        /// Get a channel instance that can write all logs with the same <paramref name="sender"/>.
+        /// </summary>
+        /// <param name="sender">The sender provided to the channel. It can be
+        /// modified with <see cref="LoggerChannel.LogSender"/>.</param>
+        /// <returns></returns>
+        public LoggerChannel GetChannel(string? sender)
+        {
+            return new LoggerChannel(this, sender);
+        }
+
         /// <summary>
         /// Put a log with Verbose Level to the handle queue. Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/> <= <see cref="LogLevel.Verbose"/>. Notice that messages put here will only be written to <c>latest.debug.log</c>.
         /// </summary>
@@ -420,4 +436,3 @@ namespace YYHEggEgg.Logger
         #endregion
     }
 }
-#pragma warning restore CS8618 // 在退出构造函数时，不可为 null 的字段必须包含非 null 值。请考虑声明为可以为 null。

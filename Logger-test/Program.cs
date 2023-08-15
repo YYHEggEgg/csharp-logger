@@ -15,6 +15,13 @@ Log.Initialize(new LoggerConfig(
 #endif
     debug_LogWriter_AutoFlush: true
     ));
+Log.AddLogFile(new LogFileConfig
+{
+    FileIdentifier = "warning",
+    AutoFlushWriter = true,
+    MinimumLogLevel = LogLevel.Warning,
+    MaximumLogLevel = LogLevel.Error,
+});
 
 // 1. Dbug test
 #if DEBUG
