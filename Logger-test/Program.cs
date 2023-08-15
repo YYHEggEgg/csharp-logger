@@ -30,7 +30,10 @@ Log.PushLog("Push a verbose log!", LogLevel.Verbose, "TSESTender");
 
 // 2. Color test
 ConsoleWrapper.InputPrefix = "WrapperCLI> ";
-Log.Erro("<color=Blue>blue text</color>-<>>><<<color=Yellow>yelolow text</color>/<><color=FF>no color text</color>");
+Log.Erro("<color=</color>" +
+    "<color=Yellow>yelolow text</color>" +
+    "<color=Yellow></color><-nothing text|" +
+    "<color=Yellow><color=White><color=Blue><>></color></color></color>");
 Log.Info("<color=Blue>blue text</color>-<>>><<<color=Yellow>yelolow text</color>/<><color=FF>no color text</color>", "Should not output if Release");
 string res = ConsoleWrapper.ReadLine();
 Log.Warn(res, "ReadLine");

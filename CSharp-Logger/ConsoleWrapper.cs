@@ -193,7 +193,7 @@ namespace YYHEggEgg.Logger
         {
             AssertInitialized();
 
-            writelines.Enqueue(ColorLineUtil.AnalyzeColorText(input));
+            writelines_handlelist.Enqueue(input);
         }
 
         /// <summary>
@@ -204,8 +204,8 @@ namespace YYHEggEgg.Logger
         {
             AssertInitialized();
 
-            writelines.Enqueue(ColorLineUtil.AnalyzeColorText(input1));
-            writelines.Enqueue(ColorLineUtil.AnalyzeColorText(input2));
+            writelines_handlelist.Enqueue(input1);
+            writelines_handlelist.Enqueue(input2);
         }
 
         /// <summary>
@@ -216,9 +216,9 @@ namespace YYHEggEgg.Logger
         {
             AssertInitialized();
 
-            writelines.Enqueue(ColorLineUtil.AnalyzeColorText(input1));
-            writelines.Enqueue(ColorLineUtil.AnalyzeColorText(input2));
-            writelines.Enqueue(ColorLineUtil.AnalyzeColorText(input3));
+            writelines_handlelist.Enqueue(input1);
+            writelines_handlelist.Enqueue(input2);
+            writelines_handlelist.Enqueue(input3);
         }
 
         /// <summary>
@@ -229,7 +229,7 @@ namespace YYHEggEgg.Logger
         {
             AssertInitialized();
 
-            foreach (var input in inputs) writelines.Enqueue(ColorLineUtil.AnalyzeColorText(input));
+            foreach (var input in inputs) writelines_handlelist.Enqueue(input);
         }
 
         /// <summary>
@@ -449,6 +449,7 @@ namespace YYHEggEgg.Logger
         }
 
         private static ConcurrentQueue<ColorLineResult> writelines = new();
+        private static ConcurrentQueue<string> writelines_handlelist = new();
 
         private static bool ending = false;
         internal static bool _clearup_completed = false;
@@ -461,7 +462,8 @@ namespace YYHEggEgg.Logger
                 try
                 {
                     var inputnow = input.ToString();
-                    if (inputnow == prev_input && writelines.Count == 0 && !cursor_moved_refresh)
+                    if (inputnow == prev_input && !cursor_moved_refresh
+                        && writelines.Count == 0 && writelines_handlelist.Count == 0)
                     {
                         if (ending)
                         {
@@ -477,6 +479,10 @@ namespace YYHEggEgg.Logger
                         var arr = writelines.ToArray();
                         writelines.Clear();
                         foreach (var line in arr)
+                            InnerWriteLine(line);
+                        var arr_handles = writelines_handlelist.ToArray();
+                        writelines_handlelist.Clear();
+                        foreach (var line in arr_handles)
                             InnerWriteLine(line);
                         EndWrite();
                         prev_input = inputnow;
