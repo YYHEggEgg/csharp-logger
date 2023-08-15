@@ -1,6 +1,5 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Reflection;
 using YYHEggEgg.Logger.Utils;
 
 #pragma warning disable CS8618 // 在退出构造函数时，不可为 null 的字段必须包含非 null 值。请考虑声明为可以为 null。
@@ -184,7 +183,7 @@ namespace YYHEggEgg.Logger
                 AddLogFile(fileStreamName);
         }
         public BaseLogger(LoggerConfig conf, LogFileConfig[] newFileStreamConfs, string[] fileStreamNames)
-            : this(conf, newFileStreamConfs_enumerable: newFileStreamConfs, fileStreamNames_enumerable: fileStreamNames) {  }
+            : this(conf, newFileStreamConfs_enumerable: newFileStreamConfs, fileStreamNames_enumerable: fileStreamNames) { }
         #endregion
 
         /// <summary>
@@ -345,13 +344,13 @@ namespace YYHEggEgg.Logger
             while (qlog.TryDequeue(out LogDetail log))
             {
                 var consoleOutput = GetWriteLog(log);
-                if (CustomConfig.Use_Console_Wrapper)
+                if (log.level >= CustomConfig.Console_Minimum_LogLevel)
                 {
-                    ConsoleWrapper.WriteLine(consoleOutput);
-                }
-                else
-                {
-                    if (log.level >= CustomConfig.Console_Minimum_LogLevel)
+                    if (CustomConfig.Use_Console_Wrapper)
+                    {
+                        ConsoleWrapper.WriteLine(consoleOutput);
+                    }
+                    else
                     {
                         qconsole_strings.Enqueue(consoleOutput);
                     }
