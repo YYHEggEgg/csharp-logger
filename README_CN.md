@@ -6,7 +6,7 @@
 [![NuGet](https://img.shields.io/nuget/v/EggEgg.CSharp-Logger.svg)](https://www.nuget.org/packages/EggEgg.CSharp-Logger)
 
 ## 更新
-### v4.0.0 - Preview 1 Patch 2 (v3.0.52-beta)
+### v4.0.0 - Preview 1 Patch 3 (v3.0.53-beta)
 这个版本几乎重新实现了整个 logger，将静态类 `Log` 的主要功能提取并封装到了 `BaseLogger`。原有的功能不受影响，并修复了一些 bug，但可能会遇到一些中断性变更。
 
 注意，尽管 `BaseLogger` 是一套完整的日志实现，想要使用它也必须调用 `Log.Initialize`。此外，尽管可以为每个 `BaseLogger` 提供不同的初始化 `LoggerConfig`，其关键的字段必须与 `Log.Initialize` 时提供的版本统一，以保持整个程序中 Logger 的各项行为一致。  
@@ -18,7 +18,7 @@
 - 使用了全新的基于 KMP 的算法来分析颜色标签信息，加快了处理速度。详见 [Benchmark 数据](https://github.com/YYHEggEgg/csharp-logger/blob/main/Logger-test/ColorLineUtil-report-github.md)。
 
 Patch 更改：
-- 修复了在使用基于 ConsoleWrapper 的 logger 时，控制台会异常输出等级低于 `Console_Minimum_Level` 的日志。
+- 修复了使用 `Log.Warn` 会异常导向 `BaseLogger.Info` 的问题。
 
 ### 中断性变更
 - 现在如果用户在 `Log.Initialize` 时指示使用程序路径（为 `LoggerConfig.Use_Working_Directory` 提供了 `false`），并且其无法访问，相比之前的实现，其不会发出警告程序会 fallback 到工作目录。同理，在压缩过往日志文件时如果出现了错误也不会有警告提示。

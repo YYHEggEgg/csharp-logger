@@ -139,7 +139,7 @@ namespace YYHEggEgg.Logger
         public static void Warn(string content, string? sender = null)
         {
             AssertInitialized();
-            _baseLogger.Info(content, sender);
+            _baseLogger.Warn(content, sender);
         }
 
         /// <summary>
