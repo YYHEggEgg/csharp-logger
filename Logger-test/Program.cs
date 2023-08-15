@@ -1,4 +1,5 @@
-﻿using YYHEggEgg.Logger;
+﻿using System.Text;
+using YYHEggEgg.Logger;
 
 // See https://aka.ms/new-console-template for more information
 
@@ -42,19 +43,19 @@ Log.Erro("<color=</color>" +
     "<color=Yellow></color><-nothing text|" +
     "<color=Yellow><color=White><color=Blue><>></color></color></color>");
 Log.Info("<color=Blue>blue text</color>-<>>><<<color=Yellow>yelolow text</color>/<><color=FF>no color text</color>", "Should not output if Release");
-string res = ConsoleWrapper.ReadLine();
-Log.Warn(res, "ReadLine");
+// string res = ConsoleWrapper.ReadLine();
+// Log.Warn(res, "ReadLine");
 //ConsoleWrapper.ReadLine();
 
 // 3. High output amout test
-// StringBuilder sb = new();
-// for (int i = 0; i < 1000; i++) sb.AppendLine($"Batching message part {i}");
-// string BatchingMessage = sb.ToString();
+StringBuilder sb = new();
+for (int i = 0; i < 1000; i++) sb.AppendLine($"Batching message part {i}");
+string BatchingMessage = sb.ToString();
 
 // ConsoleWrapper.InputPrefix = "Present for test prefix > ";
 // _ = ConsoleWrapper.ReadLineAsync();
 
-// Log.Warn(BatchingMessage);
+Log.Warn(BatchingMessage);
 // Parallel.For(0, 1000, i =>
 // {
 //     Log.Warn(BatchingMessage);

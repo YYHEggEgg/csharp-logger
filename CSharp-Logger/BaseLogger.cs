@@ -322,6 +322,34 @@ namespace YYHEggEgg.Logger
                 sender = snd;
                 create_time = DateTime.Now;
             }
+
+            private ColorLineResult? _writeResult = null;
+            public ColorLineResult GetWriteFileResult()
+            {
+                if (_writeResult == null)
+                {
+                    string nowtime = create_time.ToString("HH:mm:ss");
+                    string header = GetLogInfo(level, sender);
+                    string res = $"{nowtime}{header}{content}";
+
+                    _writeResult = ColorLineUtil.AnalyzeColorText(res);
+                }
+                return (ColorLineResult)_writeResult;
+            }
+
+            public ColorLineResult GetWriteConsoleResult(LoggerConfig conf)
+            {
+                string nowtime = create_time.ToString("HH:mm:ss");
+                string header = GetLogInfo(level, sender);
+                string res = $"{nowtime}{header}{content}";
+
+                if (conf.Max_Output_Char_Count < 0 || content.Length < conf.Max_Output_Char_Count)
+                    return ColorLineUtil.AnalyzeColorText(res);
+                else
+                    return ColorLineUtil.AnalyzeColorText(
+                        $"{nowtime}{header}[content too long (> Maximum line length of " +
+                        $"{conf.Max_Output_Char_Count}), so not output to console]");
+            }
         }
 
         private ConcurrentQueue<LogDetail> qlog = new();
@@ -359,7 +387,7 @@ namespace YYHEggEgg.Logger
         {
             while (qlog.TryDequeue(out LogDetail log))
             {
-                var consoleOutput = GetWriteLog(log);
+                var consoleOutput = log.GetWriteConsoleResult(CustomConfig);
                 if (log.level >= CustomConfig.Console_Minimum_LogLevel)
                 {
                     if (CustomConfig.Use_Console_Wrapper)
@@ -374,18 +402,13 @@ namespace YYHEggEgg.Logger
 
                 foreach (var push_filestream in writeTargetFiles)
                 {
-                    push_filestream.WriteLine(consoleOutput, log.level);
+                    push_filestream.WriteLine(log.GetWriteFileResult(), log.level);
                 }
             }
         }
         #endregion
         #endregion
 
-        /// <summary>
-        /// Not responsible for Console operations but only write lines to file.
-        /// </summary>
-        /// <param name="log"></param>
-        /// <returns></returns>
         private ColorLineResult GetWriteLog(LogDetail log)
         {
             string nowtime = log.create_time.ToString("HH:mm:ss");
@@ -402,7 +425,7 @@ namespace YYHEggEgg.Logger
         /// <summary>
         /// Write info <[level]:[sender]> like <Info:KCP>. 
         /// </summary>
-        private string GetLogInfo(LogLevel level, string? sender)
+        private static string GetLogInfo(LogLevel level, string? sender)
         {
             string rtn = " <";
             switch (level)
