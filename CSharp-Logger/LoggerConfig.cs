@@ -1,4 +1,6 @@
-﻿namespace YYHEggEgg.Logger
+﻿using System.Runtime.CompilerServices;
+
+namespace YYHEggEgg.Logger
 {
     public struct LoggerConfig
     {
@@ -45,6 +47,25 @@
         /// For now, the unflushed parts of the log will be lost. More optimization will come in further versions. 
         /// </summary>
         public readonly bool Debug_LogWriter_AutoFlush = false;
+        /// <summary>
+        /// 等待 ChatGPT 翻译 <para/>
+        /// 指示创建的 latest.log 与 latest.debug.log 是否为竖线分隔值文件（Pipe-separated
+        /// values file，PSV）。将日志输出为表格有助于在数据量极大时进行分析，尤其是如果程序中
+        /// 大量模块化代码调用 Log 方法时不会改变 sender 参数的情况下。<para/>
+        /// 但由于 Logger 不保证内容不存在会影响 PSV 文件格式读取的内容（例如换行符），一般
+        /// 不启用这个选项，取而代之的是调用 <see cref="BaseLogger(LoggerConfig, LogFileConfig)"/>
+        /// 创建全新的 <see cref="BaseLogger"/> 实例与单独的日志文件，并为其启用
+        /// <see cref="LogFileConfig.IsPipeSeparatedFile"/>，专门用于存放 PSV 格式的数据。<para/>
+        /// 此配置不要求全局统一，同时也不会对输出至控制台的内容生效，它们的格式不受该配置影响。
+        /// </summary>
+        public readonly bool Is_PipeSeparated_Format = false;
+        /// <summary>
+        /// 等待 ChatGPT 翻译 <para/>
+        /// 指示是否启用时间细节。默认情况下，Logger 记录的时间仅精确到秒，且不包含日期，对应格式化字符串
+        /// <c>HH:mm:ss</c>。开启时间细节后，将会展现日志创建时间直至七分之一秒的细节，与之相对应的格式化字符串为
+        /// <c>yyyy-MM-dd HH:mm:ss.fffffff</c>. 此配置要求全局统一，对控制台与日志文件的输出内容均生效。
+        /// </summary>
+        public readonly bool Enable_Detailed_Time = false;
 
         /// <summary>
         /// Because of efficiency reasons, all features are defined as readonly variables and can only be set in this constructor. <para/>
@@ -57,7 +78,9 @@
                             bool use_Working_Directory = true,
                             LogLevel global_Minimum_LogLevel = LogLevel.Debug,
                             LogLevel console_Minimum_LogLevel = LogLevel.Information,
-                            bool debug_LogWriter_AutoFlush = false)
+                            bool debug_LogWriter_AutoFlush = false,
+                            bool is_PipeSeparated_Format = false,
+                            bool enable_Detailed_Time = false)
         {
             Max_Output_Char_Count = max_Output_Char_Count;
             Use_Console_Wrapper = use_Console_Wrapper;
@@ -69,6 +92,8 @@
             Global_Minimum_LogLevel = global_Minimum_LogLevel;
             Console_Minimum_LogLevel = console_Minimum_LogLevel;
             Debug_LogWriter_AutoFlush = debug_LogWriter_AutoFlush;
+            Is_PipeSeparated_Format = is_PipeSeparated_Format;
+            Enable_Detailed_Time = enable_Detailed_Time;
         }
     }
 }

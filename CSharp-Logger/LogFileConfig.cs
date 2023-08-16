@@ -8,5 +8,7 @@
         public LogLevel MinimumLogLevel, MaximumLogLevel;
         public bool AutoFlushWriter;
         public string FileIdentifier;
+
+        public bool IsPipeSeparatedFile;
     }
 }

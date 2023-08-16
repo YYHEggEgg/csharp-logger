@@ -84,11 +84,40 @@ namespace YYHEggEgg.Logger
         internal BaseLogger(LoggerConfig conf)
         {
             CustomConfig = conf;
-            if (conf.Use_Console_Wrapper) ConsoleWrapper.Initialize();
+            VerifyConfWithGlobal(conf);
+
             RefreshLogMilliseconds = 100;
             WorkDirectory = Tools.GetLoggerWorkingDir(conf);
 
             Task.Run(BackgroundUpdate);
+        }
+
+        private static void VerifyConfWithGlobal(LoggerConfig conf)
+        {
+            if (conf.Use_Console_Wrapper != Log.GlobalConfig.Use_Console_Wrapper)
+            {
+                throw new InvalidOperationException("The whole program should use only " +
+                    "one Console implement, so LoggerConfig.Use_Console_Wrapper should be provided " +
+                    "the same value when initializing any BaseLogger.");
+            }
+            if (conf.Use_Working_Directory != Log.GlobalConfig.Use_Working_Directory)
+            {
+                throw new InvalidOperationException("The whole program should have only " +
+                    "one logs working directory, so LoggerConfig.Use_Working_Directory " +
+                    "should be provided the same value when initializing any BaseLogger.");
+            }
+            if (conf.Max_Output_Char_Count != Log.GlobalConfig.Max_Output_Char_Count)
+            {
+                throw new InvalidOperationException("Currently, LoggerConfig.Max_Output_Char_Count " +
+                    "should be provided the same value when initializing any BaseLogger " +
+                    "because of performace and other reasons.");
+            }
+            if (conf.Enable_Detailed_Time != Log.GlobalConfig.Enable_Detailed_Time)
+            {
+                throw new InvalidOperationException("Currently, LoggerConfig.Enable_Detailed_Time " +
+                   "should be provided the same value when initializing any BaseLogger " +
+                   "because of performace and other reasons.");
+            }
         }
 
         #region .ctors
@@ -301,6 +330,10 @@ namespace YYHEggEgg.Logger
         /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>
         public void PushLog(string content, LogLevel logLevel, string? sender = null)
         {
+            if (logLevel == LogLevel.None)
+            {
+                throw new InvalidOperationException("A log with LogLevel.None cannot be pushed and handled.");
+            }
             if (CustomConfig.Global_Minimum_LogLevel <= logLevel)
             {
                 qlog.Enqueue(new LogDetail(content, logLevel, sender));
@@ -308,7 +341,7 @@ namespace YYHEggEgg.Logger
         }
 
         #region Background Refresh
-        private struct LogDetail
+        internal struct LogDetail
         {
             public LogLevel level;
             public string content;
@@ -323,13 +356,15 @@ namespace YYHEggEgg.Logger
                 create_time = DateTime.Now;
             }
 
+            internal static string TimeFormat = "HH:mm:ss";
+
             private ColorLineResult? _writeResult = null;
-            public ColorLineResult GetWriteFileResult()
+            public ColorLineResult GetWriteFileResult(bool is_pipeseparated_format)
             {
                 if (_writeResult == null)
                 {
-                    string nowtime = create_time.ToString("HH:mm:ss");
-                    string header = GetLogInfo(level, sender);
+                    string nowtime = create_time.ToString(TimeFormat);
+                    string header = GetFileLogInfo(level, sender, is_pipeseparated_format);
                     string res = $"{nowtime}{header}{content}";
 
                     _writeResult = ColorLineUtil.AnalyzeColorText(res);
@@ -339,8 +374,8 @@ namespace YYHEggEgg.Logger
 
             public ColorLineResult GetWriteConsoleResult(LoggerConfig conf)
             {
-                string nowtime = create_time.ToString("HH:mm:ss");
-                string header = GetLogInfo(level, sender);
+                string nowtime = create_time.ToString(TimeFormat);
+                string header = GetConsoleLogInfo(level, sender);
                 string res = $"{nowtime}{header}{content}";
 
                 if (conf.Max_Output_Char_Count < 0 || content.Length < conf.Max_Output_Char_Count)
@@ -402,7 +437,7 @@ namespace YYHEggEgg.Logger
 
                 foreach (var push_filestream in writeTargetFiles)
                 {
-                    push_filestream.WriteLine(log.GetWriteFileResult(), log.level);
+                    push_filestream.WriteLine(log.GetWriteFileResult(push_filestream.IsPipeSeparatedFormat), log.level);
                 }
             }
         }
@@ -412,7 +447,7 @@ namespace YYHEggEgg.Logger
         private ColorLineResult GetWriteLog(LogDetail log)
         {
             string nowtime = log.create_time.ToString("HH:mm:ss");
-            string header = GetLogInfo(log.level, log.sender);
+            string header = GetConsoleLogInfo(log.level, log.sender);
             string res = $"{nowtime}{header}{log.content}";
 
             if (CustomConfig.Max_Output_Char_Count < 0 || log.content.Length < CustomConfig.Max_Output_Char_Count)
@@ -425,7 +460,7 @@ namespace YYHEggEgg.Logger
         /// <summary>
         /// Write info <[level]:[sender]> like <Info:KCP>. 
         /// </summary>
-        private static string GetLogInfo(LogLevel level, string? sender)
+        private static string GetConsoleLogInfo(LogLevel level, string? sender)
         {
             string rtn = " <";
             switch (level)
@@ -455,6 +490,47 @@ namespace YYHEggEgg.Logger
                 rtn += $"> ";
             }
             return rtn;
+        }
+
+        private static string GetFileLogInfo(LogLevel level, string? sender,
+            bool is_pipeseparated_format)
+        {
+            if (is_pipeseparated_format)
+            {
+                switch (level)
+                {
+                    case LogLevel.Verbose:
+                        return $"|Verb|{sender}|";
+                    case LogLevel.Debug:
+                        return $"|Dbug|{sender}|";
+                    case LogLevel.Information:
+                        return $"|Info|{sender}|";
+                    case LogLevel.Warning:
+                        return $"|Warn|{sender}|";
+                    case LogLevel.Error:
+                        return $"|Erro|{sender}|";
+                    default:
+                        throw new Exception("Unexpected enum value!");
+                }
+            }
+            else
+            {
+                switch (level)
+                {
+                    case LogLevel.Verbose:
+                        return $" <Verb:{sender}> ";
+                    case LogLevel.Debug:
+                        return $" <Dbug:{sender}> ";
+                    case LogLevel.Information:
+                        return $" <Info:{sender}> ";
+                    case LogLevel.Warning:
+                        return $" <Warn:{sender}> ";
+                    case LogLevel.Error:
+                        return $" <Erro:{sender}> ";
+                    default:
+                        throw new Exception("Unexpected enum value!");
+                }
+            }
         }
         #endregion
     }

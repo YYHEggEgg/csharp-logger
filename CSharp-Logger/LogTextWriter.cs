@@ -17,12 +17,14 @@ namespace YYHEggEgg.Logger
         /// The LogLevel used for invoking <see cref="TraceListener.Write(string?)"/>.
         /// </summary>
         public LogLevel LogLevelWrite;
+        public readonly BaseLogger BasedLogger;
 
         public LogTextWriter(string? logSender = nameof(LogTextWriter), 
-            LogLevel logLevelWrite = LogLevel.Information)
+            LogLevel logLevelWrite = LogLevel.Information, BaseLogger? basedlogger = null)
         {
             LogSender = logSender;
             LogLevelWrite = logLevelWrite;
+            BasedLogger = basedlogger ?? Log.GlobalBasedLogger;
         }
 
         public override Encoding Encoding => Encoding.UTF8;
@@ -31,7 +33,7 @@ namespace YYHEggEgg.Logger
 
         protected void InternalFlush_OnNewLine()
         {
-            Log.PushLog(writebuf.ToString(), LogLevelWrite, LogSender);
+            BasedLogger.PushLog(writebuf.ToString(), LogLevelWrite, LogSender);
             writebuf.Clear();
         }
 
@@ -80,7 +82,7 @@ namespace YYHEggEgg.Logger
                 else
                 {
                     Debug.Assert(writebuf.Length == 0);
-                    Log.PushLog(line, LogLevelWrite, LogSender);
+                    BasedLogger.PushLog(line, LogLevelWrite, LogSender);
                 }
             }
             if (lines.Length > 0)

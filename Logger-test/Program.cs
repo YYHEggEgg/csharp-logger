@@ -14,7 +14,8 @@ Log.Initialize(new LoggerConfig(
     global_Minimum_LogLevel: LogLevel.Information,
     console_Minimum_LogLevel: LogLevel.Warning,
 #endif
-    debug_LogWriter_AutoFlush: true
+    debug_LogWriter_AutoFlush: true,
+    enable_Detailed_Time: true
     ));
 Log.AddLogFile(new LogFileConfig
 {
@@ -22,6 +23,7 @@ Log.AddLogFile(new LogFileConfig
     AutoFlushWriter = true,
     MinimumLogLevel = LogLevel.Warning,
     MaximumLogLevel = LogLevel.Error,
+    IsPipeSeparatedFile = true,
 });
 
 // 1. Dbug test

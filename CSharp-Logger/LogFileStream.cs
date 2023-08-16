@@ -164,6 +164,7 @@ namespace YYHEggEgg.Logger
         private readonly StreamWriter logwriter;
         private readonly object write_lck = "3.8.50";
         public readonly LogLevel MinimumLogLevel, MaximumLogLevel;
+        public readonly bool IsPipeSeparatedFormat;
         /// <summary>
         /// 对于 <paramref name="FileStreamName"/> == "global"，其被留用作
         /// latest.log 的标识符。用户代码尝试与其同名的示例应引发异常。
@@ -189,6 +190,7 @@ namespace YYHEggEgg.Logger
             logwriter.AutoFlush = fileconf.AutoFlushWriter;
             MinimumLogLevel = fileconf.MinimumLogLevel;
             MaximumLogLevel = fileconf.MaximumLogLevel;
+            IsPipeSeparatedFormat = fileconf.IsPipeSeparatedFile;
         }
 
         public void WriteLine(string content, LogLevel level)

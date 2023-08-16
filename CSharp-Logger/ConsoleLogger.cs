@@ -65,6 +65,8 @@ namespace YYHEggEgg.Logger
             _initialized = true;
 
             _global_customConfig = conf;
+            if (conf.Enable_Detailed_Time)
+                BaseLogger.LogDetail.TimeFormat = "yyyy-MM-dd HH:mm:ss.fffffff";
             if (conf.Use_Console_Wrapper) ConsoleWrapper.Initialize();
 
             LogFileStream.HandlePastLogs(Tools.GetLoggerWorkingDir(conf));
@@ -76,6 +78,7 @@ namespace YYHEggEgg.Logger
                 AutoFlushWriter = true,
                 MinimumLogLevel = LogLevel.Information,
                 MaximumLogLevel = LogLevel.Error,
+                IsPipeSeparatedFile = conf.Is_PipeSeparated_Format,
             });
             if (conf.Global_Minimum_LogLevel <= LogLevel.Debug)
             {
@@ -85,6 +88,7 @@ namespace YYHEggEgg.Logger
                     AutoFlushWriter = conf.Debug_LogWriter_AutoFlush,
                     MinimumLogLevel = LogLevel.Verbose,
                     MaximumLogLevel = LogLevel.Error,
+                    IsPipeSeparatedFile = conf.Is_PipeSeparated_Format,
                 });
             }
         }
