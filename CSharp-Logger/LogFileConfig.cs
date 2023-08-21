@@ -10,5 +10,14 @@
         public string FileIdentifier;
 
         public bool IsPipeSeparatedFile;
+
+        public LogFileConfig()
+        {
+            MinimumLogLevel = LogLevel.Verbose;
+            MaximumLogLevel = LogLevel.Error;
+            AutoFlushWriter = true;
+            FileIdentifier = string.Empty;
+            IsPipeSeparatedFile = false;
+        }
     }
 }

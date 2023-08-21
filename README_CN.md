@@ -6,7 +6,7 @@
 [![NuGet](https://img.shields.io/nuget/v/EggEgg.CSharp-Logger.svg)](https://www.nuget.org/packages/EggEgg.CSharp-Logger)
 
 ## 更新
-### v4.0.0 - Preview 3 (v3.2.50-beta)
+### v4.0.0 - Preview 4 (v3.3.50-beta)
 这个版本几乎重新实现了整个 logger，将静态类 `Log` 的主要功能提取并封装到了 `BaseLogger`。原有的功能不受影响，并修复了一些 bug，但可能会遇到一些中断性变更。
 
 注意，尽管 `BaseLogger` 是一套完整的日志实现，想要使用它也必须先调用 `Log.Initialize`。此外，尽管可以为每个 `BaseLogger` 提供不同的初始化 `LoggerConfig`，其关键的字段必须与 `Log.Initialize` 时提供的版本统一，以保持整个程序中 Logger 的各项行为一致。  
@@ -31,6 +31,7 @@
 - 可以在创建新日志文件时，使用 `LogFileConfig.IsPipeSeparatedFormat` 指示创建的日志文件是否为竖线分隔值文件（Pipe-separated values file，PSV）。
   将日志输出为表格有助于在数据量极大时进行分析，尤其是如果程序中大量模块化代码调用 Log 方法时不会改变 sender 参数的情况下。此配置不会对输出至控制台的内容生效。
 - 现在可以为 `LogTraceListener` 和 `LogTextWriter` 提供 `basedlogger` 参数，来改变它们输出的目标 `BaseLogger`。默认值仍为全局静态类共享的 `Log.GlobalBasedLogger`.
+- 借鉴了一些 [tonerdo/readline](https://github.com/tonerdo/readline) 的代码来实现新版的 `ConsoleWrapper`。但请注意，本版本的 nuget 包不包含对 nuget 包 [ReadLine](https://www.nuget.org/packages/ReadLine) 的引用，也不包含类 `ReadLine`。所有操作仍封装为 `ConsoleWrapper`。
 
 ### 中断性变更
 - 现在如果用户在 `Log.Initialize` 时指示使用程序路径（为 `LoggerConfig.Use_Working_Directory` 提供了 `false`），并且其无法访问，相比之前的实现，其不会发出警告程序会 fallback 到工作目录。同理，在压缩过往日志文件时如果出现了错误也不会有警告提示。
@@ -38,6 +39,11 @@
   它们也同样受日志自动压缩的影响，但这实际上与过往的行为一致。
 - 现在在程序结束时，给予 Logger 的离开时间为 1000ms，而给予控制台输出（无论是普通输出还是 `ConsoleWrapper`）的离开时间为 500ms（其一定在 Logger 清理工作完毕后才进行）。在以前的版本中，这两个数字分别是 300ms 和 1200ms。
 - 颜色判断使用了全新的算法，因此其可能与以前的实现并不“bug 兼容”。
+- `ConsoleWrapper` 使用了全新的算法，开发者尽量将引起的中断性变更置于下方，但是被修复的 bug 可能不会列出。
+- `ConsoleWrapper` 以前支持将多行的文本粘贴至输入中（尽管修改文本时会出现问题）；现在并不支持这一功能，并且会将输入的所有换行符均替换为两个空格。  
+  > 识别的换行序列列表是 CR (U+000D)、LF (U+000A)，CRLF (U+000D U+000A)、NEL (U+0085)、LS (U+2028)、FF (U+000C) 和 PS (U+2029)。此列表由 Unicode Standard 第 5.8 条建议 R4 和表 5-2 提供。
+- `ConsoleWrapper` 现在支持与 bash 类似的历史合并，也就是说连续执行一条命令多次并不会在历史中留下多次记录。
+- `ConsoleWrapper` 的新读入方式类似于 [GNU Readline](https://en.wikipedia.org/wiki/GNU_Readline)，但这导致 Ctrl+C 的过往行为与其产生了冲突，因此保留了 Ctrl+C 引发 `ConsoleWrapper.ShutDownRequest` 事件的功能。除此之外，其他所有下附 GNU readline 快捷键的功能均可以视为中断性变更。
 
 ### v3.0.0
 - 修复了等待队列中的未处理日志会在程序关闭时丢失的问题。
@@ -56,12 +62,35 @@
   使用方法：首先 `Log.Initialize(LoggerConfig)`，然后 `Log.Info(content, sender)`、`Log.Erro(...)`、`Log.Warn(...)`、`Log.Dbug(...)`。   
 - **支持颜色输出**   
   只需在文本中添加xml标记，例如：`<color=Red>Output as red color</color>`。    
-  颜色值应该是 [ConsoleColor](https://learn.microsoft.com/en-us/dotnet/api/system.consolecolor) 中的有效值，例如"Red"、"Green"。   
+  颜色值应该是 [ConsoleColor](https://learn.microsoft.com/zh-cn/dotnet/api/system.consolecolor) 中的有效值，例如"Red"、"Green"。   
   识别到的颜色标记将在日志文件中被删除。  
 - **并行输入支持**         
   如果您想在输出日志的同时读取用户的输入（例如制作支持 CLI 交互的程序），则提供了 `ConsoleWrapper`。    
   您可以将 `ConsoleWrapper.InputPrefix` 的值设置为等待输入的前缀，就像 `mysql>` 或 `ubuntu ~$`，并使用 `ConsoleWrapper.ReadLineAsync` 读取输入。    
-  _请注意，当用户的输入非常大时，它会影响性能。它默认是禁用的，您可以通过 `LoggerConfig(use_Console_Wrapper: true)`来启用它。
+  它接受部分 [GNU readline](https://en.wikipedia.org/wiki/GNU_Readline) 的快捷键读取数据。下表是支持列表：
+
+  | 快捷键 | 功能 |
+  | ------------------------------ | --------------------------------- |
+  | `Ctrl`+`A` / `HOME`            | 回到输入起点 |
+  | `Ctrl`+`B` / `←`               | 将光标后退一个字符（一般是左移） |
+  | `Ctrl`+`C`                     | **与 GNU readline 不同，表示终止程序** |
+  | `Ctrl`+`E` / `END`             | 回到输入末尾 |
+  | `Ctrl`+`F` / `→`               | 将光标前进一个字符（一般是右移） |
+  | `Ctrl`+`H` / `Backspace`       | 删除光标前的一个字符 |
+  | `Tab`                          | （目前尚未支持）自动补全 |
+  | `Shift`+`Tab`                  | （目前尚未支持）上一个自动补全 |
+  | `Ctrl`+`J` / `Enter`           | 确认输入 |
+  | `Ctrl`+`K`                     | 切除自光标所在位置开始（包括）至输入末尾的字符 |
+  | `Ctrl`+`L`                     | 清除输入区域 |
+  | `Ctrl`+`M`                     | 作用等价于回车 |
+  | `Ctrl`+`N` / `↓`               | 下一条命令历史 |
+  | `Ctrl`+`P` / `↑`               | 上一条命令历史 |
+  | `Ctrl`+`U`                     | 切除自光标所在位置开始（不包括）至输入起始点的字符 |
+  | `Ctrl`+`W`                     | 切除光标前的一个单词，即切除自光标所在位置开始（不包括）至后方（一般为左方）第一个空格（不包括）的字符 |
+  | `Backspace`                    | 删除光标前的一个字符 |
+  | `Ctrl`+`D` / `Delete`          | 删除光标所在位置的一个字符 |
+
+  此外，它不需要任何配置就可以读入大于 4096 位的数据。但请注意，当用户的输入非常大时，它会影响性能。它默认是禁用的，您可以通过 `LoggerConfig(use_Console_Wrapper: true)`来启用它。
 - 输出数量限制       
   大量信息输出会严重影响性能。您可以通过 `LoggerConfig.Max_Output_Char_Count` 设置每行的最大输出量。      
   您也可以通过将其设置为 `-1` 来禁用此功能。
