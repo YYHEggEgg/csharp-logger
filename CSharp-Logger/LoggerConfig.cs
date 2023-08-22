@@ -62,8 +62,11 @@ namespace YYHEggEgg.Logger
         /// <summary>
         /// 等待 ChatGPT 翻译 <para/>
         /// 指示是否启用时间细节。默认情况下，Logger 记录的时间仅精确到秒，且不包含日期，对应格式化字符串
-        /// <c>HH:mm:ss</c>。开启时间细节后，将会展现日志创建时间直至七分之一秒的细节，与之相对应的格式化字符串为
-        /// <c>yyyy-MM-dd HH:mm:ss.fffffff</c>. 此配置要求全局统一，对控制台与日志文件的输出内容均生效。
+        /// <c>HH:mm:ss</c>。<para/>
+        /// 开启时间细节后，将会展现日志提交时间直至七分之一秒的细节，与之相对应的格式化字符串为
+        /// <c>yyyy-MM-dd HH:mm:ss fff ffff</c>，两部分 <c>fff</c> 和 <c>ffff</c>
+        /// 分别表示毫秒级别与万分之一毫秒（100 纳秒，0.1 毫秒）级别.
+        /// 此配置要求全局统一，对控制台与日志文件的输出内容均生效。
         /// </summary>
         public readonly bool Enable_Detailed_Time = false;
 

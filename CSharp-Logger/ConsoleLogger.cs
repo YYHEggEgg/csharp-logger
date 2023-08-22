@@ -60,8 +60,7 @@ namespace YYHEggEgg.Logger
             _initialized = true;
 
             _global_customConfig = conf;
-            if (conf.Enable_Detailed_Time)
-                BaseLogger.LogDetail.TimeFormat = "yyyy-MM-dd HH:mm:ss.fffffff";
+            BaseLogger.LogDetail.DetailedTimeFormat = conf.Enable_Detailed_Time;
             if (conf.Use_Console_Wrapper) ConsoleWrapper.Initialize();
 
             LogFileStream.HandlePastLogs(Tools.GetLoggerWorkingDir(conf));

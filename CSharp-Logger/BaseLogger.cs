@@ -530,18 +530,36 @@ namespace YYHEggEgg.Logger
                 this.getcontent_func = getcontent_func;
                 this.on_getcontent_error = on_getcontent_error ?? new(ex =>
                 {
-                    Log.Warn($"Delay log content (pushed on {nowtime.ToString(TimeFormat)}) get failed: {ex}", snd);
+                    Log.Warn($"Delay log content (pushed on {FormatTime(nowtime)}) get failed: {ex}", snd);
                 });
             }
 
-            internal static string TimeFormat = "HH:mm:ss";
+            internal static bool DetailedTimeFormat = false;
+            internal static string FormatTime(DateTime t)
+            {
+                if (DetailedTimeFormat)
+                {
+                    int yyyy = t.Year;
+                    int MM = t.Month;
+                    int dd = t.Day;
+                    int HH = t.Hour;
+                    int mm = t.Minute;
+                    int ss = t.Second;
+                    long ticks = t.Ticks;
+                    int millisec = t.Millisecond;
+                    int microsec = (int)(ticks % 10000) / 10;
+                    int nanosec_multiple100 = (int)(ticks % 10);
+                    return $"{yyyy:D4}-{MM:D2}-{dd:D2} {HH:D2}:{mm:D2}:{ss:D2} {millisec:D3} {microsec:D3}{nanosec_multiple100}";
+                }
+                else return t.ToString("HH:mm:ss");
+            }
 
             private ColorLineResult? _writeResult = null;
             public ColorLineResult GetWriteFileResult(bool is_pipeseparated_format)
             {
                 if (_writeResult == null)
                 {
-                    string nowtime = create_time.ToString(TimeFormat);
+                    string nowtime = FormatTime(create_time);
                     string header = GetFileLogInfo(level, sender, is_pipeseparated_format);
                     string res = $"{nowtime}{header}{content}";
 
@@ -552,7 +570,7 @@ namespace YYHEggEgg.Logger
 
             public ColorLineResult GetWriteConsoleResult(LoggerConfig conf)
             {
-                string nowtime = create_time.ToString(TimeFormat);
+                string nowtime = FormatTime(create_time);
                 string header = GetConsoleLogInfo(level, sender);
                 string res = $"{nowtime}{header}{content}";
 

@@ -6,7 +6,7 @@
 [![NuGet](https://img.shields.io/nuget/v/EggEgg.CSharp-Logger.svg)](https://www.nuget.org/packages/EggEgg.CSharp-Logger)
 
 ## 更新
-### v4.0.0 - Preview 7 (v3.6.50-beta)
+### v4.0.0 - Preview 8 (v3.7.50-beta)
 这个版本几乎重新实现了整个 logger，将静态类 `Log` 的主要功能提取并封装到了 `BaseLogger`。原有的功能不受影响，并修复了一些 bug，但可能会遇到一些中断性变更。
 
 注意，尽管 `BaseLogger` 是一套完整的日志实现，想要使用它也必须先调用 `Log.Initialize`。此外，尽管可以为每个 `BaseLogger` 提供不同的初始化 `LoggerConfig`，其关键的字段必须与 `Log.Initialize` 时提供的版本统一，以保持整个程序中 Logger 的各项行为一致。  
@@ -20,7 +20,8 @@
   如果一些外部代码使用 `Console` 的方法且您使用 `ConsoleWrapper`（例如 `CommandLineParser`），则必须为其提供 `LogTextWriter` 的实例。
 - 添加了 `LoggerChannel`。对于实现某一段逻辑的代码，其在调用 `Log` 方法时通常会传递同一个 `sender` 参数，可以创建 `LoggerChannel` 来减少代码量并增加可维护性。
 - 在 `Log` 静态类额外创建了一些指向 `BaseLogger` 对应方法的静态方法。
-- 现在可以通过设置 `LoggerConfig.Enable_Detailed_Time` 来设置是否启用时间细节。默认情况下，Logger 记录的时间仅精确到秒，且不包含日期，对应格式化字符串 `HH:mm:ss`。开启时间细节后，将会展现日志创建时间直至七分之一秒的细节，与之相对应的格式化字符串为 `yyyy-MM-dd HH:mm:ss.fffffff`. 此配置要求全局统一，对控制台与日志文件的输出内容均生效。
+- 现在可以通过设置 `LoggerConfig.Enable_Detailed_Time` 来设置是否启用时间细节。默认情况下，Logger 记录的时间仅精确到秒，且不包含日期，对应格式化字符串 `HH:mm:ss`。  
+  开启时间细节后，将会展现日志提交时间直至七分之一秒的细节，与之相对应的格式化字符串为 `yyyy-MM-dd HH:mm:ss fff ffff`，两部分 `fff` 和 `ffff` 分别表示毫秒级别与万分之一毫秒（100 纳秒，0.1 微秒）级别，如 `2023-08-22 15:43:36 456 4362`. 此配置要求全局统一，对控制台与日志文件的输出内容均生效。
 - 可以在创建新日志文件时，使用 `LogFileConfig.IsPipeSeparatedFormat` 指示创建的日志文件是否为竖线分隔值文件（Pipe-separated values file，PSV）。
   将日志输出为表格有助于在数据量极大时进行分析，尤其是如果程序中大量模块化代码调用 Log 方法时不会改变 sender 参数的情况下。此配置不会对输出至控制台的内容生效，且出于一些性能上的考虑，目前只接受 `|` 作为分隔符。输出格式为：
 
@@ -144,3 +145,5 @@
 4. 如果想要使用 `ConsoleWrapper` 的功能，需要将上示 `LoggerConfig` 中的 `use_Console_Wrapper` 设为 true，然后开始使用其功能。
 5. 在创建新日志文件时，可使用 `LogFileConfig.IsPipeSeparatedFormat` 指示创建的日志文件是否为竖线分隔值文件（Pipe-separated values file，PSV）。  
    将日志输出为表格有助于在数据量极大时进行筛选与分析，尤其是如果程序中大量模块化代码调用 Log 方法时不会改变 sender 参数的情况下。可使用 `BaseLogger(LoggerConfig, LogFileConfig)` 为统计类数据专门创建一个 `BaseLogger` 与其日志文件，并令 `content` 同样使用类似 PSV 的格式，以便于数据的查询。
+6. 可以通过将 `LoggerConfig` 中的 `enable_Detailed_Time` 设为 true，启用日志的时间细节。默认情况下，Logger 记录的时间仅精确到秒，且不包含日期，对应格式化字符串 `HH:mm:ss`。  
+  开启时间细节后，将会展现日志提交时间直至七分之一秒的细节，与之相对应的格式化字符串为 `yyyy-MM-dd HH:mm:ss fff ffff`，两部分 `fff` 和 `ffff` 分别表示毫秒级别与万分之一毫秒（100 纳秒，0.1 微秒）级别，如 `2023-08-22 15:43:36 456 4362`. 此配置要求全局统一，对控制台与日志文件的输出内容均生效。
