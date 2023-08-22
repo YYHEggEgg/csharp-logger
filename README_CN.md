@@ -6,7 +6,7 @@
 [![NuGet](https://img.shields.io/nuget/v/EggEgg.CSharp-Logger.svg)](https://www.nuget.org/packages/EggEgg.CSharp-Logger)
 
 ## 更新
-### v4.0.0 - Preview 6 (v3.5.50-beta)
+### v4.0.0 - Preview 7 (v3.6.50-beta)
 这个版本几乎重新实现了整个 logger，将静态类 `Log` 的主要功能提取并封装到了 `BaseLogger`。原有的功能不受影响，并修复了一些 bug，但可能会遇到一些中断性变更。
 
 注意，尽管 `BaseLogger` 是一套完整的日志实现，想要使用它也必须先调用 `Log.Initialize`。此外，尽管可以为每个 `BaseLogger` 提供不同的初始化 `LoggerConfig`，其关键的字段必须与 `Log.Initialize` 时提供的版本统一，以保持整个程序中 Logger 的各项行为一致。  
@@ -15,7 +15,7 @@
 主要更改：
 - 修复了由于计时算法缺陷，日志处理后台任务在处理完日志后不会等待规定时间的问题。
 - 修复了在大多数情况下，清理所等待的时间（1.5s）会达到最大值，且仍有可能无法完成控制台清理的问题。
-- 使用了全新的基于 KMP 的算法来分析颜色标签信息，加快了处理速度。详见 [Benchmark 数据](https://github.com/YYHEggEgg/csharp-logger/blob/main/Logger-test/ColorLineUtil-report-github.md)。
+- 使用了全新的基于 KMP 的算法来分析颜色标签信息，加快了处理速度。详见 [Benchmark 数据](https://github.com/YYHEggEgg/csharp-logger/blob/main/ColorLineUtil-report-github.md)。
 - 添加了 `LogTextWriter`，但注意其使用一个缓冲区来维护未换行的字符；也就是说，在没有输入换行符之前的所有内容都不会显示在 `Logger`。  
   如果一些外部代码使用 `Console` 的方法且您使用 `ConsoleWrapper`（例如 `CommandLineParser`），则必须为其提供 `LogTextWriter` 的实例。
 - 添加了 `LoggerChannel`。对于实现某一段逻辑的代码，其在调用 `Log` 方法时通常会传递同一个 `sender` 参数，可以创建 `LoggerChannel` 来减少代码量并增加可维护性。
@@ -33,9 +33,10 @@
 - 借鉴了一些 [tonerdo/readline](https://github.com/tonerdo/readline) 的代码来实现新版的 `ConsoleWrapper`。但请注意，本版本的 nuget 包不包含对 nuget 包 [ReadLine](https://www.nuget.org/packages/ReadLine) 的引用，也不包含类 `ReadLine`。所有操作仍封装为 `ConsoleWrapper`。
 - 大幅提升了 `ConsoleWrapper` 在文本量较大时修改文本的体验。
 - 现在设置 `ConsoleWrapper.AutoCompleteHandler` 可对用户的输入进行自动补全。
+- 优化了 `Log`、`BaseLogger` 以及 `LoggerChannel` 类内的方法指示。
 
 ### 中断性变更
-- 现在如果用户在 `Log.Initialize` 时指示使用程序路径（为 `LoggerConfig.Use_Working_Directory` 提供了 `false`），并且其无法访问，相比之前的实现，其不会发出警告程序会 fallback 到工作目录。同理，在压缩过往日志文件时如果出现了错误也不会有警告提示。
+- 现在如果用户在 `Log.Initialize` 时指示使用程序路径（为 `LoggerConfig.Use_Working_Directory` 提供了 `false`），并且其无法访问，相比之前的实现，其不会发出程序会 fallback 到工作目录的警告。同理，在压缩过往日志文件时如果出现了错误也不会有警告提示。
 - **重要**：在新版本中，不仅有 `latest.log` 与 `latest.debug.log`，而是**任何在 `logs` 文件夹下符合通配符 `latest.*.log` 的**日志文件都会在调用 `Log.Initialize` 进行过往日志处理时被重命名为最后一次进行写入的时间。  
   它们也同样受日志自动压缩的影响，但这实际上与过往的行为一致。
 - 现在在程序结束时，给予 Logger 的离开时间为 1000ms，而给予控制台输出（无论是普通输出还是 `ConsoleWrapper`）的离开时间为 500ms（其一定在 Logger 清理工作完毕后才进行）。在以前的版本中，这两个数字分别是 300ms 和 1200ms。
@@ -45,6 +46,7 @@
   > 识别的换行序列列表是 CR (U+000D)、LF (U+000A)，CRLF (U+000D U+000A)、NEL (U+0085)、LS (U+2028)、FF (U+000C) 和 PS (U+2029)。此列表由 Unicode Standard 第 5.8 条建议 R4 和表 5-2 提供。
 - `ConsoleWrapper` 现在支持与 bash 类似的历史合并，也就是说连续执行一条命令多次并不会在历史中留下多次记录。
 - `ConsoleWrapper` 的新读入方式类似于 [GNU Readline](https://en.wikipedia.org/wiki/GNU_Readline)，但这导致 Ctrl+C 的过往行为与其产生了冲突，因此保留了 Ctrl+C 引发 `ConsoleWrapper.ShutDownRequest` 事件的功能。除此之外，其他所有下附 GNU readline 快捷键的功能均可以视为中断性变更。
+- 该项目未来不会向下兼容到 `.NET 6.0` 以下的任何版本，包括 `.NET Standard 2.1`。
 
 ### v3.0.0
 - 修复了等待队列中的未处理日志会在程序关闭时丢失的问题。
@@ -106,4 +108,39 @@
   23:14:17|Warn|TestSender|Push a warning log!
   ```
 
-  但请注意：Logger 并不检查您的输入是否不包含换行符。最佳实践是使用 `BaseLogger(LoggerConfig, LogFileConfig)` 为统计类数据专门创建一个 `BaseLogger` 与其日志文件，并令 `content` 同样使用类似 PSV 的格式，以便于数据的查询。
+## 最佳实践
+
+1. 在程序的入口点（也可是其他地方，总之越早越好）调用 `Log.Initialize(LoggerConfig)` 来进行全局初始化，然后开始使用日志相关方法。
+2. 如果程序使用 [CommandLineParser](https://www.nuget.org/packages/CommandLineParser)，请重定向它的输出 `TextWriter`。代码如下：
+
+   ```cs
+   public readonly static Parser DefaultCommandsParser = new Parser(config =>
+   {
+       // 在构建时设置自定义 ConsoleWriter
+       config.HelpWriter = TextWriter.Synchronized(new LogTextWriter("CommandLineParser"));
+   });
+   ```
+
+3. 谨慎配置 `LoggerConfig` 的各项功能。如果只想用作普通的日志记录器，以下是一个推荐配置：
+
+   ```cs
+   Log.Initialize(new LoggerConfig(
+       max_Output_Char_Count: -1,
+       use_Console_Wrapper: false,
+       use_Working_Directory: true,
+   #if DEBUG
+       global_Minimum_LogLevel: LogLevel.Verbose,
+       console_Minimum_LogLevel: LogLevel.Information,
+   #else
+       global_Minimum_LogLevel: LogLevel.Information,
+       console_Minimum_LogLevel: LogLevel.Information,
+   #endif
+       debug_LogWriter_AutoFlush: true,
+       is_PipeSeparated_Format: false,
+       enable_Detailed_Time: false
+       ));
+   ```
+
+4. 如果想要使用 `ConsoleWrapper` 的功能，需要将上示 `LoggerConfig` 中的 `use_Console_Wrapper` 设为 true，然后开始使用其功能。
+5. 在创建新日志文件时，可使用 `LogFileConfig.IsPipeSeparatedFormat` 指示创建的日志文件是否为竖线分隔值文件（Pipe-separated values file，PSV）。  
+   将日志输出为表格有助于在数据量极大时进行筛选与分析，尤其是如果程序中大量模块化代码调用 Log 方法时不会改变 sender 参数的情况下。可使用 `BaseLogger(LoggerConfig, LogFileConfig)` 为统计类数据专门创建一个 `BaseLogger` 与其日志文件，并令 `content` 同样使用类似 PSV 的格式，以便于数据的查询。

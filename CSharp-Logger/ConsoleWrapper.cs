@@ -1,5 +1,4 @@
 ﻿using Internal.ReadLine;
-using Internal.ReadLine.Abstractions;
 using System.Collections.Concurrent;
 using YYHEggEgg.Logger.readline.Abstractions;
 using YYHEggEgg.Logger.Utils;

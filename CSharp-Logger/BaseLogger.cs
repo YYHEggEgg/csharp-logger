@@ -8,7 +8,7 @@ namespace YYHEggEgg.Logger
     {
         #region Background Console
         private static ConcurrentQueue<ColorLineResult> qconsole_strings = new();
-        private static ConcurrentBag<BaseLogger> working_loggers = new();
+        private static ConcurrentBag<BaseLogger> working_loggers = new ConcurrentBag<BaseLogger>();
         static BaseLogger()
         {
             AppDomain.CurrentDomain.ProcessExit += GlobalClearup;
@@ -257,8 +257,11 @@ namespace YYHEggEgg.Logger
             return new LoggerChannel(this, sender);
         }
 
+        #region Log Methods
         /// <summary>
-        /// Put a log with Verbose Level to the handle queue. Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/> <= <see cref="LogLevel.Verbose"/>. Notice that messages put here will only be written to <c>latest.debug.log</c>.
+        /// Put a log with Verbose Level to the handle queue.
+        /// Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/>
+        /// is no more than <see cref="LogLevel.Verbose"/>.
         /// </summary>
         /// <param name="content">The log content.</param>
         /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>
@@ -271,7 +274,9 @@ namespace YYHEggEgg.Logger
         }
 
         /// <summary>
-        /// Put a log with Debug Level to the handle queue. Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/> <= <see cref="LogLevel.Debug"/>. Notice that messages put here will only be written to <c>latest.debug.log</c>.
+        /// Put a log with Debug Level to the handle queue.
+        /// Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/>
+        /// is no more than <see cref="LogLevel.Debug"/>.
         /// </summary>
         /// <param name="content">The log content.</param>
         /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>
@@ -284,7 +289,9 @@ namespace YYHEggEgg.Logger
         }
 
         /// <summary>
-        /// Put a log with Info Level to the handle queue. Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/> <= <see cref="LogLevel.Information"/>. 
+        /// Put a log with Info Level to the handle queue.
+        /// Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/>
+        /// is no more than <see cref="LogLevel.Information"/>. 
         /// </summary>
         /// <param name="content">The log content.</param>
         /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>
@@ -297,7 +304,9 @@ namespace YYHEggEgg.Logger
         }
 
         /// <summary>
-        /// Put a log with Warning Level to the handle queue. Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/> <= <see cref="LogLevel.Warning"/>. 
+        /// Put a log with Warning Level to the handle queue.
+        /// Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/>
+        /// is no more than <see cref="LogLevel.Warning"/>. 
         /// </summary>
         /// <param name="content">The log content.</param>
         /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>
@@ -310,7 +319,9 @@ namespace YYHEggEgg.Logger
         }
 
         /// <summary>
-        /// Put a log with Error Level to the handle queue. Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/> <= <see cref="LogLevel.Error"/>. 
+        /// Put a log with Error Level to the handle queue.
+        /// Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/>
+        /// is no more than <see cref="LogLevel.Error"/>. 
         /// </summary>
         /// <param name="content">The log content.</param>
         /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>
@@ -323,7 +334,9 @@ namespace YYHEggEgg.Logger
         }
 
         /// <summary>
-        /// Put a log with a certain Level to the handle queue. Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/> <= <paramref name="logLevel"/>. 
+        /// Put a log with a certain Level to the handle queue.
+        /// Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/>
+        /// is no more than <paramref name="logLevel"/>. 
         /// </summary>
         /// <param name="content">The log content.</param>
         /// <param name="logLevel">The <see cref="LogLevel"/> of this log message.</param>
@@ -340,6 +353,162 @@ namespace YYHEggEgg.Logger
             }
         }
 
+        /// <summary>
+        /// Put a <see cref="Func{TResult}"/> with Verbose Level to the handle queue,
+        /// and invoke the func afterwards to get the content.
+        /// Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/>
+        /// is no more than <paramref name="logLevel"/>. 
+        /// </summary>
+        /// <param name="getcontent_func">
+        /// The func used to get the log content. It'll be invoked afterwards by
+        /// the logger's background refreshing task.
+        /// </param>
+        /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>
+        /// <param name="on_getcontent_error">
+        /// The Action used to handle the error in <paramref name="getcontent_func"/>.
+        /// If not providing it, the logger will report the exception to
+        /// <see cref="Log.Warn(string, string?)"/> in a certain format.
+        /// </param>
+        public void Verb(Func<string> getcontent_func, string? sender = null,
+            Action<Exception>? on_getcontent_error = null)
+        {
+            if (CustomConfig.Global_Minimum_LogLevel == LogLevel.Verbose)
+            {
+                qlog.Enqueue(new LogDetail(string.Empty, LogLevel.Verbose, sender, getcontent_func, on_getcontent_error));
+            }
+        }
+
+        /// <summary>
+        /// Put a <see cref="Func{TResult}"/> with Debug Level to the handle queue,
+        /// and invoke the func afterwards to get the content.
+        /// Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/>
+        /// is no more than <paramref name="logLevel"/>. 
+        /// </summary>
+        /// <param name="getcontent_func">
+        /// The func used to get the log content. It'll be invoked afterwards by
+        /// the logger's background refreshing task.
+        /// </param>
+        /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>
+        /// <param name="on_getcontent_error">
+        /// The Action used to handle the error in <paramref name="getcontent_func"/>.
+        /// If not providing it, the logger will report the exception to
+        /// <see cref="Log.Warn(string, string?)"/> in a certain format.
+        /// </param>
+        public void Dbug(Func<string> getcontent_func, string? sender = null,
+            Action<Exception>? on_getcontent_error = null)
+        {
+            if (CustomConfig.Global_Minimum_LogLevel <= LogLevel.Debug)
+            {
+                qlog.Enqueue(new LogDetail(string.Empty, LogLevel.Debug, sender, getcontent_func, on_getcontent_error));
+            }
+        }
+
+        /// <summary>
+        /// Put a <see cref="Func{TResult}"/> with Information Level to the handle queue,
+        /// and invoke the func afterwards to get the content.
+        /// Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/>
+        /// is no more than <paramref name="logLevel"/>. 
+        /// </summary>
+        /// <param name="getcontent_func">
+        /// The func used to get the log content. It'll be invoked afterwards by
+        /// the logger's background refreshing task.
+        /// </param>
+        /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>
+        /// <param name="on_getcontent_error">
+        /// The Action used to handle the error in <paramref name="getcontent_func"/>.
+        /// If not providing it, the logger will report the exception to
+        /// <see cref="Log.Warn(string, string?)"/> in a certain format.
+        /// </param>
+        public void Info(Func<string> getcontent_func, string? sender = null,
+            Action<Exception>? on_getcontent_error = null)
+        {
+            if (CustomConfig.Global_Minimum_LogLevel <= LogLevel.Information)
+            {
+                qlog.Enqueue(new LogDetail(string.Empty, LogLevel.Information, sender, getcontent_func, on_getcontent_error));
+            }
+        }
+
+        /// <summary>
+        /// Put a <see cref="Func{TResult}"/> with Warning Level to the handle queue,
+        /// and invoke the func afterwards to get the content.
+        /// Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/>
+        /// is no more than <paramref name="logLevel"/>. 
+        /// </summary>
+        /// <param name="getcontent_func">
+        /// The func used to get the log content. It'll be invoked afterwards by
+        /// the logger's background refreshing task.
+        /// </param>
+        /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>
+        /// <param name="on_getcontent_error">
+        /// The Action used to handle the error in <paramref name="getcontent_func"/>.
+        /// If not providing it, the logger will report the exception to
+        /// <see cref="Log.Warn(string, string?)"/> in a certain format.
+        /// </param>
+        public void Warn(Func<string> getcontent_func, string? sender = null,
+            Action<Exception>? on_getcontent_error = null)
+        {
+            if (CustomConfig.Global_Minimum_LogLevel <= LogLevel.Warning)
+            {
+                qlog.Enqueue(new LogDetail(string.Empty, LogLevel.Warning, sender, getcontent_func, on_getcontent_error));
+            }
+        }
+
+        /// <summary>
+        /// Put a <see cref="Func{TResult}"/> with Error Level to the handle queue,
+        /// and invoke the func afterwards to get the content.
+        /// Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/>
+        /// is no more than <paramref name="logLevel"/>. 
+        /// </summary>
+        /// <param name="getcontent_func">
+        /// The func used to get the log content. It'll be invoked afterwards by
+        /// the logger's background refreshing task.
+        /// </param>
+        /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>
+        /// <param name="on_getcontent_error">
+        /// The Action used to handle the error in <paramref name="getcontent_func"/>.
+        /// If not providing it, the logger will report the exception to
+        /// <see cref="Log.Warn(string, string?)"/> in a certain format.
+        /// </param>
+        public void Erro(Func<string> getcontent_func, string? sender = null,
+            Action<Exception>? on_getcontent_error = null)
+        {
+            if (CustomConfig.Global_Minimum_LogLevel <= LogLevel.Error)
+            {
+                qlog.Enqueue(new LogDetail(string.Empty, LogLevel.Error, sender, getcontent_func, on_getcontent_error));
+            }
+        }
+
+        /// <summary>
+        /// Put a <see cref="Func{TResult}"/> with a certain Level to the handle queue,
+        /// and invoke the func afterwards to get the content.
+        /// Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/>
+        /// is no more than <paramref name="logLevel"/>. 
+        /// </summary>
+        /// <param name="getcontent_func">
+        /// The func used to get the log content. It'll be invoked afterwards by
+        /// the logger's background refreshing task.
+        /// </param>
+        /// <param name="logLevel">The <see cref="LogLevel"/> of this log message.</param>
+        /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>
+        /// <param name="on_getcontent_error">
+        /// The Action used to handle the error in <paramref name="getcontent_func"/>.
+        /// If not providing it, the logger will report the exception to
+        /// <see cref="Log.Warn(string, string?)"/> in a certain format.
+        /// </param>
+        public void PushLog(Func<string> getcontent_func, LogLevel logLevel, 
+            string? sender = null, Action<Exception>? on_getcontent_error = null)
+        {
+            if (logLevel == LogLevel.None)
+            {
+                throw new InvalidOperationException("A log with LogLevel.None cannot be pushed and handled.");
+            }
+            if (CustomConfig.Global_Minimum_LogLevel <= logLevel)
+            {
+                qlog.Enqueue(new LogDetail(string.Empty, logLevel, sender, getcontent_func, on_getcontent_error));
+            }
+        }
+        #endregion
+
         #region Background Refresh
         internal struct LogDetail
         {
@@ -347,13 +516,22 @@ namespace YYHEggEgg.Logger
             public string content;
             public string? sender;
             public DateTime create_time;
+            public Func<string>? getcontent_func;
+            public Action<Exception>? on_getcontent_error;
 
-            public LogDetail(string con, LogLevel lvl, string? snd)
+            public LogDetail(string con, LogLevel lvl, string? snd, 
+                Func<string>? getcontent_func = null, Action<Exception>? on_getcontent_error = null)
             {
                 level = lvl;
                 content = con;
                 sender = snd;
-                create_time = DateTime.Now;
+                var nowtime = DateTime.Now;
+                create_time = nowtime;
+                this.getcontent_func = getcontent_func;
+                this.on_getcontent_error = on_getcontent_error ?? new(ex =>
+                {
+                    Log.Warn($"Delay log content (pushed on {nowtime.ToString(TimeFormat)}) get failed: {ex}", snd);
+                });
             }
 
             internal static string TimeFormat = "HH:mm:ss";
@@ -417,11 +595,14 @@ namespace YYHEggEgg.Logger
             }
         }
 
-        #region Write Methods
         private void InnerWriteLogs()
         {
             while (qlog.TryDequeue(out LogDetail log))
             {
+                if (log.getcontent_func != null)
+                {
+                    log.content = log.getcontent_func();
+                }
                 var consoleOutput = log.GetWriteConsoleResult(CustomConfig);
                 if (log.level >= CustomConfig.Console_Minimum_LogLevel)
                 {
@@ -442,20 +623,6 @@ namespace YYHEggEgg.Logger
             }
         }
         #endregion
-        #endregion
-
-        private ColorLineResult GetWriteLog(LogDetail log)
-        {
-            string nowtime = log.create_time.ToString("HH:mm:ss");
-            string header = GetConsoleLogInfo(log.level, log.sender);
-            string res = $"{nowtime}{header}{log.content}";
-
-            if (CustomConfig.Max_Output_Char_Count < 0 || log.content.Length < CustomConfig.Max_Output_Char_Count)
-                return ColorLineUtil.AnalyzeColorText(res);
-            else
-                return ColorLineUtil.AnalyzeColorText(
-                    $"{nowtime}{header}[content too long (> Maximum line length of {CustomConfig.Max_Output_Char_Count}), so not output to console]");
-        }
 
         /// <summary>
         /// Write info <[level]:[sender]> like <Info:KCP>. 
