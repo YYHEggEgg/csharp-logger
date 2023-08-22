@@ -1,6 +1,7 @@
 ﻿using Internal.ReadLine;
 using Internal.ReadLine.Abstractions;
 using System.Collections.Concurrent;
+using YYHEggEgg.Logger.readline.Abstractions;
 using YYHEggEgg.Logger.Utils;
 
 #pragma warning disable CS8618 // 在退出构造函数时，不可为 null 的字段必须包含非 null 值。请考虑声明为可以为 null。
@@ -234,9 +235,9 @@ namespace YYHEggEgg.Logger
         private static void ShutdownRequest_Callback()
             => ShutDownRequest?.Invoke(null, EventArgs.Empty);
 
-        private static Console2 shared_absconsole = new();
+        private static DelayConsole shared_absconsole = new();
         private static ConcurrentQueue<ConsoleKeyInfo> qhandle_consolekeys = new();
-        private static KeyHandler keyHandler = new(shared_absconsole, lines, null, 0);
+        private static KeyHandler keyHandler = new(shared_absconsole, lines, null, string.Empty);
         private static async Task BackgroundReadkey()
         {
             try
@@ -262,6 +263,9 @@ namespace YYHEggEgg.Logger
         private static bool isReading = false;
         private static bool _inputprefix_changed = false;
 
+        private static bool Writelines_waiting_handle
+            => !writelines.IsEmpty || !writelines_handlelist.IsEmpty;
+
         private static async Task BackgroundUpdate()
         {
             bool pre_reading = false;
@@ -269,9 +273,10 @@ namespace YYHEggEgg.Logger
             {
                 try
                 {
+                    bool cur_handle_writelines = Writelines_waiting_handle;
                     if (qhandle_consolekeys.IsEmpty && !_inputprefix_changed
                         && !(!pre_reading && isReading) // not starting reading nearly
-                        && writelines.IsEmpty && writelines_handlelist.IsEmpty)
+                        && !cur_handle_writelines)
                     {
                         if (ending)
                         {
@@ -282,22 +287,28 @@ namespace YYHEggEgg.Logger
                         continue;
                     }
                     _inputprefix_changed = false;
-                    if (isReading)
+                    
+                    if (isReading && cur_handle_writelines)
                     {
                         // Keep the KeyHandler status
                         keyHandler.ClearWrittingStatus();
                     }
-
-                    while (writelines.TryDequeue(out var line))
-                        InnerWriteLine(line);
-                    while (writelines_handlelist.TryDequeue(out var line))
-                        InnerWriteLine(line);
-
+                    if (cur_handle_writelines)
+                    {
+                        while (writelines.TryDequeue(out var line))
+                            InnerWriteLine(line);
+                        while (writelines_handlelist.TryDequeue(out var line))
+                            InnerWriteLine(line);
+                        if (isReading) shared_absconsole.Resync();
+                    }
                     if (isReading)
                     {
                         string cur_prefix = isReading ? InputPrefix : string.Empty;
-                        pre_reading = isReading;
-                        keyHandler = KeyHandler.RecoverWrittingStatus(cur_prefix, keyHandler);
+                        if (cur_handle_writelines)
+                        {
+                            pre_reading = isReading;
+                            keyHandler = KeyHandler.RecoverWrittingStatus(cur_prefix, keyHandler);
+                        }
                         while (qhandle_consolekeys.TryDequeue(out var keyInfo))
                         {
                             if (keyInfo.Modifiers == ConsoleModifiers.Control && keyInfo.Key == ConsoleKey.C)
@@ -314,7 +325,7 @@ namespace YYHEggEgg.Logger
                             readqueue.Enqueue(keyHandler.Text);
                             if (lines.Count == 0 || lines[0] != keyHandler.Text)
                                 lines.Add(keyHandler.Text);
-                            keyHandler = new(shared_absconsole, lines, null, cur_prefix.Length);
+                            keyHandler = new(shared_absconsole, lines, null, cur_prefix);
                         }
                     }
                     await Task.Delay(50);

@@ -31,5 +31,9 @@ namespace Internal.ReadLine.Abstractions
         }
 
         public void WriteLine(string value) => Console.WriteLine(value);
+
+        public void Flush() { }
+        public void Resync() { }
+        public void Clear() => Console.Clear();
     }
 }

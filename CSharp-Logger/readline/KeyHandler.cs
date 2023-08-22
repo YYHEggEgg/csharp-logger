@@ -19,7 +19,7 @@ namespace Internal.ReadLine
         private int _completionStart;
         private int _completionsIndex;
         private IConsole Console2;
-        private int _prompt_length;
+        private string _prompt;
 
         /// <summary>
         /// 用户敲击 Control+C (^C) 时发生。
@@ -54,7 +54,7 @@ namespace Internal.ReadLine
         /// <summary>
         /// 如果没有到达输入内容的最左端，将光标后退一格。
         /// </summary>
-        private void MoveCursorLeft()
+        private void MoveCursorLeftCore()
         {
             if (IsStartOfLine())
                 return;
@@ -67,10 +67,37 @@ namespace Internal.ReadLine
             _cursorPos--;
         }
 
+        private void MoveCursorLeft()
+        {
+            int _console_cursorLeft_tmp = Console2.CursorLeft;
+            int _console_cursorTop_tmp = Console2.CursorTop;
+            int _cursorPos_tmp = _cursorPos;
+            try
+            {
+                MoveCursorLeftCore();
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                Console2.SetCursorPosition(_console_cursorLeft_tmp, _console_cursorTop_tmp);
+                _cursorPos = _cursorPos_tmp;
+            }
+        }
+
         private void MoveCursorHome()
         {
-            while (!IsStartOfLine())
-                MoveCursorLeft();
+            int _console_cursorLeft_tmp = Console2.CursorLeft;
+            int _console_cursorTop_tmp = Console2.CursorTop;
+            int _cursorPos_tmp = _cursorPos;
+            try
+            {
+                while (!IsStartOfLine())
+                    MoveCursorLeftCore();
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                Console2.SetCursorPosition(_console_cursorLeft_tmp, _console_cursorTop_tmp);
+                _cursorPos = _cursorPos_tmp;
+            }
         }
 
         /// <summary>
@@ -152,7 +179,7 @@ namespace Internal.ReadLine
                 #region Corner case: new line handle
                 // Researches show that the cursor don't switch to the
                 // next line when it reaches the end of a line.
-                if (((_prompt_length + _cursorPos) % Console2.BufferWidth == 0)
+                if (((_prompt.Length + _cursorPos) % Console2.BufferWidth == 0)
                     && (Console2.CursorLeft == Console2.BufferWidth - 1))
                 {
                     Console2.Write(" ");
@@ -318,10 +345,11 @@ namespace Internal.ReadLine
         }
 
         public KeyHandler(IConsole console, List<string>? history, IAutoCompleteHandler? autoCompleteHandler,
-            int prompt_length)
+            string prompt)
         {
             Console2 = console;
-            _prompt_length = prompt_length;
+            _prompt = prompt;
+            Console2.Write(prompt);
 
             _history = history ?? new List<string>();
             _historyIndex = _history.Count;
@@ -524,6 +552,21 @@ namespace Internal.ReadLine
             {
                 action ??= WriteChar;
                 action.Invoke();
+                try
+                {
+                    Console2.Flush();
+                }
+                catch (ArgumentOutOfRangeException)
+                {
+                    Console2.Clear();
+                    var str = Text;
+                    _text = new();
+                    _cursorPos = 0;
+                    _cursorLimit = 0;
+                    Console2.Write(_prompt);
+                    foreach (var ch in str)
+                        WriteChar(ch);
+                }
             }
         }
 
@@ -535,7 +578,7 @@ namespace Internal.ReadLine
         {
             var tmp_cursor = _cursorPos;
             MoveCursorEnd();
-            int calcCursor = _prompt_length + _cursorPos;
+            int calcCursor = _prompt.Length + _cursorPos;
             _cursorPos = tmp_cursor;
 
             int operate_line_count = calcCursor / Console2.BufferWidth + 1;
@@ -547,25 +590,26 @@ namespace Internal.ReadLine
                 if (i == operate_line_count - 1)
                     Console2.SetCursorPosition(0, current_line);
                 current_line--;
-                if (current_line < 0) 
+                if (current_line < 0)
                     break;
             }
-            Debug.Assert(IsStartOfBuffer());
+            Console2.Flush();
+            if (!IsStartOfBuffer()) Console.WriteLine();
         }
 
         internal static KeyHandler RecoverWrittingStatus(string prompt, KeyHandler previous_stat)
         {
-            KeyHandler keyHandler = new(previous_stat.Console2, previous_stat._history, null, prompt.Length);
+            KeyHandler keyHandler = new(previous_stat.Console2, previous_stat._history, null, prompt);
             var copyfrom_actions = previous_stat._keyActions;
             var write_actions = keyHandler._keyActions;
             write_actions["Tab"] = copyfrom_actions["Tab"];
             write_actions["ShiftTab"] = copyfrom_actions["ShiftTab"];
             // Auto completion not supported now
             IConsole abstract_console = previous_stat.Console2;
-            abstract_console.Write(prompt);
             keyHandler.WriteNewString(previous_stat.Text);
             for (int i = previous_stat._cursorLimit; i > previous_stat._cursorPos; i--)
                 keyHandler.MoveCursorLeft();
+            abstract_console.Flush();
             Debug.Assert(keyHandler._cursorPos == previous_stat._cursorPos);
             Debug.Assert(keyHandler._cursorLimit == previous_stat._cursorLimit);
             return keyHandler;
