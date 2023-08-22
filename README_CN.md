@@ -1,18 +1,24 @@
 # csharp-logger
-一个方便的 C# 日志记录器实现。    
+
+一个方便的 C# 日志记录器实现，同时有可靠的控制台交互封装支持可使用。
 
 你可以通过在 [nuget.org](https://www.nuget.org) 上搜索 [EggEgg.CSharp-Logger](https://www.nuget.org/packages/EggEgg.CSharp-Logger) 来下载它。
 
 [![NuGet](https://img.shields.io/nuget/v/EggEgg.CSharp-Logger.svg)](https://www.nuget.org/packages/EggEgg.CSharp-Logger)
 
 ## 更新
-### v4.0.0 - Preview 8 (v3.7.50-beta)
+
+### v4.0.0 - Preview 9 (v3.8.50-beta)
+
+（注：这是 v4.0.0 正式版本前的最后一个次要预览版本。它的最新 Patch 将会与正式版本 v4.0.0 完全一致。）
+
 这个版本几乎重新实现了整个 logger，将静态类 `Log` 的主要功能提取并封装到了 `BaseLogger`。原有的功能不受影响，并修复了一些 bug，但可能会遇到一些中断性变更。
 
 注意，尽管 `BaseLogger` 是一套完整的日志实现，想要使用它也必须先调用 `Log.Initialize`。此外，尽管可以为每个 `BaseLogger` 提供不同的初始化 `LoggerConfig`，其关键的字段必须与 `Log.Initialize` 时提供的版本统一，以保持整个程序中 Logger 的各项行为一致。  
-现阶段受影响的字段有：`Use_Console_Wrapper`、`Use_Working_Directory`、`Max_Output_Char_Count`、`Log_Detailed_Time`。
+现阶段受影响的字段有：`Use_Console_Wrapper`、`Use_Working_Directory`、`Max_Output_Char_Count`、`Enable_Detailed_Time`。
 
 主要更改：
+
 - 修复了由于计时算法缺陷，日志处理后台任务在处理完日志后不会等待规定时间的问题。
 - 修复了在大多数情况下，清理所等待的时间（1.5s）会达到最大值，且仍有可能无法完成控制台清理的问题。
 - 使用了全新的基于 KMP 的算法来分析颜色标签信息，加快了处理速度。详见 [Benchmark 数据](https://github.com/YYHEggEgg/csharp-logger/blob/main/ColorLineUtil-report-github.md)。
@@ -37,6 +43,7 @@
 - 优化了 `Log`、`BaseLogger` 以及 `LoggerChannel` 类内的方法指示。
 
 ### 中断性变更
+
 - 现在如果用户在 `Log.Initialize` 时指示使用程序路径（为 `LoggerConfig.Use_Working_Directory` 提供了 `false`），并且其无法访问，相比之前的实现，其不会发出程序会 fallback 到工作目录的警告。同理，在压缩过往日志文件时如果出现了错误也不会有警告提示。
 - **重要**：在新版本中，不仅有 `latest.log` 与 `latest.debug.log`，而是**任何在 `logs` 文件夹下符合通配符 `latest.*.log` 的**日志文件都会在调用 `Log.Initialize` 进行过往日志处理时被重命名为最后一次进行写入的时间。  
   它们也同样受日志自动压缩的影响，但这实际上与过往的行为一致。
@@ -49,28 +56,16 @@
 - `ConsoleWrapper` 的新读入方式类似于 [GNU Readline](https://en.wikipedia.org/wiki/GNU_Readline)，但这导致 Ctrl+C 的过往行为与其产生了冲突，因此保留了 Ctrl+C 引发 `ConsoleWrapper.ShutDownRequest` 事件的功能。除此之外，其他所有下附 GNU readline 快捷键的功能均可以视为中断性变更。
 - 该项目未来不会向下兼容到 `.NET 6.0` 以下的任何版本，包括 `.NET Standard 2.1`。
 
-### v3.0.0
-- 修复了等待队列中的未处理日志会在程序关闭时丢失的问题。
-- 修复了 `debug.log` 日志在 `Debug_LogWriter_AutoFlush` 设为 `false` 时，终止程序造成未写入磁盘的日志丢失的问题。
-- 正常支持了 `ConsoleWrapper` 按 Ctrl+V 粘贴文本的功能。
-- 修复了使用 `ConsoleWrapper.ReadLine` 系列方法时，控制台无法滚动查看上下内容的问题。
-- 修复了 `ConsoleWrapper.ReadLine` 系列方法在程序结束时，会异常重复输出 `InputPrefix` 内容的问题。
-- 修复了在使用原生 `Console` 输出日志（即不使用 `ConsoleWrapper` 的默认配置）时，当用户选择控制台上的内容时，日志处理线程会被阻塞的问题。
-- 修复了自动压缩日志功能忽略内容为空的日志的问题。
-- 修复了自动压缩日志功能在无法压缩到现有日志压缩包而创建新 zip 文件时，忽略内容为空的日志的问题。
-- 其他有关 logger 与 `ConsoleWrapper` 的功能修复与改进。
-- 已知 `ConsoleWrapper` 使用 Home/End 键的功能在输入有多行的情况下存在显著问题。由于涉及底层代码，将会在充分测试后在下一个主要版本修复。
-
 ## 功能
-- 基础日志实现        
-  使用方法：首先 `Log.Initialize(LoggerConfig)`，然后 `Log.Info(content, sender)`、`Log.Erro(...)`、`Log.Warn(...)`、`Log.Dbug(...)`。也可以先调用 `Log.GetChannel(sender)` 确定一个 `sender` 参数，然后再调用 `logchan.LogInfo(content)`。   
-- **支持颜色输出**   
-  只需在文本中添加xml标记，例如：`<color=Red>Output as red color</color>`。    
-  颜色值应该是 [ConsoleColor](https://learn.microsoft.com/zh-cn/dotnet/api/system.consolecolor) 中的有效值，例如"Red"、"Green"。   
-  识别到的颜色标记将在日志文件中被删除。  
-- **并行输入支持**         
-  如果您想在输出日志的同时读取用户的输入（例如制作支持 CLI 交互的程序），则提供了 `ConsoleWrapper`。    
-  您可以将 `ConsoleWrapper.InputPrefix` 的值设置为等待输入的前缀，就像 `mysql>` 或 `ubuntu ~$`，并使用 `ConsoleWrapper.ReadLineAsync` 读取输入。**通过设置 `ConsoleWrapper.AutoCompleteHandler` 还可对用户的输入进行自动补全**。    
+
+- 基础日志实现  
+  使用方法：首先 `Log.Initialize(LoggerConfig)`，然后 `Log.Info(content, sender)`、`Log.Erro(...)`、`Log.Warn(...)`、`Log.Dbug(...)`。也可以先调用 `Log.GetChannel(sender)` 确定一个 `sender` 参数，然后再调用 `logchan.LogInfo(content)`。
+- **支持颜色输出**  
+  只需在文本中添加xml标记，例如：`<color=Red>Output as red color</color>`。  
+  颜色值应该是 [ConsoleColor](https://learn.microsoft.com/zh-cn/dotnet/api/system.consolecolor) 中的有效值，例如"Red"、"Green"。识别到的颜色标记将在日志文件中被删除。
+- **并行用户输入/日志输出支持**  
+  如果您想在输出日志的同时读取用户的输入（例如制作支持 CLI 交互的程序），则提供了 `ConsoleWrapper`。  
+  您可以将 `ConsoleWrapper.InputPrefix` 的值设置为等待输入的前缀，就像 `mysql>` 或 `ubuntu ~$`，并使用 `ConsoleWrapper.ReadLineAsync` 读取输入。**通过设置 `ConsoleWrapper.AutoCompleteHandler` 还可对用户的输入进行自动补全**。  
   它接受部分 [GNU readline](https://en.wikipedia.org/wiki/GNU_Readline) 的快捷键读取数据。下表是支持列表：
 
   | 快捷键 | 功能 |
@@ -91,12 +86,13 @@
   | `Ctrl`+`P` / `↑`               | 上一条命令历史 |
   | `Ctrl`+`U`                     | 切除自光标所在位置开始（不包括）至输入起始点的字符 |
   | `Ctrl`+`W`                     | 切除光标前的一个单词，即切除自光标所在位置开始（不包括）至后方（一般为左方）第一个空格（不包括）的字符 |
+  | `Ctrl`+`T`                     | 转置（即反转）当前光标位置的前一个字符与后一个字符，并使光标随后前进一位（这里的前进应指向右） |
   | `Backspace`                    | 删除光标前的一个字符 |
   | `Ctrl`+`D` / `Delete`          | 删除光标所在位置的一个字符 |
 
   此外，它不需要任何配置就可以读入大于 4096 位的数据。但请注意，当用户的输入非常大且控制台频繁输出日志时，它可能会影响性能。它默认是禁用的，您可以通过 `LoggerConfig(use_Console_Wrapper: true)`来启用它。
-- 输出数量限制       
-  大量信息输出到控制台会严重影响性能。您可以通过 `LoggerConfig.Max_Output_Char_Count` 设置每条日志的最大输出量，如果单条日志超出了这个值，则控制台内不会显示该条日志的内容，而是以特殊的警告取代。它的内容可以在文件中找到。      
+- 输出数量限制  
+  大量信息输出到控制台会严重影响性能。您可以通过 `LoggerConfig.Max_Output_Char_Count` 设置每条日志的最大输出量，如果单条日志超出了这个值，则控制台内不会显示该条日志的内容，而是以特殊的警告取代。它的内容可以在文件中找到。  
   您也可以通过将其设置为 `-1` 来禁用此功能。
 - 自动压缩日志  
   如果有至少 1 天前创建的日志，则会将它们压缩成一个zip文件，例如 `logs.[Date].zip`。
@@ -147,3 +143,4 @@
    将日志输出为表格有助于在数据量极大时进行筛选与分析，尤其是如果程序中大量模块化代码调用 Log 方法时不会改变 sender 参数的情况下。可使用 `BaseLogger(LoggerConfig, LogFileConfig)` 为统计类数据专门创建一个 `BaseLogger` 与其日志文件，并令 `content` 同样使用类似 PSV 的格式，以便于数据的查询。
 6. 可以通过将 `LoggerConfig` 中的 `enable_Detailed_Time` 设为 true，启用日志的时间细节。默认情况下，Logger 记录的时间仅精确到秒，且不包含日期，对应格式化字符串 `HH:mm:ss`。  
   开启时间细节后，将会展现日志提交时间直至七分之一秒的细节，与之相对应的格式化字符串为 `yyyy-MM-dd HH:mm:ss fff ffff`，两部分 `fff` 和 `ffff` 分别表示毫秒级别与万分之一毫秒（100 纳秒，0.1 微秒）级别，如 `2023-08-22 15:43:36 456 4362`. 此配置要求全局统一，对控制台与日志文件的输出内容均生效。
+7. 如果你使用 `ConsoleWrapper`，最好订阅事件 `ConsoleWrapper.ShutDownRequested` 以在用户按下 Ctrl+C 时做出操作。注意引发该事件的 `EventHandler` 提供的 `sender` 与 `args` 均无实际意义。

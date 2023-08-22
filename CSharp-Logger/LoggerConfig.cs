@@ -1,4 +1,6 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Reflection.Metadata;
+using System;
+using System.Runtime.CompilerServices;
 
 namespace YYHEggEgg.Logger
 {
@@ -48,25 +50,35 @@ namespace YYHEggEgg.Logger
         /// </summary>
         public readonly bool Debug_LogWriter_AutoFlush = false;
         /// <summary>
-        /// 等待 ChatGPT 翻译 <para/>
-        /// 指示创建的 latest.log 与 latest.debug.log 是否为竖线分隔值文件（Pipe-separated
-        /// values file，PSV）。将日志输出为表格有助于在数据量极大时进行分析，尤其是如果程序中
-        /// 大量模块化代码调用 Log 方法时不会改变 sender 参数的情况下。<para/>
-        /// 但由于 Logger 不保证内容不存在会影响 PSV 文件格式读取的内容（例如换行符），一般
-        /// 不启用这个选项，取而代之的是调用 <see cref="BaseLogger(LoggerConfig, LogFileConfig)"/>
-        /// 创建全新的 <see cref="BaseLogger"/> 实例与单独的日志文件，并为其启用
-        /// <see cref="LogFileConfig.IsPipeSeparatedFile"/>，专门用于存放 PSV 格式的数据。<para/>
-        /// 此配置不要求全局统一，同时也不会对输出至控制台的内容生效，它们的格式不受该配置影响。
+        /// Indicates whether latest.log and latest.debug.log should be created in
+        /// Pipe-separated values format (PSV). Outputting logs as a table helps
+        /// with analysis when dealing with large amounts of data, especially if
+        /// the Log method is called by modularized code that does not change the
+        /// sender parameter.<para/>
+        /// However, because Logger does not guarantee that the content does not contain
+        /// characters that affect the PSV file format reading (such as line breaks),
+        /// this option is generally not enabled. Instead, you should create a new
+        /// instance of <see cref="BaseLogger"/> and a separate log file by calling
+        /// <see cref="BaseLogger(LoggerConfig, LogFileConfig)"/>, and enable
+        /// <see cref="LogFileConfig.IsPipeSeparatedFile"/> specifically for storing
+        /// data in PSV format.<para/>
+        /// This configuration does not affect the content output to the console,
+        /// and currently only accepts <c>|</c> as the separator for performance reasons.
         /// </summary>
         public readonly bool Is_PipeSeparated_Format = false;
         /// <summary>
-        /// 等待 ChatGPT 翻译 <para/>
-        /// 指示是否启用时间细节。默认情况下，Logger 记录的时间仅精确到秒，且不包含日期，对应格式化字符串
+        /// Indicates whether to enable the time detail of the log.
+        /// By default, the time recorded by Logger is only accurate to the second
+        /// and does not include the date, corresponding to the formatted string
         /// <c>HH:mm:ss</c>。<para/>
-        /// 开启时间细节后，将会展现日志提交时间直至七分之一秒的细节，与之相对应的格式化字符串为
-        /// <c>yyyy-MM-dd HH:mm:ss fff ffff</c>，两部分 <c>fff</c> 和 <c>ffff</c>
-        /// 分别表示毫秒级别与万分之一毫秒（100 纳秒，0.1 毫秒）级别.
-        /// 此配置要求全局统一，对控制台与日志文件的输出内容均生效。
+        /// After enabling time details, it will display the details of the log
+        /// submission time up to one-seventh of a second, and the corresponding
+        /// formatted string is <c>yyyy-MM-dd HH:mm:ss fff ffff</c>, the two parts
+        /// <c>fff</c> and <c>ffff</c> represent the millisecond level and the ten-thousandth
+        /// of a millisecond (100 nanoseconds, 0.1 microseconds) level, such as
+        /// <c>2023-08-22 15:43:36 456 4362</c>.<para/>
+        /// This configuration requires global unity and is effective for both console
+        /// and log file output.
         /// </summary>
         public readonly bool Enable_Detailed_Time = false;
 
