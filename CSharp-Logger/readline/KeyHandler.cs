@@ -20,6 +20,7 @@ namespace Internal.ReadLine
         private int _completionsIndex;
         private IConsole Console2;
         private string _prompt;
+        private IAutoCompleteHandler? _autoCompleteHandler;
 
         /// <summary>
         /// 用户敲击 Control+C (^C) 时发生。
@@ -393,6 +394,7 @@ namespace Internal.ReadLine
                     Backspace();
             };
             _keyActions["ControlT"] = TransposeChars;
+            _autoCompleteHandler = autoCompleteHandler;
             _keyActions["Tab"] = () =>
             {
                 if (IsInAutoCompleteMode())
@@ -597,14 +599,23 @@ namespace Internal.ReadLine
             if (!IsStartOfBuffer()) Console.WriteLine();
         }
 
-        internal static KeyHandler RecoverWrittingStatus(string prompt, KeyHandler previous_stat)
+        internal static KeyHandler RecoverWrittingStatus(string prompt, KeyHandler previous_stat,
+            IAutoCompleteHandler? autoCompleteHandler)
         {
-            KeyHandler keyHandler = new(previous_stat.Console2, previous_stat._history, null, prompt);
+            KeyHandler keyHandler = new(previous_stat.Console2, previous_stat._history, autoCompleteHandler, prompt);
             var copyfrom_actions = previous_stat._keyActions;
             var write_actions = keyHandler._keyActions;
-            write_actions["Tab"] = copyfrom_actions["Tab"];
-            write_actions["ShiftTab"] = copyfrom_actions["ShiftTab"];
-            // Auto completion not supported now
+
+            #region Auto Completion
+            if (autoCompleteHandler != null &&
+                ReferenceEquals(previous_stat._autoCompleteHandler, autoCompleteHandler))
+            {
+                keyHandler._completions = previous_stat._completions;
+                keyHandler._completionsIndex = previous_stat._completionsIndex;
+                keyHandler._completionStart = previous_stat._completionStart;
+            }
+            #endregion
+
             IConsole abstract_console = previous_stat.Console2;
             keyHandler.WriteNewString(previous_stat.Text);
             for (int i = previous_stat._cursorLimit; i > previous_stat._cursorPos; i--)

@@ -266,6 +266,18 @@ namespace YYHEggEgg.Logger
         private static bool Writelines_waiting_handle
             => !writelines.IsEmpty || !writelines_handlelist.IsEmpty;
 
+        private static IAutoCompleteHandler? _autoCompleteHandler = null;
+        private static bool _autoCompleteHandler_updated = true;
+        public static IAutoCompleteHandler? AutoCompleteHandler
+        {
+            get => _autoCompleteHandler;
+            set
+            {
+                _autoCompleteHandler = value;
+                _autoCompleteHandler_updated = true;
+            }
+        }
+
         private static async Task BackgroundUpdate()
         {
             bool pre_reading = false;
@@ -276,7 +288,7 @@ namespace YYHEggEgg.Logger
                     bool cur_handle_writelines = Writelines_waiting_handle;
                     if (qhandle_consolekeys.IsEmpty && !_inputprefix_changed
                         && !(!pre_reading && isReading) // not starting reading nearly
-                        && !cur_handle_writelines)
+                        && !cur_handle_writelines && !_autoCompleteHandler_updated)
                     {
                         if (ending)
                         {
@@ -288,8 +300,9 @@ namespace YYHEggEgg.Logger
                     }
                     _inputprefix_changed = false;
                     
-                    if (isReading && cur_handle_writelines)
+                    if (isReading && (cur_handle_writelines || _autoCompleteHandler_updated))
                     {
+                        _autoCompleteHandler_updated = false;
                         // Keep the KeyHandler status
                         keyHandler.ClearWrittingStatus();
                     }
@@ -304,10 +317,11 @@ namespace YYHEggEgg.Logger
                     if (isReading)
                     {
                         string cur_prefix = isReading ? InputPrefix : string.Empty;
-                        if (cur_handle_writelines)
+                        if (cur_handle_writelines || _autoCompleteHandler_updated)
                         {
                             pre_reading = isReading;
-                            keyHandler = KeyHandler.RecoverWrittingStatus(cur_prefix, keyHandler);
+                            keyHandler = KeyHandler.RecoverWrittingStatus(
+                                cur_prefix, keyHandler, _autoCompleteHandler);
                         }
                         while (qhandle_consolekeys.TryDequeue(out var keyInfo))
                         {
@@ -325,7 +339,7 @@ namespace YYHEggEgg.Logger
                             readqueue.Enqueue(keyHandler.Text);
                             if (lines.Count == 0 || lines[0] != keyHandler.Text)
                                 lines.Add(keyHandler.Text);
-                            keyHandler = new(shared_absconsole, lines, null, cur_prefix);
+                            keyHandler = new(shared_absconsole, lines, _autoCompleteHandler, cur_prefix);
                         }
                     }
                     await Task.Delay(50);
