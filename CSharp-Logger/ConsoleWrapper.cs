@@ -264,7 +264,6 @@ namespace YYHEggEgg.Logger
 
         private static async Task BackgroundUpdate()
         {
-            int cur_prefix_length = 0;
             bool pre_reading = false;
             while (!ending)
             {
@@ -282,40 +281,37 @@ namespace YYHEggEgg.Logger
                         await Task.Delay(50);
                         continue;
                     }
-                    else
+                    _inputprefix_changed = false;
+                    // Keep the KeyHandler status
+                    keyHandler.ClearWrittingStatus();
+
+                    while (writelines.TryDequeue(out var line))
+                        InnerWriteLine(line);
+                    while (writelines_handlelist.TryDequeue(out var line))
+                        InnerWriteLine(line);
+
+                    string cur_prefix = isReading ? InputPrefix : string.Empty;
+                    pre_reading = isReading;
+                    keyHandler = KeyHandler.RecoverWrittingStatus(cur_prefix, keyHandler);
+                    while (qhandle_consolekeys.TryDequeue(out var keyInfo))
                     {
-                        _inputprefix_changed = false;
-                        // Keep the KeyHandler status
-                        keyHandler.ClearWrittingStatus();
-
-                        while (writelines.TryDequeue(out var line))
-                            InnerWriteLine(line);
-                        while (writelines_handlelist.TryDequeue(out var line))
-                            InnerWriteLine(line);
-
-                        string cur_prefix = isReading ? InputPrefix : string.Empty;
-                        pre_reading = isReading;
-                        cur_prefix_length = cur_prefix.Length;
-                        keyHandler = KeyHandler.RecoverWrittingStatus(cur_prefix, keyHandler);
-                        while (qhandle_consolekeys.TryDequeue(out var keyInfo))
+                        if (keyInfo.Modifiers == ConsoleModifiers.Control && keyInfo.Key == ConsoleKey.C)
                         {
-                            if (keyInfo.Key != ConsoleKey.Enter)
-                            {
-                                keyHandler.Handle(keyInfo);
-                                continue;
-                            }
-                            else if (keyInfo.Modifiers == ConsoleModifiers.Control && keyInfo.Key == ConsoleKey.C)
-                            {
-                                ShutdownRequest_Callback();
-                                continue;
-                            }
-                            Console.WriteLine();
-                            readqueue.Enqueue(keyHandler.Text);
-                            if (lines.Count == 0 || lines[0] != keyHandler.Text)
-                                lines.Add(keyHandler.Text);
-                            keyHandler = new(shared_absconsole, lines, null, cur_prefix.Length);
+                            ShutdownRequest_Callback();
+                            continue;
                         }
+                        else if (keyInfo.Key != ConsoleKey.Enter)
+                        {
+                            keyHandler.Handle(keyInfo);
+                            continue;
+                        }
+                        Console.WriteLine();
+                        readqueue.Enqueue(keyHandler.Text);
+                        if (lines.Count == 0 || lines[0] != keyHandler.Text)
+                            lines.Add(keyHandler.Text);
+                        keyHandler = new(shared_absconsole, lines, null, cur_prefix.Length);
                     }
+                    await Task.Delay(50);
                 }
                 catch { }
             }

@@ -8,7 +8,7 @@
     <GenerateDocumentationFile>False</GenerateDocumentationFile>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Title>EggEgg.CSharp-Logger</Title>
-    <Version>3.3.50-beta</Version>
+    <Version>3.3.51-beta</Version>
     <Authors>YYHEggEgg</Authors>
     <Company>YYHEggEgg</Company>
     <Description>A easy logger that supports log and CLI interacting.</Description>
