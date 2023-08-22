@@ -8,7 +8,7 @@
     <GenerateDocumentationFile>False</GenerateDocumentationFile>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Title>EggEgg.CSharp-Logger</Title>
-    <Version>3.8.50-beta</Version>
+    <Version>3.8.51-beta</Version>
     <Authors>YYHEggEgg</Authors>
     <Company>YYHEggEgg</Company>
     <Description>A convenient C# Logger implementation, with reliable console interaction encapsulation support available.</Description>
@@ -63,12 +63,13 @@ Main changes:
 - The experience of modifying text when the text volume is large in `ConsoleWrapper` has been greatly improved.
 - Now setting `ConsoleWrapper.AutoCompleteHandler` can auto-complete user input.
 - Optimized the method indication in the `Log`, `BaseLogger` and `LoggerChannel` classes.</PackageReleaseNotes>
-    <IncludeSymbols>False</IncludeSymbols>
+    <IncludeSymbols>True</IncludeSymbols>
     <PackageId>EggEgg.$(AssemblyName)</PackageId>
     <Product>EggEgg.$(AssemblyName)</Product>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <NeutralLanguage>en-US</NeutralLanguage>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
   <ItemGroup>

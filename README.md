@@ -8,7 +8,7 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
 
 ## Update
 
-### v4.0.0 - Preview 9 (v3.8.50-beta)
+### v4.0.0 - Preview 9 Patch 1 (v3.8.51-beta)
 
 (Note: This is the last minor preview version before the official version v4.0.0. Its latest Patch will be identical to the official version v4.0.0.)
 
