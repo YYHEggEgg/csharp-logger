@@ -155,7 +155,8 @@ namespace Internal.ReadLine
                 if (((_prompt_length + _cursorPos) % Console2.BufferWidth == 0)
                     && (Console2.CursorLeft == Console2.BufferWidth - 1))
                 {
-                    Console2.SetCursorPosition(0, Console2.CursorTop + 1);
+                    Console2.Write(" ");
+                    Console2.SetCursorPosition(0, Console2.CursorTop);
                 }
                 #endregion
             }
@@ -546,6 +547,8 @@ namespace Internal.ReadLine
                 if (i == operate_line_count - 1)
                     Console2.SetCursorPosition(0, current_line);
                 current_line--;
+                if (current_line < 0) 
+                    break;
             }
             Debug.Assert(IsStartOfBuffer());
         }

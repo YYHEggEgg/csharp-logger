@@ -6,7 +6,7 @@
 [![NuGet](https://img.shields.io/nuget/v/EggEgg.CSharp-Logger.svg)](https://www.nuget.org/packages/EggEgg.CSharp-Logger)
 
 ## 更新
-### v4.0.0 - Preview 4 (v3.3.50-beta)
+### v4.0.0 - Preview 4 Patch 2 (v3.3.52-beta)
 这个版本几乎重新实现了整个 logger，将静态类 `Log` 的主要功能提取并封装到了 `BaseLogger`。原有的功能不受影响，并修复了一些 bug，但可能会遇到一些中断性变更。
 
 注意，尽管 `BaseLogger` 是一套完整的日志实现，想要使用它也必须先调用 `Log.Initialize`。此外，尽管可以为每个 `BaseLogger` 提供不同的初始化 `LoggerConfig`，其关键的字段必须与 `Log.Initialize` 时提供的版本统一，以保持整个程序中 Logger 的各项行为一致。  
@@ -32,6 +32,9 @@
   将日志输出为表格有助于在数据量极大时进行分析，尤其是如果程序中大量模块化代码调用 Log 方法时不会改变 sender 参数的情况下。此配置不会对输出至控制台的内容生效。
 - 现在可以为 `LogTraceListener` 和 `LogTextWriter` 提供 `basedlogger` 参数，来改变它们输出的目标 `BaseLogger`。默认值仍为全局静态类共享的 `Log.GlobalBasedLogger`.
 - 借鉴了一些 [tonerdo/readline](https://github.com/tonerdo/readline) 的代码来实现新版的 `ConsoleWrapper`。但请注意，本版本的 nuget 包不包含对 nuget 包 [ReadLine](https://www.nuget.org/packages/ReadLine) 的引用，也不包含类 `ReadLine`。所有操作仍封装为 `ConsoleWrapper`。
+
+Patch 更改：
+- 修复了在 `ConsoleWrapper` 读取输入内容时，如果读取的内容超过了控制台的最下端，`ConsoleWrapper` 的所有功能均会异常停止工作的问题。
 
 ### 中断性变更
 - 现在如果用户在 `Log.Initialize` 时指示使用程序路径（为 `LoggerConfig.Use_Working_Directory` 提供了 `false`），并且其无法访问，相比之前的实现，其不会发出警告程序会 fallback 到工作目录。同理，在压缩过往日志文件时如果出现了错误也不会有警告提示。

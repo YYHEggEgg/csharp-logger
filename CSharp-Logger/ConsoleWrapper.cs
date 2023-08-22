@@ -282,34 +282,40 @@ namespace YYHEggEgg.Logger
                         continue;
                     }
                     _inputprefix_changed = false;
-                    // Keep the KeyHandler status
-                    keyHandler.ClearWrittingStatus();
+                    if (isReading)
+                    {
+                        // Keep the KeyHandler status
+                        keyHandler.ClearWrittingStatus();
+                    }
 
                     while (writelines.TryDequeue(out var line))
                         InnerWriteLine(line);
                     while (writelines_handlelist.TryDequeue(out var line))
                         InnerWriteLine(line);
 
-                    string cur_prefix = isReading ? InputPrefix : string.Empty;
-                    pre_reading = isReading;
-                    keyHandler = KeyHandler.RecoverWrittingStatus(cur_prefix, keyHandler);
-                    while (qhandle_consolekeys.TryDequeue(out var keyInfo))
+                    if (isReading)
                     {
-                        if (keyInfo.Modifiers == ConsoleModifiers.Control && keyInfo.Key == ConsoleKey.C)
+                        string cur_prefix = isReading ? InputPrefix : string.Empty;
+                        pre_reading = isReading;
+                        keyHandler = KeyHandler.RecoverWrittingStatus(cur_prefix, keyHandler);
+                        while (qhandle_consolekeys.TryDequeue(out var keyInfo))
                         {
-                            ShutdownRequest_Callback();
-                            continue;
+                            if (keyInfo.Modifiers == ConsoleModifiers.Control && keyInfo.Key == ConsoleKey.C)
+                            {
+                                ShutdownRequest_Callback();
+                                continue;
+                            }
+                            else if (keyInfo.Key != ConsoleKey.Enter)
+                            {
+                                keyHandler.Handle(keyInfo);
+                                continue;
+                            }
+                            Console.WriteLine();
+                            readqueue.Enqueue(keyHandler.Text);
+                            if (lines.Count == 0 || lines[0] != keyHandler.Text)
+                                lines.Add(keyHandler.Text);
+                            keyHandler = new(shared_absconsole, lines, null, cur_prefix.Length);
                         }
-                        else if (keyInfo.Key != ConsoleKey.Enter)
-                        {
-                            keyHandler.Handle(keyInfo);
-                            continue;
-                        }
-                        Console.WriteLine();
-                        readqueue.Enqueue(keyHandler.Text);
-                        if (lines.Count == 0 || lines[0] != keyHandler.Text)
-                            lines.Add(keyHandler.Text);
-                        keyHandler = new(shared_absconsole, lines, null, cur_prefix.Length);
                     }
                     await Task.Delay(50);
                 }
