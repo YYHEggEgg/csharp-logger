@@ -38,6 +38,13 @@ namespace YYHEggEgg.Logger.readline.Abstractions
             _tmpCursor_desync = true;
         }
 
+        public void Write(char value)
+        {
+            Flush();
+            Console.Write(value);
+            Resync();
+        }
+
         public void Write(string value)
         {
             Flush();

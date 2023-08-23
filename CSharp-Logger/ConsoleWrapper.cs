@@ -341,7 +341,6 @@ namespace YYHEggEgg.Logger
                             keyHandler = new(shared_absconsole, lines, _autoCompleteHandler, cur_prefix);
                         }
                     }
-                    await Task.Delay(50);
                 }
                 catch { }
             }

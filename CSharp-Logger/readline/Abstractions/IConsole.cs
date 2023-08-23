@@ -8,6 +8,7 @@ namespace Internal.ReadLine.Abstractions
         int BufferHeight { get; }
         void SetCursorPosition(int left, int top);
         // void SetBufferSize(int width, int height);
+        void Write(char value);
         void Write(string value);
         void WriteLine(string value);
         /// <summary>

@@ -1,3 +1,4 @@
+using Cyjb;
 using Internal.ReadLine.Abstractions;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -26,6 +27,33 @@ namespace Internal.ReadLine
         /// 用户敲击 Control+C (^C) 时发生。
         /// </summary>
         public event Action? EOFSent;
+
+        #region Writting Area length calculate
+        private int _display_len = 0;
+        private int _target_consolewidth;
+        private void AddChar(char ch)
+        {
+            var actual_ch_len = ch.Width();
+            if (_target_consolewidth - (_display_len % _target_consolewidth) >= 2)
+                _display_len += actual_ch_len;
+            else _display_len = (_display_len / _target_consolewidth) * _target_consolewidth + actual_ch_len;
+        }
+
+        /// <summary>
+        /// 模拟控制台计算输入区的字符占用长度。
+        /// </summary>
+        /// <param name="_text_index_limit">从 0 开始，计算截止到的字符数。左闭右开区间（for 循环的常见规则）。</param>
+        /// <returns></returns>
+        private int CalcWritingAreaLen(int _text_index_limit = -1)
+        {
+            if (_text_index_limit == -1) _text_index_limit = _text.Length;
+            _display_len = 0;
+            _target_consolewidth = Console2.BufferWidth;
+            foreach (var ch in _prompt) AddChar(ch);
+            for (int i = 0; i < _text_index_limit; i++) AddChar(_text[i]);
+            return _display_len;
+        }
+        #endregion
 
         /// <summary>
         /// 是否为整个输入内容的开头。
@@ -61,9 +89,18 @@ namespace Internal.ReadLine
                 return;
 
             if (IsStartOfBuffer())
-                Console2.SetCursorPosition(Console2.BufferWidth - 1, Console2.CursorTop - 1);
+            {
+                var prelen = CalcWritingAreaLen(_cursorPos);
+                if (prelen % Console2.BufferWidth == Console2.BufferWidth - 1
+                    && _text[_cursorPos - 1].Width() == 2)
+                    Console2.SetCursorPosition(
+                        Console2.BufferWidth - 3, Console2.CursorTop - 1);
+                else Console2.SetCursorPosition(
+                        Console2.BufferWidth - 2, Console2.CursorTop - 1);
+            }
             else
-                Console2.SetCursorPosition(Console2.CursorLeft - 1, Console2.CursorTop);
+                Console2.SetCursorPosition(
+                    Console2.CursorLeft - _text[_cursorPos - 1].Width(), Console2.CursorTop);
 
             _cursorPos--;
         }
@@ -123,7 +160,12 @@ namespace Internal.ReadLine
             if (IsEndOfBuffer())
                 Console2.SetCursorPosition(0, Console2.CursorTop + 1);
             else
-                Console2.SetCursorPosition(Console2.CursorLeft + 1, Console2.CursorTop);
+            {
+                if (Console2.CursorLeft + _text[_cursorPos].Width() >= Console2.BufferWidth - 1)
+                    Console2.SetCursorPosition(0, Console2.CursorTop + 1);
+                else Console2.SetCursorPosition(
+                    Console2.CursorLeft + _text[_cursorPos].Width(), Console2.CursorTop);
+            }
 
             _cursorPos++;
         }
@@ -170,23 +212,48 @@ namespace Internal.ReadLine
         /// </summary>
         private void WriteChar() => WriteChar(_keyInfo.KeyChar);
 
+        /// <summary>
+        /// 利用特殊的规则（强制控制台每行最后留出一格供以全角字符操作），将字符写入控制台。
+        /// </summary>
+        private void ConsoleWriteChar(char ch)
+        {
+            Console2.Write(ch);
+            if (Console2.CursorLeft == Console2.BufferWidth - 1)
+            {
+                Console2.Write("  ");
+                Console2.SetCursorPosition(0, Console2.CursorTop);
+            }
+        }
+
+        /// <summary>
+        /// 利用特殊的规则（强制控制台每行最后留出一格供以全角字符操作），将字符写入控制台。
+        /// </summary>
+        private void ConsoleWriteString(string str)
+        {
+            foreach (var ch in str) ConsoleWriteChar(ch);
+        }
+
+        /// <summary>
+        /// 利用特殊的规则（强制控制台每行最后留出一格供以全角字符操作），将字符写入控制台。
+        /// </summary>
+        /// <param name="startindex">从 0 开始，计算截止到的字符数。左闭右开区间（for 循环的常见规则）。</param>
+        private void ConsoleWriteStringBuilder(StringBuilder sb, int startindex = 0)
+        {
+            for (int i = startindex; i < sb.Length; i++) ConsoleWriteChar(sb[i]);
+        }
+
         private void WriteChar(char c)
         {
             if (IsEndOfLine())
             {
                 _text.Append(c);
-                Console2.Write(c.ToString());
+                Console2.Write(c);
                 _cursorPos++;
-                #region Corner case: new line handle
-                // Researches show that the cursor don't switch to the
-                // next line when it reaches the end of a line.
-                if (((_prompt.Length + _cursorPos) % Console2.BufferWidth == 0)
-                    && (Console2.CursorLeft == Console2.BufferWidth - 1))
+                if (Console2.CursorLeft == Console2.BufferWidth - 1)
                 {
-                    Console2.Write(" ");
+                    Console2.Write("   ");
                     Console2.SetCursorPosition(0, Console2.CursorTop);
                 }
-                #endregion
             }
             else
             {
@@ -194,7 +261,8 @@ namespace Internal.ReadLine
                 int top = Console2.CursorTop;
                 string str = _text.ToString().Substring(_cursorPos);
                 _text.Insert(_cursorPos, c);
-                Console2.Write(c.ToString() + str);
+                ConsoleWriteChar(c);
+                ConsoleWriteString(str);
                 Console2.SetCursorPosition(left, top);
                 MoveCursorRight();
             }
@@ -213,10 +281,10 @@ namespace Internal.ReadLine
             MoveCursorLeft();
             int index = _cursorPos;
             _text.Remove(index, 1);
-            string replacement = _text.ToString().Substring(index);
             int left = Console2.CursorLeft;
             int top = Console2.CursorTop;
-            Console2.Write(string.Format("{0} ", replacement));
+            ConsoleWriteStringBuilder(_text, index);
+            ConsoleWriteString("  ");
             Console2.SetCursorPosition(left, top);
             _cursorLimit--;
         }
@@ -231,10 +299,10 @@ namespace Internal.ReadLine
 
             int index = _cursorPos;
             _text.Remove(index, 1);
-            string replacement = _text.ToString().Substring(index);
             int left = Console2.CursorLeft;
             int top = Console2.CursorTop;
-            Console2.Write(string.Format("{0} ", replacement));
+            ConsoleWriteStringBuilder(_text, index);
+            ConsoleWriteString("  ");
             Console2.SetCursorPosition(left, top);
             _cursorLimit--;
         }
@@ -580,7 +648,7 @@ namespace Internal.ReadLine
         {
             var tmp_cursor = _cursorPos;
             MoveCursorEnd();
-            int calcCursor = _prompt.Length + _cursorPos;
+            int calcCursor = CalcWritingAreaLen();
             _cursorPos = tmp_cursor;
 
             int operate_line_count = calcCursor / Console2.BufferWidth + 1;
@@ -603,8 +671,6 @@ namespace Internal.ReadLine
             IAutoCompleteHandler? autoCompleteHandler)
         {
             KeyHandler keyHandler = new(previous_stat.Console2, previous_stat._history, autoCompleteHandler, prompt);
-            var copyfrom_actions = previous_stat._keyActions;
-            var write_actions = keyHandler._keyActions;
 
             #region Auto Completion
             if (autoCompleteHandler != null &&

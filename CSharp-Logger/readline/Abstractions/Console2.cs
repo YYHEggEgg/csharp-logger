@@ -20,6 +20,14 @@ namespace Internal.ReadLine.Abstractions
                 Console.SetCursorPosition(left, top);
         }
 
+        public void Write(char value)
+        {
+            if (PasswordMode)
+                value = default(char);
+
+            Console.Write(value);
+        }
+
         public void Write(string value)
         {
             if (PasswordMode)
