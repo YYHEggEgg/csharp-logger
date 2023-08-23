@@ -8,7 +8,7 @@
     <GenerateDocumentationFile>False</GenerateDocumentationFile>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Title>EggEgg.CSharp-Logger</Title>
-    <Version>3.8.51-beta</Version>
+    <Version>3.8.52-beta</Version>
     <Authors>YYHEggEgg</Authors>
     <Company>YYHEggEgg</Company>
     <Description>A convenient C# Logger implementation, with reliable console interaction encapsulation support available.</Description>
@@ -16,7 +16,7 @@
     <PackageProjectUrl>https://github.com/YYHEggEgg/csharp-logger</PackageProjectUrl>
     <RepositoryUrl>https://github.com/YYHEggEgg/csharp-logger</RepositoryUrl>
     <PackageTags>Log;CLI</PackageTags>
-    <PackageReleaseNotes>Breaking changes in v4.0.0 - Preview 9 (v3.8.50-beta)
+    <PackageReleaseNotes>Breaking changes in v4.0.0 - Preview 9 Patch 2 (v3.8.52-beta)
 
 - Now if the user indicates to use the program path (provided `false` for `LoggerConfig.Use_Working_Directory`) during `Log.Initialize` and it cannot be accessed, compared with the previous implementation, it will not issue a warning that the program will fallback to the working directory. Similarly, there will be no warning prompts if an error occurs when compressing past log files.
 - **Important**: In the new version, not only `latest.log` and `latest.debug.log`, but **any log files under the `logs` folder that match the wildcard `latest.*.log`** will be renamed to the last time they were written when `Log.Initialize` processes past logs.  

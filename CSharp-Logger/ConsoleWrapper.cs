@@ -311,12 +311,12 @@ namespace YYHEggEgg.Logger
                             InnerWriteLine(line);
                         while (writelines_handlelist.TryDequeue(out var line))
                             InnerWriteLine(line);
-                        if (isReading) shared_absconsole.Resync();
+                        shared_absconsole.Resync();
                     }
                     if (isReading)
                     {
                         string cur_prefix = isReading ? InputPrefix : string.Empty;
-                        if (cur_handle_writelines || _autoCompleteHandler_updated)
+                        if (cur_handle_writelines || _autoCompleteHandler_updated || !pre_reading)
                         {
                             pre_reading = isReading;
                             keyHandler = KeyHandler.RecoverWrittingStatus(

@@ -3,7 +3,7 @@ using YYHEggEgg.Logger;
 
 internal class Program
 {
-    private static void Main(string[] args)
+    private static async Task Main(string[] args)
     {
         Log.Initialize(new LoggerConfig(
             max_Output_Char_Count: 1024,
@@ -17,7 +17,7 @@ internal class Program
             console_Minimum_LogLevel: LogLevel.Warning,
 #endif
             debug_LogWriter_AutoFlush: true,
-            enable_Detailed_Time: true
+            enable_Detailed_Time: false
             ));
 
         BaseLogger separate_logger = new BaseLogger(new LoggerConfig(
@@ -27,7 +27,7 @@ internal class Program
             global_Minimum_LogLevel: LogLevel.Verbose,
             console_Minimum_LogLevel: LogLevel.Information,
             debug_LogWriter_AutoFlush: true,
-            enable_Detailed_Time: true
+            enable_Detailed_Time: false
             ), new LogFileConfig
             {
                 AutoFlushWriter = true,
@@ -51,12 +51,14 @@ internal class Program
         Log.PushLog("Push a verbose log!", LogLevel.Verbose, "TSESTender");
 
         // 2. Color test
-        ConsoleWrapper.InputPrefix = "WrapperCLI> ";
         Log.Erro("<color=</color>" +
             "<color=Yellow>yelolow text</color>" +
             "<color=Yellow></color><-nothing text|" +
             "<color=Yellow><color=White><color=Blue><>></color></color></color>");
         Log.Info("<color=Blue>blue text</color>-<>>><<<color=Yellow>yelolow text</color>/<><color=FF>no color text</color>", "Should not output if Release");
+        Log.Info("start 1st reading attempt in 1s...");
+        await Task.Delay(1000);
+        ConsoleWrapper.InputPrefix = "WrapperCLI> ";
         string res = ConsoleWrapper.ReadLine();
         Log.Warn(res, "ReadLine");
         Log.Info("Now auto complete enabled... (Press Tab/Shift+Tab)");
