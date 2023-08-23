@@ -8,7 +8,7 @@
     <GenerateDocumentationFile>False</GenerateDocumentationFile>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Title>EggEgg.CSharp-Logger</Title>
-    <Version>3.8.52-beta</Version>
+    <Version>3.8.53-beta</Version>
     <Authors>YYHEggEgg</Authors>
     <Company>YYHEggEgg</Company>
     <Description>A convenient C# Logger implementation, with reliable console interaction encapsulation support available.</Description>
@@ -16,7 +16,7 @@
     <PackageProjectUrl>https://github.com/YYHEggEgg/csharp-logger</PackageProjectUrl>
     <RepositoryUrl>https://github.com/YYHEggEgg/csharp-logger</RepositoryUrl>
     <PackageTags>Log;CLI</PackageTags>
-    <PackageReleaseNotes>Breaking changes in v4.0.0 - Preview 9 Patch 2 (v3.8.52-beta)
+    <PackageReleaseNotes>Breaking changes in v4.0.0 - Preview 9 Patch 3 (v3.8.53-beta)
 
 - Now if the user indicates to use the program path (provided `false` for `LoggerConfig.Use_Working_Directory`) during `Log.Initialize` and it cannot be accessed, compared with the previous implementation, it will not issue a warning that the program will fallback to the working directory. Similarly, there will be no warning prompts if an error occurs when compressing past log files.
 - **Important**: In the new version, not only `latest.log` and `latest.debug.log`, but **any log files under the `logs` folder that match the wildcard `latest.*.log`** will be renamed to the last time they were written when `Log.Initialize` processes past logs.  
@@ -30,7 +30,7 @@
 - The new reading method of `ConsoleWrapper` is similar to [GNU Readline](https://en.wikipedia.org/wiki/GNU_Readline), but this causes a conflict with the past behavior of Ctrl+C, so the function of Ctrl+C triggering the `ConsoleWrapper.ShutDownRequest` event is retained. In addition to this, all other functions of the attached GNU readline shortcut keys can be regarded as breaking changes.
 - This project will not be backward compatible with any version below `.NET 6.0` in the future, including `.NET Standard 2.1`.
 
-Changes in v4.0.0 - Preview 9 (v3.8.50-beta)
+Changes in v4.0.0 - Preview 9 Patch 3 (v3.8.53-beta)
 
 (Note: This is the last minor preview version before the official version v4.0.0. Its latest Patch will be identical to the official version v4.0.0.)
 
@@ -62,6 +62,7 @@ Main changes:
 - Some codes of [tonerdo/readline](https://github.com/tonerdo/readline) are used to implement the new version of `ConsoleWrapper`. But please note that this version of the nuget package does not include references to the nuget package [ReadLine](https://www.nuget.org/packages/ReadLine), nor does it include the `ReadLine` class. All operations are still encapsulated as `ConsoleWrapper`.
 - The experience of modifying text when the text volume is large in `ConsoleWrapper` has been greatly improved.
 - Now setting `ConsoleWrapper.AutoCompleteHandler` can auto-complete user input.
+- In order to support the input of Chinese and full-width characters and other wide characters, while avoiding the processing of various corner cases, now `ConsoleWrapper` reduces the number of characters that can fit in a single line by 1 bit, which is reserved as the extra space for full-width characters.
 - Optimized the method indication in the `Log`, `BaseLogger` and `LoggerChannel` classes.</PackageReleaseNotes>
     <IncludeSymbols>True</IncludeSymbols>
     <PackageId>EggEgg.$(AssemblyName)</PackageId>

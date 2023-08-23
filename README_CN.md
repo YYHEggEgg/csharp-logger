@@ -8,7 +8,7 @@
 
 ## 更新
 
-### v4.0.0 - Preview 9 Patch 2 (v3.8.52-beta)
+### v4.0.0 - Preview 9 Patch 3 (v3.8.53-beta)
 
 （注：这是 v4.0.0 正式版本前的最后一个次要预览版本。它的最新 Patch 将会与正式版本 v4.0.0 完全一致。）
 
@@ -54,6 +54,7 @@
   > 识别的换行序列列表是 CR (U+000D)、LF (U+000A)，CRLF (U+000D U+000A)、NEL (U+0085)、LS (U+2028)、FF (U+000C) 和 PS (U+2029)。此列表由 Unicode Standard 第 5.8 条建议 R4 和表 5-2 提供。
 - `ConsoleWrapper` 现在支持与 bash 类似的历史合并，也就是说连续执行一条命令多次并不会在历史中留下多次记录。
 - `ConsoleWrapper` 的新读入方式类似于 [GNU Readline](https://en.wikipedia.org/wiki/GNU_Readline)，但这导致 Ctrl+C 的过往行为与其产生了冲突，因此保留了 Ctrl+C 引发 `ConsoleWrapper.ShutDownRequest` 事件的功能。除此之外，其他所有下附 GNU readline 快捷键的功能均可以视为中断性变更。
+- 为了支持中文及全角字符等宽字符的输入，同时避开各种 corner case 的处理，现在 `ConsoleWrapper` 单行内可容纳的字符量减少了 1 位，最后一位作为承载宽字符的额外空间。
 - 该项目未来不会向下兼容到 `.NET 6.0` 以下的任何版本，包括 `.NET Standard 2.1`。
 
 ## 功能
@@ -66,7 +67,7 @@
 - **并行用户输入/日志输出支持**  
   如果您想在输出日志的同时读取用户的输入（例如制作支持 CLI 交互的程序），则提供了 `ConsoleWrapper`。  
   您可以将 `ConsoleWrapper.InputPrefix` 的值设置为等待输入的前缀，就像 `mysql>` 或 `ubuntu ~$`，并使用 `ConsoleWrapper.ReadLineAsync` 读取输入。**通过设置 `ConsoleWrapper.AutoCompleteHandler` 还可对用户的输入进行自动补全**。  
-  它接受部分 [GNU readline](https://en.wikipedia.org/wiki/GNU_Readline) 的快捷键读取数据。下表是支持列表：
+  它接受部分 [GNU readline](https://en.wikipedia.org/wiki/GNU_Readline) 的快捷键读取数据，但相比其他 .NET 的 GNU readline 版本，**它支持中文的输入**。下表是支持列表：
 
   | 快捷键 | 功能 |
   | ------------------------------ | --------------------------------- |
@@ -86,7 +87,7 @@
   | `Ctrl`+`P` / `↑`               | 上一条命令历史 |
   | `Ctrl`+`U`                     | 切除自光标所在位置开始（不包括）至输入起始点的字符 |
   | `Ctrl`+`W`                     | 切除光标前的一个单词，即切除自光标所在位置开始（不包括）至后方（一般为左方）第一个空格（不包括）的字符 |
-  | `Ctrl`+`T`                     | 转置（即反转）当前光标位置的前一个字符与后一个字符，并使光标随后前进一位（这里的前进应指向右） |
+  | ~~`Ctrl`+`T`~~                     | 由于引入中文、全角输入支持而放弃 ~~转置（即反转）当前光标位置的前一个字符与后一个字符，并使光标随后前进一位~~ |
   | `Backspace`                    | 删除光标前的一个字符 |
   | `Ctrl`+`D` / `Delete`          | 删除光标所在位置的一个字符 |
 

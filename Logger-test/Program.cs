@@ -107,7 +107,7 @@ internal class Program
         public string[] GetSuggestions(string text, int index)
         {
             return new string[]
-                { "autocmp1_01", "autocmp1_02", "autocmpl_03", "autocmpl_final" };
+                { "autocmp1_01", "autocmp1_02", "autocmpl_03", "测试中文autocompl01", "测试中文autocmpl02" };
         }
     }
 }

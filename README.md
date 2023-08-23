@@ -8,7 +8,7 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
 
 ## Update
 
-### v4.0.0 - Preview 9 Patch 2 (v3.8.52-beta)
+### v4.0.0 - Preview 9 Patch 3 (v3.8.53-beta)
 
 (Note: This is the last minor preview version before the official version v4.0.0. Its latest Patch will be identical to the official version v4.0.0.)
 
@@ -40,6 +40,7 @@ Main changes:
 - Some codes of [tonerdo/readline](https://github.com/tonerdo/readline) are used to implement the new version of `ConsoleWrapper`. But please note that this version of the nuget package does not include references to the nuget package [ReadLine](https://www.nuget.org/packages/ReadLine), nor does it include the `ReadLine` class. All operations are still encapsulated as `ConsoleWrapper`.
 - The experience of modifying text when the text volume is large in `ConsoleWrapper` has been greatly improved.
 - Now setting `ConsoleWrapper.AutoCompleteHandler` can auto-complete user input.
+- In order to support the input of Chinese and full-width characters and other wide characters, while avoiding the processing of various corner cases, now `ConsoleWrapper` reduces the number of characters that can fit in a single line by 1 bit, which is reserved as the extra space for full-width characters.
 - Optimized the method indication in the `Log`, `BaseLogger` and `LoggerChannel` classes.
 
 ### Breaking changes
@@ -65,8 +66,8 @@ Main changes:
   The Color value should be a valid value in [ConsoleColor](https://learn.microsoft.com/en-us/dotnet/api/system.consolecolor), e.g. "Red", "Green". Recognized color tags will be removed in the log file.
 - **Parallel user input/log output support**  
   If you want to read the user's input while outputting logs in parallel (e.g. making a CLI program), `ConsoleWrapper` is provided.  
-  You can set the value of `ConsoleWrapper.InputPrefix` as a waiting-input prefix, just like `mysql>` or `ubuntu ~$`, and use `ConsoleWrapper.ReadLineAsync` to read inputs from the user.  
-  It accepts some [GNU readline](https://en.wikipedia.org/wiki/GNU_Readline) shortcut keys to read data. The following table is the support list:
+  You can set the value of `ConsoleWrapper.InputPrefix` as a waiting-input prefix, just like `mysql>` or `ubuntu ~$`, and use `ConsoleWrapper.ReadLineAsync` to read inputs from the user. **You can also set `ConsoleWrapper.AutoCompleteHandler` and enable auto-completion of user's input**.  
+  It accepts some [GNU readline](https://en.wikipedia.org/wiki/GNU_Readline) shortcut keys to read data, but comparing with other .NET GNU readline implementions, **it fully supports Chinese and full-width characters input**. The following table is the support list:
 
   | Shortcut key | Function |
   | ------------------------------ | --------------------------------- |
@@ -86,7 +87,7 @@ Main changes:
   | `Ctrl`+`P` / `↑`               | Previous command history |
   | `Ctrl`+`U`                     | Cut off the characters from the cursor position (not including) to the beginning of the input |
   | `Ctrl`+`W`                     | Cut off a word before the cursor, that is, cut off the characters from the cursor position (not including) to the first space behind (usually left) (not including) |
-  | `Ctrl`+`T`                     | Transpose (reverse) the character before the current cursor position with the character after it, and move the cursor forward one position (to the right) |
+  | ~~`Ctrl`+`T`~~                 | Abandoned due to the introduction of Chinese, full-width input support ~~Transpose (reverse) the character before the current cursor position with the character after it, and move the cursor forward one position~~ |
   | `Backspace`                    | Delete one character before the cursor |
   | `Ctrl`+`D` / `Delete`          | Delete one character at the cursor position |
 

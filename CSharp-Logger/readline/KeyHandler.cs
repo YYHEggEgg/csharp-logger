@@ -36,7 +36,8 @@ namespace Internal.ReadLine
             var actual_ch_len = ch.Width();
             if (_target_consolewidth - (_display_len % _target_consolewidth) >= 2)
                 _display_len += actual_ch_len;
-            else _display_len = (_display_len / _target_consolewidth) * _target_consolewidth + actual_ch_len;
+            else _display_len = (int)Math.Ceiling((double)_display_len / _target_consolewidth) 
+                    * _target_consolewidth + actual_ch_len;
         }
 
         /// <summary>
@@ -228,9 +229,23 @@ namespace Internal.ReadLine
         /// <summary>
         /// 利用特殊的规则（强制控制台每行最后留出一格供以全角字符操作），将字符写入控制台。
         /// </summary>
-        private void ConsoleWriteString(string str)
+        /// <param name="startindex">从 0 开始，计算截止到的字符数。左闭右开区间（for 循环的常见规则）。</param>
+        private void ConsoleWriteString(string str, int startindex = 0)
         {
-            foreach (var ch in str) ConsoleWriteChar(ch);
+            int _tmpcursorleft = Console2.CursorLeft;
+            int _cutsb_start = startindex;
+            for (int i = startindex; i < str.Length; i++)
+            {
+                _tmpcursorleft += str[i].Width();
+                if (_tmpcursorleft >= Console2.BufferWidth - 1)
+                {
+                    Console2.Write($"{str.Substring(_cutsb_start, i - _cutsb_start + 1)}  ");
+                    Console2.SetCursorPosition(0, Console2.CursorTop);
+                    _tmpcursorleft = Console2.CursorLeft;
+                    _cutsb_start = i + 1;
+                }
+            }
+            Console2.Write(str.Substring(_cutsb_start, str.Length - _cutsb_start));
         }
 
         /// <summary>
@@ -239,7 +254,20 @@ namespace Internal.ReadLine
         /// <param name="startindex">从 0 开始，计算截止到的字符数。左闭右开区间（for 循环的常见规则）。</param>
         private void ConsoleWriteStringBuilder(StringBuilder sb, int startindex = 0)
         {
-            for (int i = startindex; i < sb.Length; i++) ConsoleWriteChar(sb[i]);
+            int _tmpcursorleft = Console2.CursorLeft;
+            int _cutsb_start = startindex;
+            for (int i = startindex; i < sb.Length; i++)
+            {
+                _tmpcursorleft += sb[i].Width();
+                if (_tmpcursorleft >= Console2.BufferWidth - 1)
+                {
+                    Console2.Write($"{sb.ToString(_cutsb_start, i - _cutsb_start + 1)}  ");
+                    Console2.SetCursorPosition(0, Console2.CursorTop);
+                    _tmpcursorleft = Console2.CursorLeft;
+                    _cutsb_start = i + 1;
+                }
+            }
+            Console2.Write(sb.ToString(_cutsb_start, sb.Length - _cutsb_start));
         }
 
         private void WriteChar(char c)
