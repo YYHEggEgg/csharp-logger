@@ -21,7 +21,7 @@
         /// </summary>
         /// <param name="content">The log content.</param>
         /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>ded to use <see cref="nameof"/> to provide this param.</param>
-        public void Verb(string content) => TargetLogger.Verb(content, LogSender);
+        public void LogVerb(string content) => TargetLogger.Verb(content, LogSender);
 
         /// <summary>
         /// Put a log with Debug Level to <see cref="TargetLogger"/>.
@@ -30,7 +30,7 @@
         /// </summary>
         /// <param name="content">The log content.</param>
         /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>ded to use <see cref="nameof"/> to provide this param.</param>
-        public void Dbug(string content) => TargetLogger.Dbug(content, LogSender);
+        public void LogDbug(string content) => TargetLogger.Dbug(content, LogSender);
 
         /// <summary>
         /// Put a log with Info Level to <see cref="TargetLogger"/>.
@@ -39,7 +39,7 @@
         /// </summary>
         /// <param name="content">The log content.</param>
         /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>ded to use <see cref="nameof"/> to provide this param.</param>
-        public void Info(string content) => TargetLogger.Info(content, LogSender);
+        public void LogInfo(string content) => TargetLogger.Info(content, LogSender);
 
         /// <summary>
         /// Put a log with Warning Level to <see cref="TargetLogger"/>.
@@ -48,7 +48,7 @@
         /// </summary>
         /// <param name="content">The log content.</param>
         /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>ded to use <see cref="nameof"/> to provide this param.</param>
-        public void Warn(string content) => TargetLogger.Warn(content, LogSender);
+        public void LogWarn(string content) => TargetLogger.Warn(content, LogSender);
 
         /// <summary>
         /// Put a log with Error Level to <see cref="TargetLogger"/>.
@@ -57,7 +57,7 @@
         /// </summary>
         /// <param name="content">The log content.</param>
         /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>ded to use <see cref="nameof"/> to provide this param.</param>
-        public void Erro(string content) => TargetLogger.Erro(content, LogSender);
+        public void LogErro(string content) => TargetLogger.Erro(content, LogSender);
 
         /// <summary>
         /// Put a log with a certain Level to <see cref="TargetLogger"/>.
@@ -67,7 +67,7 @@
         /// <param name="content">The log content.</param>
         /// <param name="logLevel">The <see cref="LogLevel"/> of this log message.</param>
         /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>
-        public void PushLog(string content, LogLevel logLevel) => TargetLogger.PushLog(content, logLevel, LogSender);
+        public void LogPushLog(string content, LogLevel logLevel) => TargetLogger.PushLog(content, logLevel, LogSender);
         
         /// <summary>
         /// Put a <see cref="Func{TResult}"/> with Verbose Level to <see cref="TargetLogger"/>,
@@ -85,7 +85,7 @@
         /// If not providing it, <see cref="TargetLogger"/> will report the exception to
         /// <see cref="Log.Warn(string, string?)"/> in a certain format.
         /// </param>
-        public void Verb(Func<string> getcontent_func,
+        public void LogVerb(Func<string> getcontent_func,
             Action<Exception>? on_getcontent_error = null)
             => TargetLogger.Verb(getcontent_func, LogSender, on_getcontent_error);
 
@@ -105,7 +105,7 @@
         /// If not providing it, <see cref="TargetLogger"/> will report the exception to
         /// <see cref="Log.Warn(string, string?)"/> in a certain format.
         /// </param>
-        public void Dbug(Func<string> getcontent_func,
+        public void LogDbug(Func<string> getcontent_func,
             Action<Exception>? on_getcontent_error = null)
             => TargetLogger.Dbug(getcontent_func, LogSender, on_getcontent_error);
 
@@ -125,7 +125,7 @@
         /// If not providing it, <see cref="TargetLogger"/> will report the exception to
         /// <see cref="Log.Warn(string, string?)"/> in a certain format.
         /// </param>
-        public void Info(Func<string> getcontent_func,
+        public void LogInfo(Func<string> getcontent_func,
             Action<Exception>? on_getcontent_error = null)
             => TargetLogger.Info(getcontent_func, LogSender, on_getcontent_error);
 
@@ -145,7 +145,7 @@
         /// If not providing it, <see cref="TargetLogger"/> will report the exception to
         /// <see cref="Log.Warn(string, string?)"/> in a certain format.
         /// </param>
-        public void Warn(Func<string> getcontent_func,
+        public void LogWarn(Func<string> getcontent_func,
             Action<Exception>? on_getcontent_error = null)
             => TargetLogger.Warn(getcontent_func, LogSender, on_getcontent_error);
 
@@ -165,7 +165,7 @@
         /// If not providing it, <see cref="TargetLogger"/> will report the exception to
         /// <see cref="Log.Warn(string, string?)"/> in a certain format.
         /// </param>
-        public void Erro(Func<string> getcontent_func,
+        public void LogErro(Func<string> getcontent_func,
             Action<Exception>? on_getcontent_error = null)
             => TargetLogger.Erro(getcontent_func, LogSender, on_getcontent_error);
 
@@ -186,7 +186,7 @@
         /// If not providing it, <see cref="TargetLogger"/> will report the exception to
         /// <see cref="Log.Warn(string, string?)"/> in a certain format.
         /// </param>
-        public void PushLog(Func<string> getcontent_func, LogLevel logLevel, 
+        public void LogPushLog(Func<string> getcontent_func, LogLevel logLevel, 
             Action<Exception>? on_getcontent_error = null)
             => TargetLogger.PushLog(getcontent_func, logLevel, LogSender, on_getcontent_error);
     }

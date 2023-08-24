@@ -8,7 +8,7 @@
     <GenerateDocumentationFile>False</GenerateDocumentationFile>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Title>EggEgg.CSharp-Logger</Title>
-    <Version>3.8.53-beta</Version>
+    <Version>3.8.54-beta</Version>
     <Authors>YYHEggEgg</Authors>
     <Company>YYHEggEgg</Company>
     <Description>A convenient C# Logger implementation, with reliable console interaction encapsulation support available.</Description>
@@ -16,21 +16,25 @@
     <PackageProjectUrl>https://github.com/YYHEggEgg/csharp-logger</PackageProjectUrl>
     <RepositoryUrl>https://github.com/YYHEggEgg/csharp-logger</RepositoryUrl>
     <PackageTags>Log;CLI</PackageTags>
-    <PackageReleaseNotes>Breaking changes in v4.0.0 - Preview 9 Patch 3 (v3.8.53-beta)
+    <PackageReleaseNotes>Breaking changes in v4.0.0 - Preview 9 Patch 4 (v3.8.54-beta)
 
+- The property `Log.CustomConfig` is renamed to `Log.GlobalConfig`, and an access attempt to `Log.GlobalConfig` before invoking `Log.Initialize` will raise `InvalidOperationException`.
 - Now if the user indicates to use the program path (provided `false` for `LoggerConfig.Use_Working_Directory`) during `Log.Initialize` and it cannot be accessed, compared with the previous implementation, it will not issue a warning that the program will fallback to the working directory. Similarly, there will be no warning prompts if an error occurs when compressing past log files.
 - **Important**: In the new version, not only `latest.log` and `latest.debug.log`, but **any log files under the `logs` folder that match the wildcard `latest.*.log`** will be renamed to the last time they were written when `Log.Initialize` processes past logs.  
   They are also affected by automatic log compression, but this is actually consistent with past behavior.
 - Now at the end of the program, the leave time given to Logger is 1000ms, and the leave time given to console output (whether it is normal output or `ConsoleWrapper`) is 500ms (it will only be performed after Logger's cleaning work is completed). In previous versions, these two numbers were 300ms and 1200ms respectively.
 - The color judgment uses a new algorithm, so it may not be "bug compatible" with the previous implementation.
 - `ConsoleWrapper` uses a new algorithm, developers try to put the breaking changes caused by it below, but the fixed bugs may not be listed.
-- `ConsoleWrapper` used to support pasting multi-line text into the input (although there will be problems when modifying the text); now it does not support this function, and all newline characters entered will be replaced with two spaces.
+- `ConsoleWrapper` used to support pasting multi-line text into the input with newline characters reserved (although there will be problems when modifying the text); now it does not support this function, and all newline characters entered will be replaced with two spaces.
   &gt; The list of recognized newline sequences is CR (U+000D), LF (U+000A), CRLF (U+000D U+000A), NEL (U+0085), LS (U+2028), FF (U+000C), and PS (U+2029). This list is given by the Unicode Standard, Sec. 5.8, Recommendation R4 and Table 5-2.
+
+  However, if your program utilizes the "converting newline characters to spaces for a single input" feature, you may prompt the user to use `Ctrl`+`Alt`+`V` in Windows Terminal.
+
 - `ConsoleWrapper` now supports history merging similar to bash, that is, executing a command multiple times in a row will not leave multiple records in history.
 - The new reading method of `ConsoleWrapper` is similar to [GNU Readline](https://en.wikipedia.org/wiki/GNU_Readline), but this causes a conflict with the past behavior of Ctrl+C, so the function of Ctrl+C triggering the `ConsoleWrapper.ShutDownRequest` event is retained. In addition to this, all other functions of the attached GNU readline shortcut keys can be regarded as breaking changes.
 - This project will not be backward compatible with any version below `.NET 6.0` in the future, including `.NET Standard 2.1`.
 
-Changes in v4.0.0 - Preview 9 Patch 3 (v3.8.53-beta)
+Changes in v4.0.0 - Preview 9 Patch 4 (v3.8.54-beta)
 
 (Note: This is the last minor preview version before the official version v4.0.0. Its latest Patch will be identical to the official version v4.0.0.)
 

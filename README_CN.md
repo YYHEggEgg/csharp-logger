@@ -8,7 +8,7 @@
 
 ## 更新
 
-### v4.0.0 - Preview 9 Patch 3 (v3.8.53-beta)
+### v4.0.0 - Preview 9 Patch 4 (v3.8.54-beta)
 
 （注：这是 v4.0.0 正式版本前的最后一个次要预览版本。它的最新 Patch 将会与正式版本 v4.0.0 完全一致。）
 
@@ -44,14 +44,33 @@
 
 ### 中断性变更
 
+- `Log.CustomConfig` 属性更名为 `Log.GlobalConfig`。同时，现在在未调用 `Log.Initialize` 初始化时访问 `Log.GlobalConfig` 会引发 `InvalidOperationException`.
 - 现在如果用户在 `Log.Initialize` 时指示使用程序路径（为 `LoggerConfig.Use_Working_Directory` 提供了 `false`），并且其无法访问，相比之前的实现，其不会发出程序会 fallback 到工作目录的警告。同理，在压缩过往日志文件时如果出现了错误也不会有警告提示。
 - **重要**：在新版本中，不仅有 `latest.log` 与 `latest.debug.log`，而是**任何在 `logs` 文件夹下符合通配符 `latest.*.log` 的**日志文件都会在调用 `Log.Initialize` 进行过往日志处理时被重命名为最后一次进行写入的时间。  
   它们也同样受日志自动压缩的影响，但这实际上与过往的行为一致。
 - 现在在程序结束时，给予 Logger 的离开时间为 1000ms，而给予控制台输出（无论是普通输出还是 `ConsoleWrapper`）的离开时间为 500ms（其一定在 Logger 清理工作完毕后才进行）。在以前的版本中，这两个数字分别是 300ms 和 1200ms。
 - 颜色判断使用了全新的算法，因此其可能与以前的实现并不“bug 兼容”。
 - `ConsoleWrapper` 使用了全新的算法，开发者尽量将引起的中断性变更置于下方，但是被修复的 bug 可能不会列出。
-- `ConsoleWrapper` 以前支持将多行的文本粘贴至输入中（尽管修改文本时会出现问题）；现在并不支持这一功能，并且会将输入的所有换行符均替换为两个空格。  
+- `ConsoleWrapper` 以前支持将多行的文本保留换行符粘贴至输入中（尽管修改文本时会出现问题）；现在并不支持这一功能，并且会将输入的所有换行符均替换为两个空格。  
   > 识别的换行序列列表是 CR (U+000D)、LF (U+000A)，CRLF (U+000D U+000A)、NEL (U+0085)、LS (U+2028)、FF (U+000C) 和 PS (U+2029)。此列表由 Unicode Standard 第 5.8 条建议 R4 和表 5-2 提供。
+
+  但是，由于一些终端重载了 `Ctrl`+`V` 快捷键，如果你的程序利用“将换行符转换为空格以供一次输入”的功能，你可能需要提示用户使用 `Ctrl`+`Alt`+`V` 快捷键，以保证内置粘贴机制的触发。在剪贴板文本极大时，使用内置粘贴还可以显著提高输入框性能。  
+  下表表头中的快捷键到达 `ConsoleWrapper` 时均会被识别为粘贴功能，针对多种控制台列出了支持情况。表中“支持”代表换行符会被正确转换为两个空格；“不支持”代表终端重载了该快捷键，致使剪贴板中的换行符变为回车；“阻止”表示终端既不将该快捷键重载为粘贴，也不将该按键传递给程序，即按键完全被忽视（大部分时候是因为与其他快捷键冲突）。测试环境为 Windows 11.
+
+  | 终端类型 | `Ctrl`+`V` | `Ctrl`+`Shift`+`V` | `Ctrl`+`Alt`+`V` | `Windows`+`V`（选中剪贴板记录以粘贴） |
+  | :----------------- | ------ | ------ | ------ | ------ |
+  | Windows cmd.exe | 支持 | 支持 | 支持 | 支持 |
+  | Windows powershell.exe | 支持 | 支持 | 支持 | 支持 |
+  | Windows Terminal | 不支持 | 不支持 | 支持 | 不支持 |
+  | VSCode 集成终端（powershell, windows） | 支持 | 不支持 | 阻止 | 支持 |
+  | VSCode 集成终端（cmd, windows） | 不支持 | 不支持 | 阻止 | 不支持 |
+  | VSCode 集成终端（Git Bash MINGW64, windows） | 不支持 | 不支持 | 阻止 | 不支持 |
+  | VSCode 集成终端（Javascript 调试终端, windows） | 支持 | 不支持 | 阻止 | 支持 |
+  | Visual Studio 开发者 Powershell 集成终端 | 支持 | 支持 | 阻止 | 支持 |
+  | Visual Studio 开发者命令提示 集成终端 | 支持 | 不支持 | 阻止 | 支持 |
+
+  总结下来，如果程序确实依赖该机制，请你提示用户在 Windows Terminal 下使用 `Ctrl`+`Alt`+`V`。其他环境下使用 `Ctrl`+`V` 即可。
+
 - `ConsoleWrapper` 现在支持与 bash 类似的历史合并，也就是说连续执行一条命令多次并不会在历史中留下多次记录。
 - `ConsoleWrapper` 的新读入方式类似于 [GNU Readline](https://en.wikipedia.org/wiki/GNU_Readline)，但这导致 Ctrl+C 的过往行为与其产生了冲突，因此保留了 Ctrl+C 引发 `ConsoleWrapper.ShutDownRequest` 事件的功能。除此之外，其他所有下附 GNU readline 快捷键的功能均可以视为中断性变更。
 - 为了支持中文及全角字符等宽字符的输入，同时避开各种 corner case 的处理，现在 `ConsoleWrapper` 单行内可容纳的字符量减少了 1 位，最后一位作为承载宽字符的额外空间。

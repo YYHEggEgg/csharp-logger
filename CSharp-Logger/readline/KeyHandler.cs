@@ -146,7 +146,7 @@ namespace Internal.ReadLine
         /// <returns></returns>
         private string BuildKeyInput()
         {
-            return (_keyInfo.Modifiers != ConsoleModifiers.Control && _keyInfo.Modifiers != ConsoleModifiers.Shift) ?
+            return (_keyInfo.Modifiers == 0) ?
                 _keyInfo.Key.ToString() : _keyInfo.Modifiers.ToString() + _keyInfo.Key.ToString();
         }
 
@@ -531,9 +531,11 @@ namespace Internal.ReadLine
             {
                 string? res = ClipboardService.GetText();
                 if (string.IsNullOrEmpty(res)) return;
-                res.ReplaceLineEndings("  ");
+                res = res.ReplaceLineEndings("  ");
                 WriteString(res);
             };
+            _keyActions["Shift, ControlV"] = _keyActions["ControlV"];
+            _keyActions["Alt, ControlV"] = _keyActions["ControlV"];
             _keyActions["ControlC"] = () => EOFSent?.Invoke();
         }
 

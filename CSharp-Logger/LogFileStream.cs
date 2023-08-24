@@ -183,13 +183,24 @@ namespace YYHEggEgg.Logger
         /// </param>
         public LogFileStream(string dir, LogFileConfig fileconf)
         {
+            if (fileconf.FileIdentifier == null)
+            {
+                throw new ArgumentException("Please give a valid file identifier for the created log file.");
+            }
+            if (fileconf.MinimumLogLevel == null || fileconf.MaximumLogLevel == null)
+            {
+                throw new ArgumentNullException(
+                    (fileconf.MinimumLogLevel == null ? $"{nameof(LogFileConfig)}.{nameof(LogFileConfig.MinimumLogLevel)}; " : "") +
+                    (fileconf.MaximumLogLevel == null ? $"{nameof(LogFileConfig)}.{nameof(LogFileConfig.MaximumLogLevel)}; " : ""), 
+                    "Valid log level borders are expected for the newly created log file.");
+            }
             FileStreamName = fileconf.FileIdentifier;
             if (FileStreamName == GlobalLog_Reserved) LogPath = $"{dir}/logs/latest.log";
             else LogPath = $"{dir}/logs/latest.{FileStreamName}.log";
             logwriter = new(LogPath, true);
             logwriter.AutoFlush = fileconf.AutoFlushWriter;
-            MinimumLogLevel = fileconf.MinimumLogLevel;
-            MaximumLogLevel = fileconf.MaximumLogLevel;
+            MinimumLogLevel = (LogLevel)fileconf.MinimumLogLevel;
+            MaximumLogLevel = (LogLevel)fileconf.MaximumLogLevel;
             IsPipeSeparatedFormat = fileconf.IsPipeSeparatedFile;
         }
 

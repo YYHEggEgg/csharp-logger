@@ -36,7 +36,14 @@ namespace YYHEggEgg.Logger
     public static class Log
     {
         private static LoggerConfig _global_customConfig;
-        public static LoggerConfig GlobalConfig => _global_customConfig;
+        public static LoggerConfig GlobalConfig 
+        {
+            get
+            {
+                AssertInitialized(false);
+                return _global_customConfig;
+            }
+        }
 
         #region Initialize
         private static bool _initialized = false;
@@ -45,7 +52,7 @@ namespace YYHEggEgg.Logger
         {
             get
             {
-                AssertInitialized();
+                AssertInitialized(true);
                 return _baseLogger ?? throw new Exception("Logger initialize bug.");
             }
         }
@@ -57,9 +64,9 @@ namespace YYHEggEgg.Logger
         {
             if (_initialized) return;
 
+            _global_customConfig = conf;
             _initialized = true;
 
-            _global_customConfig = conf;
             BaseLogger.LogDetail.DetailedTimeFormat = conf.Enable_Detailed_Time;
             if (conf.Use_Console_Wrapper) ConsoleWrapper.Initialize();
 
@@ -87,11 +94,11 @@ namespace YYHEggEgg.Logger
             }
         }
 
-        internal static void AssertInitialized()
+        internal static void AssertInitialized(bool demand_baselogger_inited = true)
         {
             if (!_initialized)
                 throw new InvalidOperationException("Logger hasn't been initialized!");
-            if (_baseLogger == null)
+            if (demand_baselogger_inited && _baseLogger == null)
                 throw new Exception("Logger init unknown error");
         }
         #endregion
@@ -104,7 +111,7 @@ namespace YYHEggEgg.Logger
         /// <returns></returns>
         public static LoggerChannel GetChannel(string? sender)
         {
-            AssertInitialized();
+            AssertInitialized(true);
 #pragma warning disable CS8604 // 引用类型参数可能为 null。
             return new LoggerChannel(_baseLogger, sender);
 #pragma warning restore CS8604 // 引用类型参数可能为 null。

@@ -8,7 +8,7 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
 
 ## Update
 
-### v4.0.0 - Preview 9 Patch 3 (v3.8.53-beta)
+### v4.0.0 - Preview 9 Patch 4 (v3.8.54-beta)
 
 (Note: This is the last minor preview version before the official version v4.0.0. Its latest Patch will be identical to the official version v4.0.0.)
 
@@ -45,14 +45,33 @@ Main changes:
 
 ### Breaking changes
 
+- The property `Log.CustomConfig` is renamed to `Log.GlobalConfig`, and an access attempt to `Log.GlobalConfig` before invoking `Log.Initialize` will raise `InvalidOperationException`.
 - Now if the user indicates to use the program path (provided `false` for `LoggerConfig.Use_Working_Directory`) during `Log.Initialize` and it cannot be accessed, compared with the previous implementation, it will not issue a warning that the program will fallback to the working directory. Similarly, there will be no warning prompts if an error occurs when compressing past log files.
 - **Important**: In the new version, not only `latest.log` and `latest.debug.log`, but **any log files under the `logs` folder that match the wildcard `latest.*.log`** will be renamed to the last time they were written when `Log.Initialize` processes past logs.  
   They are also affected by automatic log compression, but this is actually consistent with past behavior.
 - Now at the end of the program, the leave time given to Logger is 1000ms, and the leave time given to console output (whether it is normal output or `ConsoleWrapper`) is 500ms (it will only be performed after Logger's cleaning work is completed). In previous versions, these two numbers were 300ms and 1200ms respectively.
 - The color judgment uses a new algorithm, so it may not be "bug compatible" with the previous implementation.
 - `ConsoleWrapper` uses a new algorithm, developers try to put the breaking changes caused by it below, but the fixed bugs may not be listed.
-- `ConsoleWrapper` used to support pasting multi-line text into the input (although there will be problems when modifying the text); now it does not support this function, and all newline characters entered will be replaced with two spaces.
+- `ConsoleWrapper` used to support pasting multi-line text into the input with newline characters reserved (although there will be problems when modifying the text); now it does not support this function, and all newline characters entered will be replaced with two spaces.
   > The list of recognized newline sequences is CR (U+000D), LF (U+000A), CRLF (U+000D U+000A), NEL (U+0085), LS (U+2028), FF (U+000C), and PS (U+2029). This list is given by the Unicode Standard, Sec. 5.8, Recommendation R4 and Table 5-2.
+
+  However, due to some terminals overriding the `Ctrl`+`V` shortcut, if your program utilizes the "converting newline characters to spaces for a single input" feature, you may need to prompt the user to use the `Ctrl`+`Alt`+`V` shortcut to trigger the built-in paste mechanism. When the clipboard text is large, using the built-in paste can significantly improve the performance of the input box.  
+  The following table lists the support for various consoles when the shortcut keys in the table header reach `ConsoleWrapper`. "Supported" means that newline characters will be correctly converted to two spaces; "Not supported" means that the terminal overrides the shortcut key, causing newline characters in the clipboard to become carriage returns; "Blocked" means that the terminal neither overrides the shortcut key as paste nor passes the key to the program, i.e., the key is completely ignored (mostly due to conflicts with other shortcut keys). The test environment is Windows 11.
+
+  | Terminal Type | `Ctrl`+`V` | `Ctrl`+`Shift`+`V` | `Ctrl`+`Alt`+`V` | `Windows`+`V` (Paste selected clipboard record) |
+  | :----------------- | ------ | ------ | ------ | ------ |
+  | Windows cmd.exe | Supported | Supported | Supported | Supported |
+  | Windows powershell.exe | Supported | Supported | Supported | Supported |
+  | Windows Terminal | Not supported | Not supported | Supported | Not supported |
+  | VSCode Integrated Terminal (powershell, windows) | Supported | Not supported | Blocked | Supported |
+  | VSCode Integrated Terminal (cmd, windows) | Not supported | Not supported | Blocked | Not supported |
+  | VSCode Integrated Terminal (Git Bash MINGW64, windows) | Not supported | Not supported | Blocked | Not supported |
+  | VSCode Integrated Terminal (Javascript Debug Terminal, windows) | Supported | Not supported | Blocked | Supported |
+  | Visual Studio Developer Powershell Integrated Terminal | Supported | Supported | Blocked | Supported |
+  | Visual Studio Developer Command Prompt Integrated Terminal | Supported | Not supported | Blocked | Supported |
+
+  In summary, if your program does rely on this mechanism, please prompt the user to use `Ctrl`+`Alt`+`V` in Windows Terminal. In other environments, `Ctrl`+`V` can be used.
+
 - `ConsoleWrapper` now supports history merging similar to bash, that is, executing a command multiple times in a row will not leave multiple records in history.
 - The new reading method of `ConsoleWrapper` is similar to [GNU Readline](https://en.wikipedia.org/wiki/GNU_Readline), but this causes a conflict with the past behavior of Ctrl+C, so the function of Ctrl+C triggering the `ConsoleWrapper.ShutDownRequest` event is retained. In addition to this, all other functions of the attached GNU readline shortcut keys can be regarded as breaking changes.
 - This project will not be backward compatible with any version below `.NET 6.0` in the future, including `.NET Standard 2.1`.
