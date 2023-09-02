@@ -50,7 +50,19 @@ internal class Program
         Log.PushLog("Push a warning log!", LogLevel.Warning, "TSETSender");
         Log.PushLog("Push a verbose log!", LogLevel.Verbose, "TSESTender");
 
-        // 2. Color test
+        // 2. LogTextWriter Encoding test
+        StringReader chinese_string = new("你说得对，但是《原神》是一款由米哈游自主研发的开放世界冒险游戏");
+
+        LogTextWriter logwriter = new();
+        while (true)
+        {
+            var chint = chinese_string.Read();
+            if (chint == -1) break;
+            logwriter.Write((char)chint);
+        }
+        logwriter.WriteLine();
+
+        // 3. Color test
         Log.Erro("<color=</color>" +
             "<color=Yellow>yelolow text</color>" +
             "<color=Yellow></color><-nothing text|" +
@@ -77,7 +89,7 @@ internal class Program
         Log.Warn(res, "ReadLine_WithAutoCOmplete");
         //ConsoleWrapper.ReadLine();
 
-        // 3. High output amout test
+        // 4. High output amout test
         separate_logger.Warn(() =>
         {
             var sb = new StringBuilder();
@@ -95,7 +107,7 @@ internal class Program
 
         // ConsoleWrapper.ReadLine();
 
-        // 4. Sudden terminate test
+        // 5. Sudden terminate test
         Log.Warn($"The clearup succeed!");
         Environment.Exit(0);
     }
