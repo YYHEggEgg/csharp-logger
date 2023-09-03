@@ -79,7 +79,7 @@ internal class Program
         {
             while (waiting)
             {
-                Log.Info("A message is passing by once per sec.", "Background_TestAutoComplete");
+                Log.Warn("A message is passing by once per sec.", "Background_TestAutoComplete");
                 await Task.Delay(1000);
             }
         });
@@ -89,7 +89,23 @@ internal class Program
         Log.Warn(res, "ReadLine_WithAutoCOmplete");
         //ConsoleWrapper.ReadLine();
 
-        // 4. High output amout test
+        // 4. History test
+        var _logchannel = Log.GetChannel("Historytest");
+        _logchannel.LogWarn("Please type how many times you will test ConsoleWrapper input: ");
+        var times = int.Parse(ConsoleWrapper.ReadLine());
+        while (times-- > 0)
+        {
+            string text;
+            if (times % 2 == 1)
+            {
+                _logchannel.LogWarn("This line of input will <color=Red>NOT</color> be recorded into history.");
+                text = ConsoleWrapper.ReadLine(false);
+            }
+            else text = ConsoleWrapper.ReadLine();
+            _logchannel.LogWarn(text);
+        }
+
+        // 5. High output amout test
         separate_logger.Warn(() =>
         {
             var sb = new StringBuilder();
@@ -107,7 +123,7 @@ internal class Program
 
         // ConsoleWrapper.ReadLine();
 
-        // 5. Sudden terminate test
+        // 6. Sudden terminate test
         Log.Warn($"The clearup succeed!");
         Environment.Exit(0);
     }

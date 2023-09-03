@@ -8,7 +8,7 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
 
 ## Update
 
-### v4.0.0 - Preview 9 Patch 4 (v3.8.54-beta)
+### v4.0.0 - Preview 9 Patch 5 (v3.8.55-beta)
 
 (Note: This is the last minor preview version before the official version v4.0.0. Its latest Patch will be identical to the official version v4.0.0.)
 
@@ -42,6 +42,7 @@ Main changes:
 - Now setting `ConsoleWrapper.AutoCompleteHandler` can auto-complete user input.
 - In order to support the input of Chinese and full-width characters and other wide characters, while avoiding the processing of various corner cases, now `ConsoleWrapper` reduces the number of characters that can fit in a single line by 1 bit, which is reserved as the extra space for full-width characters.
 - Optimized the method indication in the `Log`, `BaseLogger` and `LoggerChannel` classes.
+- Now you can indicate that the content of the current line should not be included in the command input history by using `ConsoleWrapper.ReadLine(false)`. This is useful when prompting the user to input information that is specific to a certain context (e.g., a confirmation prompt like `Type 'y' to confirm, 'n' to refuse`).
 
 ### Breaking changes
 
@@ -73,6 +74,7 @@ Main changes:
   In summary, if your program does rely on this mechanism, please prompt the user to use `Ctrl`+`Alt`+`V` in Windows Terminal. In other environments, `Ctrl`+`V` can be used.
 
 - `ConsoleWrapper` now supports history merging similar to bash, that is, executing a command multiple times in a row will not leave multiple records in history.
+- `ConsoleWrapper` will no longer include unconfirmed input in the command history. Therefore, pressing the up/down arrow keys will not include unconfirmed input. For example, if you enter `1[Enter]2[Enter][Up Arrow][Enter]` **without any thread waiting for `ConsoleWrapper.ReadLine`**, the third call to `ConsoleWrapper.ReadLine` will return an empty string (in previous versions, it would return `2`).
 - The new reading method of `ConsoleWrapper` is similar to [GNU Readline](https://en.wikipedia.org/wiki/GNU_Readline), but this causes a conflict with the past behavior of Ctrl+C, so the function of Ctrl+C triggering the `ConsoleWrapper.ShutDownRequest` event is retained. In addition to this, all other functions of the attached GNU readline shortcut keys can be regarded as breaking changes.
 - This project will not be backward compatible with any version below `.NET 6.0` in the future, including `.NET Standard 2.1`.
 

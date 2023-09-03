@@ -6,8 +6,7 @@ using System.Text;
 using TextCopy;
 
 namespace Internal.ReadLine
-{
-    internal class KeyHandler
+{    internal class KeyHandler
     {
         private int _cursorPos;
         private int _cursorLimit;
@@ -408,22 +407,28 @@ namespace Internal.ReadLine
 
         private void PrevHistory()
         {
-            if (_historyIndex > 0)
+            lock (_history)
             {
-                _historyIndex--;
-                WriteNewString(_history[_historyIndex]);
+                if (_historyIndex > 0)
+                {
+                    _historyIndex--;
+                    WriteNewString(_history[_historyIndex]);
+                }
             }
         }
 
         private void NextHistory()
         {
-            if (_historyIndex < _history.Count)
+            lock (_history)
             {
-                _historyIndex++;
-                if (_historyIndex == _history.Count)
-                    ClearLine();
-                else
-                    WriteNewString(_history[_historyIndex]);
+                if (_historyIndex < _history.Count)
+                {
+                    _historyIndex++;
+                    if (_historyIndex == _history.Count)
+                        ClearLine();
+                    else
+                        WriteNewString(_history[_historyIndex]);
+                }
             }
         }
 

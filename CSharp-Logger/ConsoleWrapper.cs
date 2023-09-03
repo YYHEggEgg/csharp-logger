@@ -73,7 +73,7 @@ namespace YYHEggEgg.Logger
 
         #region Read & Write
         #region ReadLine
-        public static async Task<string> ReadLineAsync()
+        public static async Task<string> ReadLineAsync(bool reserve_in_history = true)
         {
             AssertInitialized();
 
@@ -85,11 +85,22 @@ namespace YYHEggEgg.Logger
             }
 
             isReading = false;
+            if (reserve_in_history)
+            {
+                lock (lines)
+                {
+                    if (
+                        (lines.Count == 0 || lines[lines.Count - 1] != result)
+                        && !string.IsNullOrEmpty(result)
+                    )
+                        lines.Add(result);
+                }
+            }
 
             return result;
         }
 
-        public static string ReadLine()
+        public static string ReadLine(bool reserve_in_history = true)
         {
             AssertInitialized();
 
@@ -101,6 +112,17 @@ namespace YYHEggEgg.Logger
             }
 
             isReading = false;
+            if (reserve_in_history)
+            {
+                lock (lines)
+                {
+                    if (
+                        (lines.Count == 0 || lines[lines.Count - 1] != result)
+                        && !string.IsNullOrEmpty(result)
+                    )
+                        lines.Add(result);
+                }
+            }
 
             return result;
         }
@@ -298,7 +320,7 @@ namespace YYHEggEgg.Logger
                         continue;
                     }
                     _inputprefix_changed = false;
-                    
+
                     if (isReading && (cur_handle_writelines || _autoCompleteHandler_updated))
                     {
                         _autoCompleteHandler_updated = false;
@@ -336,8 +358,9 @@ namespace YYHEggEgg.Logger
                             }
                             Console.WriteLine();
                             readqueue.Enqueue(keyHandler.Text);
-                            if (lines.Count == 0 || lines[0] != keyHandler.Text)
-                                lines.Add(keyHandler.Text);
+                            // if ((lines.Count == 0 || lines[lines.Count - 1] != keyHandler.Text)
+                            //     && !string.IsNullOrEmpty(keyHandler.Text))
+                            //     lines.Add(keyHandler.Text);
                             keyHandler = new(shared_absconsole, lines, _autoCompleteHandler, cur_prefix);
                         }
                     }

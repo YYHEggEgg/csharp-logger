@@ -8,7 +8,7 @@
 
 ## 更新
 
-### v4.0.0 - Preview 9 Patch 4 (v3.8.54-beta)
+### v4.0.0 - Preview 9 Patch 5 (v3.8.55-beta)
 
 （注：这是 v4.0.0 正式版本前的最后一个次要预览版本。它的最新 Patch 将会与正式版本 v4.0.0 完全一致。）
 
@@ -41,6 +41,7 @@
 - 大幅提升了 `ConsoleWrapper` 在文本量较大时修改文本的体验。
 - 现在设置 `ConsoleWrapper.AutoCompleteHandler` 可对用户的输入进行自动补全。
 - 优化了 `Log`、`BaseLogger` 以及 `LoggerChannel` 类内的方法指示。
+- 现在可以通过 `ConsoleWrapper.ReadLine(false)` 来指示不将当前行的内容计入命令输入历史。这在指示用户输入只与特定上下文有关的信息（例如 `Type 'y' to confirm, 'n' to refuse` 之类的确认 prompt）时很有用。
 
 ### 中断性变更
 
@@ -72,6 +73,7 @@
   总结下来，如果程序确实依赖该机制，请你提示用户在 Windows Terminal 下使用 `Ctrl`+`Alt`+`V`。其他环境下使用 `Ctrl`+`V` 即可。
 
 - `ConsoleWrapper` 现在支持与 bash 类似的历史合并，也就是说连续执行一条命令多次并不会在历史中留下多次记录。
+- `ConsoleWrapper` 现在在程序未确认输入时将不会将行内容计入历史记录，此时按上/下方向键并不能包括未确认输入的内容。例如，在**没有线程等待 `ConsoleWrapper.ReadLine` 时**依次输入 `1[回车]2[回车][上方向键][回车]`，那么程序此后第三次调用 `ConsoleWrapper.ReadLine` 取回的数据将是空字符串（在以前的版本中将会取回 `2`）。
 - `ConsoleWrapper` 的新读入方式类似于 [GNU Readline](https://en.wikipedia.org/wiki/GNU_Readline)，但这导致 Ctrl+C 的过往行为与其产生了冲突，因此保留了 Ctrl+C 引发 `ConsoleWrapper.ShutDownRequest` 事件的功能。除此之外，其他所有下附 GNU readline 快捷键的功能均可以视为中断性变更。
 - 为了支持中文及全角字符等宽字符的输入，同时避开各种 corner case 的处理，现在 `ConsoleWrapper` 单行内可容纳的字符量减少了 1 位，最后一位作为承载宽字符的额外空间。
 - 该项目未来不会向下兼容到 `.NET 6.0` 以下的任何版本，包括 `.NET Standard 2.1`。

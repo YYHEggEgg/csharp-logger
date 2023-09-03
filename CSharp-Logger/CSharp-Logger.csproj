@@ -8,7 +8,7 @@
     <GenerateDocumentationFile>False</GenerateDocumentationFile>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Title>EggEgg.CSharp-Logger</Title>
-    <Version>3.8.54-beta</Version>
+    <Version>3.8.55-beta</Version>
     <Authors>YYHEggEgg</Authors>
     <Company>YYHEggEgg</Company>
     <Description>A convenient C# Logger implementation, with reliable console interaction encapsulation support available.</Description>
@@ -16,7 +16,7 @@
     <PackageProjectUrl>https://github.com/YYHEggEgg/csharp-logger</PackageProjectUrl>
     <RepositoryUrl>https://github.com/YYHEggEgg/csharp-logger</RepositoryUrl>
     <PackageTags>Log;CLI</PackageTags>
-    <PackageReleaseNotes>Breaking changes in v4.0.0 - Preview 9 Patch 4 (v3.8.54-beta)
+    <PackageReleaseNotes>Breaking changes in v4.0.0 - Preview 9 Patch 5 (v3.8.55-beta)
 
 - The property `Log.CustomConfig` is renamed to `Log.GlobalConfig`, and an access attempt to `Log.GlobalConfig` before invoking `Log.Initialize` will raise `InvalidOperationException`.
 - Now if the user indicates to use the program path (provided `false` for `LoggerConfig.Use_Working_Directory`) during `Log.Initialize` and it cannot be accessed, compared with the previous implementation, it will not issue a warning that the program will fallback to the working directory. Similarly, there will be no warning prompts if an error occurs when compressing past log files.
@@ -31,10 +31,11 @@
   However, if your program utilizes the "converting newline characters to spaces for a single input" feature, you may prompt the user to use `Ctrl`+`Alt`+`V` in Windows Terminal.
 
 - `ConsoleWrapper` now supports history merging similar to bash, that is, executing a command multiple times in a row will not leave multiple records in history.
+- `ConsoleWrapper` will no longer include unconfirmed input in the command history. Therefore, pressing the up/down arrow keys will not include unconfirmed input. For example, if you enter `1[Enter]2[Enter][Up Arrow][Enter]` **without any thread waiting for `ConsoleWrapper.ReadLine`**, the third call to `ConsoleWrapper.ReadLine` will return an empty string (in previous versions, it would return `2`).
 - The new reading method of `ConsoleWrapper` is similar to [GNU Readline](https://en.wikipedia.org/wiki/GNU_Readline), but this causes a conflict with the past behavior of Ctrl+C, so the function of Ctrl+C triggering the `ConsoleWrapper.ShutDownRequest` event is retained. In addition to this, all other functions of the attached GNU readline shortcut keys can be regarded as breaking changes.
 - This project will not be backward compatible with any version below `.NET 6.0` in the future, including `.NET Standard 2.1`.
 
-Changes in v4.0.0 - Preview 9 Patch 4 (v3.8.54-beta)
+Changes in v4.0.0 - Preview 9 Patch 5 (v3.8.55-beta)
 
 (Note: This is the last minor preview version before the official version v4.0.0. Its latest Patch will be identical to the official version v4.0.0.)
 
@@ -67,7 +68,8 @@ Main changes:
 - The experience of modifying text when the text volume is large in `ConsoleWrapper` has been greatly improved.
 - Now setting `ConsoleWrapper.AutoCompleteHandler` can auto-complete user input.
 - In order to support the input of Chinese and full-width characters and other wide characters, while avoiding the processing of various corner cases, now `ConsoleWrapper` reduces the number of characters that can fit in a single line by 1 bit, which is reserved as the extra space for full-width characters.
-- Optimized the method indication in the `Log`, `BaseLogger` and `LoggerChannel` classes.</PackageReleaseNotes>
+- Optimized the method indication in the `Log`, `BaseLogger` and `LoggerChannel` classes.
+- Now you can indicate that the content of the current line should not be included in the command input history by using `ConsoleWrapper.ReadLine(false)`. This is useful when prompting the user to input information that is specific to a certain context (e.g., a confirmation prompt like `Type 'y' to confirm, 'n' to refuse`).</PackageReleaseNotes>
     <IncludeSymbols>True</IncludeSymbols>
     <PackageId>EggEgg.$(AssemblyName)</PackageId>
     <Product>EggEgg.$(AssemblyName)</Product>
