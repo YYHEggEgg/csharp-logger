@@ -8,7 +8,7 @@
     <GenerateDocumentationFile>False</GenerateDocumentationFile>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Title>EggEgg.CSharp-Logger</Title>
-    <Version>3.8.55-beta</Version>
+    <Version>3.8.56-beta</Version>
     <Authors>YYHEggEgg</Authors>
     <Company>YYHEggEgg</Company>
     <Description>A convenient C# Logger implementation, with reliable console interaction encapsulation support available.</Description>
@@ -16,7 +16,7 @@
     <PackageProjectUrl>https://github.com/YYHEggEgg/csharp-logger</PackageProjectUrl>
     <RepositoryUrl>https://github.com/YYHEggEgg/csharp-logger</RepositoryUrl>
     <PackageTags>Log;CLI</PackageTags>
-    <PackageReleaseNotes>Breaking changes in v4.0.0 - Preview 9 Patch 5 (v3.8.55-beta)
+    <PackageReleaseNotes>Breaking changes in v4.0.0 - Preview 9 Patch 6 (v3.8.56-beta)
 
 - The property `Log.CustomConfig` is renamed to `Log.GlobalConfig`, and an access attempt to `Log.GlobalConfig` before invoking `Log.Initialize` will raise `InvalidOperationException`.
 - Now if the user indicates to use the program path (provided `false` for `LoggerConfig.Use_Working_Directory`) during `Log.Initialize` and it cannot be accessed, compared with the previous implementation, it will not issue a warning that the program will fallback to the working directory. Similarly, there will be no warning prompts if an error occurs when compressing past log files.
@@ -33,9 +33,11 @@
 - `ConsoleWrapper` now supports history merging similar to bash, that is, executing a command multiple times in a row will not leave multiple records in history.
 - `ConsoleWrapper` will no longer include unconfirmed input in the command history. Therefore, pressing the up/down arrow keys will not include unconfirmed input. For example, if you enter `1[Enter]2[Enter][Up Arrow][Enter]` **without any thread waiting for `ConsoleWrapper.ReadLine`**, the third call to `ConsoleWrapper.ReadLine` will return an empty string (in previous versions, it would return `2`).
 - The new reading method of `ConsoleWrapper` is similar to [GNU Readline](https://en.wikipedia.org/wiki/GNU_Readline), but this causes a conflict with the past behavior of Ctrl+C, so the function of Ctrl+C triggering the `ConsoleWrapper.ShutDownRequest` event is retained. In addition to this, all other functions of the attached GNU readline shortcut keys can be regarded as breaking changes.
+- Now, if a command input line have characters exceeding the console window, it won't be recorded in the input history. You can set `ConsoleWrapper.HistoryMaximumChars` to change the default behaviour.  
+  Set it to a positive value can apply the limit,  0 can stop the history (since then), and -1 can cancel the limit. 
 - This project will not be backward compatible with any version below `.NET 6.0` in the future, including `.NET Standard 2.1`.
 
-Changes in v4.0.0 - Preview 9 Patch 5 (v3.8.55-beta)
+Changes in v4.0.0 - Preview 9 Patch 6 (v3.8.56-beta)
 
 (Note: This is the last minor preview version before the official version v4.0.0. Its latest Patch will be identical to the official version v4.0.0.)
 

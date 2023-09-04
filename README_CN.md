@@ -67,6 +67,7 @@
   | VSCode 集成终端（cmd, windows） | 不支持 | 不支持 | 阻止 | 不支持 |
   | VSCode 集成终端（Git Bash MINGW64, windows） | 不支持 | 不支持 | 阻止 | 不支持 |
   | VSCode 集成终端（Javascript 调试终端, windows） | 支持 | 不支持 | 阻止 | 支持 |
+  | VSCode 集成终端（Bash, linux） | 不支持 | 不支持 | 阻止 | 不支持 |
   | Visual Studio 开发者 Powershell 集成终端 | 支持 | 支持 | 阻止 | 支持 |
   | Visual Studio 开发者命令提示 集成终端 | 支持 | 不支持 | 阻止 | 支持 |
 
@@ -76,6 +77,8 @@
 - `ConsoleWrapper` 现在在程序未确认输入时将不会将行内容计入历史记录，此时按上/下方向键并不能包括未确认输入的内容。例如，在**没有线程等待 `ConsoleWrapper.ReadLine` 时**依次输入 `1[回车]2[回车][上方向键][回车]`，那么程序此后第三次调用 `ConsoleWrapper.ReadLine` 取回的数据将是空字符串（在以前的版本中将会取回 `2`）。
 - `ConsoleWrapper` 的新读入方式类似于 [GNU Readline](https://en.wikipedia.org/wiki/GNU_Readline)，但这导致 Ctrl+C 的过往行为与其产生了冲突，因此保留了 Ctrl+C 引发 `ConsoleWrapper.ShutDownRequest` 事件的功能。除此之外，其他所有下附 GNU readline 快捷键的功能均可以视为中断性变更。
 - 为了支持中文及全角字符等宽字符的输入，同时避开各种 corner case 的处理，现在 `ConsoleWrapper` 单行内可容纳的字符量减少了 1 位，最后一位作为承载宽字符的额外空间。
+- 现在当一段输入的字符量超出控制台字符位数量时，它将不会被记录在输入历史中。此默认行为可以通过操作 `ConsoleWrapper.HistoryMaximumChars` 来更改。
+  将其更改为正数可更新限制，更改为 0 可以停止（往后的）命令输入历史记录，更改为 -1 可以取消此限制。
 - 该项目未来不会向下兼容到 `.NET 6.0` 以下的任何版本，包括 `.NET Standard 2.1`。
 
 ## 功能

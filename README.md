@@ -8,7 +8,7 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
 
 ## Update
 
-### v4.0.0 - Preview 9 Patch 5 (v3.8.55-beta)
+### v4.0.0 - Preview 9 Patch 6 (v3.8.56-beta)
 
 (Note: This is the last minor preview version before the official version v4.0.0. Its latest Patch will be identical to the official version v4.0.0.)
 
@@ -68,6 +68,7 @@ Main changes:
   | VSCode Integrated Terminal (cmd, windows) | Not supported | Not supported | Blocked | Not supported |
   | VSCode Integrated Terminal (Git Bash MINGW64, windows) | Not supported | Not supported | Blocked | Not supported |
   | VSCode Integrated Terminal (Javascript Debug Terminal, windows) | Supported | Not supported | Blocked | Supported |
+  | VSCode Integrated Terminal (Bash, linux) | Not supported | Not supported | Blocked | Not supported |
   | Visual Studio Developer Powershell Integrated Terminal | Supported | Supported | Blocked | Supported |
   | Visual Studio Developer Command Prompt Integrated Terminal | Supported | Not supported | Blocked | Supported |
 
@@ -76,6 +77,8 @@ Main changes:
 - `ConsoleWrapper` now supports history merging similar to bash, that is, executing a command multiple times in a row will not leave multiple records in history.
 - `ConsoleWrapper` will no longer include unconfirmed input in the command history. Therefore, pressing the up/down arrow keys will not include unconfirmed input. For example, if you enter `1[Enter]2[Enter][Up Arrow][Enter]` **without any thread waiting for `ConsoleWrapper.ReadLine`**, the third call to `ConsoleWrapper.ReadLine` will return an empty string (in previous versions, it would return `2`).
 - The new reading method of `ConsoleWrapper` is similar to [GNU Readline](https://en.wikipedia.org/wiki/GNU_Readline), but this causes a conflict with the past behavior of Ctrl+C, so the function of Ctrl+C triggering the `ConsoleWrapper.ShutDownRequest` event is retained. In addition to this, all other functions of the attached GNU readline shortcut keys can be regarded as breaking changes.
+- Now, if a command input line have characters exceeding the console window, it won't be recorded in the input history. You can set `ConsoleWrapper.HistoryMaximumChars` to change the default behaviour.  
+  Set it to a positive value can apply the limit, 0 can stop the history (since then), and -1 can cancel the limit. 
 - This project will not be backward compatible with any version below `.NET 6.0` in the future, including `.NET Standard 2.1`.
 
 ## Features

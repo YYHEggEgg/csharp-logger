@@ -85,17 +85,7 @@ namespace YYHEggEgg.Logger
             }
 
             isReading = false;
-            if (reserve_in_history)
-            {
-                lock (lines)
-                {
-                    if (
-                        (lines.Count == 0 || lines[lines.Count - 1] != result)
-                        && !string.IsNullOrEmpty(result)
-                    )
-                        lines.Add(result);
-                }
-            }
+            AddHistoryRecord(result, reserve_in_history);
 
             return result;
         }
@@ -112,19 +102,26 @@ namespace YYHEggEgg.Logger
             }
 
             isReading = false;
-            if (reserve_in_history)
-            {
-                lock (lines)
-                {
-                    if (
-                        (lines.Count == 0 || lines[lines.Count - 1] != result)
-                        && !string.IsNullOrEmpty(result)
-                    )
-                        lines.Add(result);
-                }
-            }
+            AddHistoryRecord(result, reserve_in_history);
 
             return result;
+        }
+
+        private static void AddHistoryRecord(string content, bool reserve_in_history)
+        {
+            if (reserve_in_history)
+            {
+                int _history_char_limit = HistoryMaximumChars;
+                if (_history_char_limit == 0) return;
+
+                lock (lines)
+                {
+                    if ((lines.Count == 0 || lines[lines.Count - 1] != content)
+                        && !string.IsNullOrEmpty(content)
+                        && (_history_char_limit == -1 || content.Length <= _history_char_limit))
+                        lines.Add(content);
+                }
+            }
         }
         #endregion
 
@@ -250,6 +247,42 @@ namespace YYHEggEgg.Logger
         internal static void WriteLine(params ColorLineResult[] inputs) => WriteLine(inputs);
         #endregion
         #endregion
+        #endregion
+
+        #region History Limit
+        private static int _custom_history_limit = int.MinValue;
+
+        /// <summary>
+        /// Get or set the maximum chars that a line in input history have.
+        /// If a input line has chars that exceeded this value,
+        /// it will not be recorded in input history.
+        /// <para/>
+        /// The default value is the characters count of the whole
+        /// console, and modified value won't affect the history added
+        /// before setting the property. 
+        /// <para/>
+        /// Set it to a positive value can apply the limit,
+        /// 0 can stop the history (since then), and -1 can
+        /// cancel the limit. 
+        /// Otherwise, <see cref="InvalidOperationException"/> is raised.
+        /// </summary>
+        public static int HistoryMaximumChars
+        {
+            get
+            {
+                if (_custom_history_limit == int.MinValue)
+                    return Console.WindowHeight * Console.WindowWidth;
+                else return _custom_history_limit;
+            }
+            set
+            {
+                if (value < -1)
+                    throw new InvalidOperationException("Value less than -1 " +
+                    "is not allowed for HistoryMaximumChars. If want to disable " +
+                    "the history selective ignoring, provide -1.");
+                _custom_history_limit = value;
+            }
+        }
         #endregion
 
         #region Update Background
