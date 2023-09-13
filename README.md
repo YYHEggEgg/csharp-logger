@@ -8,7 +8,7 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
 
 ## Update
 
-### v4.0.0 - Preview 9 Patch 6 (v3.8.56-beta)
+### v4.0.0 - Preview 9 Patch 7 (v3.8.57-beta)
 
 (Note: This is the last minor preview version before the official version v4.0.0. Its latest Patch will be identical to the official version v4.0.0.)
 
@@ -21,6 +21,7 @@ Main changes:
 
 - Fixed the problem that due to the defect of the timing algorithm, the log processing background task will not wait for the specified time after processing the log.
 - Fixed the problem that in most cases, the waiting time for cleaning (1.5s) will reach the maximum value, and it is still possible that the console cleaning cannot be completed.
+- Fixed the problem that when not reading input by `ConsoleWrapper`, event `ConsoleWrapper.ShutDownRequest` cannot be triggered by pressing Ctrl+C, until someone starting reading input again.
 - A new KMP-based algorithm is used to analyze color tag information, which speeds up processing. See [Benchmark data](https://github.com/YYHEggEgg/csharp-logger/blob/main/ColorLineUtil-report-github.md) for details.
 - Added `LogTextWriter`, but note that it uses a buffer to maintain characters that have not been wrapped; that is, all content before the newline character is not displayed in `Logger`.  
   If some external code uses the `Console` method and you use `ConsoleWrapper` (such as `CommandLineParser`), you must provide an instance of `LogTextWriter` for it.
@@ -68,7 +69,7 @@ Main changes:
   | VSCode Integrated Terminal (cmd, windows) | Not supported | Not supported | Blocked | Not supported |
   | VSCode Integrated Terminal (Git Bash MINGW64, windows) | Not supported | Not supported | Blocked | Not supported |
   | VSCode Integrated Terminal (Javascript Debug Terminal, windows) | Supported | Not supported | Blocked | Supported |
-  | VSCode Integrated Terminal (Bash, linux) | Not supported | Not supported | Blocked | Not supported |
+  | VSCode Integrated Terminal (Bash, Remote) | Not supported | Not supported | Blocked | Not supported |
   | Visual Studio Developer Powershell Integrated Terminal | Supported | Supported | Blocked | Supported |
   | Visual Studio Developer Command Prompt Integrated Terminal | Supported | Not supported | Blocked | Supported |
 
