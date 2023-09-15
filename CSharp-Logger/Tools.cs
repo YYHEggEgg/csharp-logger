@@ -112,5 +112,13 @@ namespace YYHEggEgg.Logger.Utils
             return _logworkdir;
         }
         private static string? _logworkdir = null;
+
+        /// <summary>
+        /// Check if running on one of Windows, macOS or Linux.
+        /// </summary>
+        public static bool CheckIfSupportedOS() =>
+            OperatingSystem.IsWindows() || 
+            OperatingSystem.IsMacOS() ||
+            OperatingSystem.IsLinux();
     }
 }

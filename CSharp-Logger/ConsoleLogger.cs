@@ -60,16 +60,39 @@ namespace YYHEggEgg.Logger
         /// <summary>
         /// Initialize the logger. If initialized before, the method will return immediately.
         /// </summary>
+        /// <exception cref="InvalidOperationException">
+        /// The current OS is not supported to output logs to 
+        /// the console. To continue use logging on this OS,
+        /// set <see cref="LoggerConfig.Console_Minimum_LogLevel"/>
+        /// to <see cref="LogLevel.None"/>.
+        /// <para/> or <para/> 
+        /// <see cref="ConsoleWrapper"/> and any features
+        /// related to console is not supported on current OS.
+        /// To continue use logging on this OS, set
+        /// <see cref="LoggerConfig.Use_Console_Wrapper"/>
+        /// to <see cref="false"/>.
+        /// </exception>
         public static void Initialize(LoggerConfig conf)
         {
             if (_initialized) return;
+
+            if (conf.Console_Minimum_LogLevel != LogLevel.None 
+                && !Tools.CheckIfSupportedOS())
+            {
+                throw new InvalidOperationException(
+                    "Current OS is not supported to output logs " +
+                    "to the console. To continue use logging on " +
+                    "this OS, set LoggerConfig.Console_Minimum_LogLevel " +
+                    "to LogLevel.None.");
+            }
+
+            if (conf.Use_Console_Wrapper) ConsoleWrapper.Initialize();
 
             _global_customConfig = conf;
             _initialized = true;
 
             BaseLogger.LogDetail.DetailedTimeFormat = conf.Enable_Detailed_Time;
-            if (conf.Use_Console_Wrapper) ConsoleWrapper.Initialize();
-
+            
             LogFileStream.HandlePastLogs(Tools.GetLoggerWorkingDir(conf));
             
             _baseLogger = new BaseLogger(conf);

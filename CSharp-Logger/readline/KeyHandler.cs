@@ -558,7 +558,7 @@ namespace Internal.ReadLine
             ConsoleKey.Delete,
             ConsoleKey.Home,
             ConsoleKey.End,
-            // 回车键应由外部逻辑处理。
+            // 回车键应由外部逻辑处理（以结束输入）。
             ConsoleKey.Enter,
             // 以下按键应永远忽略。
             ConsoleKey.Clear,

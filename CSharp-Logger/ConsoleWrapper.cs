@@ -24,11 +24,21 @@ namespace YYHEggEgg.Logger
 
         /// <summary>
         /// This method has SIDE EFFECT, so don't use <see cref="Console"/> after invoked it.
-        /// <para/> If initialized before, the method will return immediately.
+        /// <para/>
+        /// If initialized before, the method will return immediately.
         /// </summary>
+        /// <exception cref="InvalidOperationException">
+        /// <see cref="ConsoleWrapper"/> and any features
+        /// related to console is not supported on current OS.
+        /// </exception>
         public static void Initialize()
         {
             if (_initialized) return;
+            if (!Tools.CheckIfSupportedOS())
+                throw new InvalidOperationException(
+                    "ConsoleWrapper and any features related " +
+                    "to console is not supported on current OS.");
+            
             _initialized = true;
 
             lines = new List<string>();
