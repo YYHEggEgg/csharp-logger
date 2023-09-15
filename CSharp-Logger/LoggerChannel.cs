@@ -67,7 +67,7 @@
         /// <param name="content">The log content.</param>
         /// <param name="logLevel">The <see cref="LogLevel"/> of this log message.</param>
         /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>
-        public void LogPushLog(string content, LogLevel logLevel) => TargetLogger.PushLog(content, logLevel, LogSender);
+        public void LogPush(string content, LogLevel logLevel) => TargetLogger.PushLog(content, logLevel, LogSender);
         
         /// <summary>
         /// Put a <see cref="Func{TResult}"/> with Verbose Level to <see cref="TargetLogger"/>,
@@ -186,7 +186,7 @@
         /// If not providing it, <see cref="TargetLogger"/> will report the exception to
         /// <see cref="Log.Warn(string, string?)"/> in a certain format.
         /// </param>
-        public void LogPushLog(Func<string> getcontent_func, LogLevel logLevel, 
+        public void LogPush(Func<string> getcontent_func, LogLevel logLevel, 
             Action<Exception>? on_getcontent_error = null)
             => TargetLogger.PushLog(getcontent_func, logLevel, LogSender, on_getcontent_error);
     }

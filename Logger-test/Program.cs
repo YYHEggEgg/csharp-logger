@@ -38,12 +38,12 @@ internal class Program
             }
         );
 
-        // 0. Ctrl+C closing test
+        // 1. Ctrl+C closing test
         ConsoleWrapper.ShutDownRequest += (_, _) => Environment.Exit(0);
         // int attempt_reading_wait_seconds = 100; // set to 100 when testing Ctrl+C
         int attempt_reading_wait_seconds = 1;
 
-        // 1. Dbug test
+        // 2. Dbug test
 #if DEBUG
         Log.Dbug("this is run on DEBUG!");
         Log.Verb("Verbose is output to the log file, not console!");
@@ -55,7 +55,13 @@ internal class Program
         Log.PushLog("Push a warning log!", LogLevel.Warning, "TSETSender");
         Log.PushLog("Push a verbose log!", LogLevel.Verbose, "TSESTender");
 
-        // 2. LogTextWriter Encoding test
+        // 3. Global default color set test
+        Log.Info($"Waiting for 1s...");
+        await Task.Delay(1000);
+        Log.GlobalDefaultColor = ConsoleColor.White;
+        Log.Warn($"Global logging console color changed to white.");
+
+        // 4. LogTextWriter Encoding test
         StringReader chinese_string = new("你说得对，但是《原神》是一款由米哈游自主研发的开放世界冒险游戏");
 
         LogTextWriter logwriter = new();
@@ -67,7 +73,7 @@ internal class Program
         }
         logwriter.WriteLine();
 
-        // 3. Color test
+        // 5. Color test
         Log.Erro("<color=</color>" +
             "<color=Yellow>yelolow text</color>" +
             "<color=Yellow></color><-nothing text|" +
@@ -94,7 +100,7 @@ internal class Program
         Log.Warn(res, "ReadLine_WithAutoCOmplete");
         //ConsoleWrapper.ReadLine();
 
-        // 4. History test
+        // 6. History test
         var _logchannel = Log.GetChannel("Historytest");
         _logchannel.LogWarn("Please type how many times you will test ConsoleWrapper input: ");
         var times = int.Parse(ConsoleWrapper.ReadLine());
@@ -110,7 +116,7 @@ internal class Program
             _logchannel.LogWarn(text);
         }
 
-        // 5. High output amout test
+        // 7. High output amout test
         separate_logger.Warn(() =>
         {
             var sb = new StringBuilder();
@@ -128,7 +134,7 @@ internal class Program
 
         // ConsoleWrapper.ReadLine();
 
-        // 6. Sudden terminate test
+        // 8. Sudden terminate test
         Log.Warn($"The clearup succeed!");
         Environment.Exit(0);
     }

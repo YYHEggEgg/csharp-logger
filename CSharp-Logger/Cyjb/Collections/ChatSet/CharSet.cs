@@ -26,11 +26,13 @@ internal sealed partial class CharSet : SetBase<char>, ICharSet, IEquatable<Char
 	/// </summary>
 	[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 	private int count = 0;
+#pragma warning disable CS0414
 	/// <summary>
 	/// 集合的字符串表示。
 	/// </summary>
 	[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 	private string? text = null;
+#pragma warning restore CS0414
 
 	/// <summary>
 	/// 从指定的范围字符串初始化 <see cref="CharSet"/> 类的新实例。

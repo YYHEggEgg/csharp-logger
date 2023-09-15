@@ -87,7 +87,7 @@ namespace YYHEggEgg.Logger
                     }
                     #endregion
                     #region 创建新 zip 归档
-                    catch (Exception ex)
+                    catch (Exception /*ex*/)
                     {
                         // 如果存在 zip 文件，则尝试在文件名后添加数字序号
                         string newFilePath = Tools.AddNumberedSuffixToPath(zipFilePath);
@@ -116,7 +116,7 @@ namespace YYHEggEgg.Logger
                                 }
                             }
                         }
-                        catch (Exception ex2)
+                        catch (Exception /*ex2*/)
                         {
                         }
                     }
@@ -150,7 +150,7 @@ namespace YYHEggEgg.Logger
                             }
                         }
                     }
-                    catch (Exception ex2)
+                    catch (Exception /*ex2*/)
                     {
                     }
                     #endregion

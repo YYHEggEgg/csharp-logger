@@ -9,10 +9,22 @@ namespace YYHEggEgg.Logger
     public class LogTextWriter : TextWriter
     {
         public string? LogSender;
+        private LogLevel _logLevelWrite;
         /// <summary>
         /// The LogLevel used for invoking <see cref="TraceListener.Write(string?)"/>.
         /// </summary>
-        public LogLevel LogLevelWrite;
+        public LogLevel LogLevelWrite 
+        {
+            get => _logLevelWrite;
+            set
+            {
+                if (!Enum.IsDefined(value))
+                {
+                    throw new InvalidOperationException("Logs with an invalid level cannot be pushed and handled.");
+                }
+                _logLevelWrite = value;
+            }
+        }
         public readonly BaseLogger BasedLogger;
 
         public LogTextWriter(string? logSender = nameof(LogTextWriter), 
@@ -29,7 +41,7 @@ namespace YYHEggEgg.Logger
 
         protected void InternalFlush_OnNewLine()
         {
-            BasedLogger.PushLog(writebuf.ToString(), LogLevelWrite, LogSender);
+            BasedLogger.PushLog(writebuf.ToString(), _logLevelWrite, LogSender);
             writebuf.Clear();
         }
 
@@ -78,7 +90,7 @@ namespace YYHEggEgg.Logger
                 else
                 {
                     Debug.Assert(writebuf.Length == 0);
-                    BasedLogger.PushLog(line, LogLevelWrite, LogSender);
+                    BasedLogger.PushLog(line, _logLevelWrite, LogSender);
                 }
             }
             if (lines.Length > 0)

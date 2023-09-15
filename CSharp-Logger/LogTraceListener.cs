@@ -6,14 +6,38 @@ namespace YYHEggEgg.Logger
     {
         public override bool IsThreadSafe => true;
         public string LogSender { get; set; }
+        private LogLevel _logLevelWrite;
         /// <summary>
         /// The LogLevel used for invoking <see cref="TraceListener.Write(string?)"/>.
         /// </summary>
-        public LogLevel LogLevelWrite;
+        public LogLevel LogLevelWrite 
+        {
+            get => _logLevelWrite;
+            set
+            {
+                if (!Enum.IsDefined(value))
+                {
+                    throw new InvalidOperationException("Logs with an invalid level cannot be pushed and handled.");
+                }
+                _logLevelWrite = value;
+            }
+        }
+        private LogLevel _logLevelFail;
         /// <summary>
         /// The LogLevel used for invoking <see cref="TraceListener.Fail(string?)"/>.
         /// </summary>
-        public readonly LogLevel LogLevelFail;
+        public LogLevel LogLevelFail
+        {
+            get => _logLevelFail;
+            set
+            {
+                if (!Enum.IsDefined(value))
+                {
+                    throw new InvalidOperationException("Logs with an invalid level cannot be pushed and handled.");
+                }
+                _logLevelFail = value;
+            }
+        }
         public readonly BaseLogger BasedLogger;
 
         /// <summary>
@@ -35,48 +59,48 @@ namespace YYHEggEgg.Logger
 
         public override void Fail(string? message)
         {
-            if (message != null) BasedLogger.PushLog(message, LogLevelFail, LogSender);
+            if (message != null) BasedLogger.PushLog(message, _logLevelFail, LogSender);
         }
 
         public override void Fail(string? message, string? detailMessage)
         {
-            if (message != null) BasedLogger.PushLog(message, LogLevelFail, LogSender);
-            if (detailMessage != null) BasedLogger.PushLog(detailMessage, LogLevelFail, LogSender);
+            if (message != null) BasedLogger.PushLog(message, _logLevelFail, LogSender);
+            if (detailMessage != null) BasedLogger.PushLog(detailMessage, _logLevelFail, LogSender);
         }
 
         public override void Write(object? o)
         {
-            if (o != null) BasedLogger.PushLog(o.ToString() ?? "", LogLevelWrite, LogSender);
+            if (o != null) BasedLogger.PushLog(o.ToString() ?? "", _logLevelWrite, LogSender);
         }
 
         public override void Write(string? message, string? category)
         {
-            if (message != null) BasedLogger.PushLog(message, LogLevelWrite, $"{LogSender}:{category}");
+            if (message != null) BasedLogger.PushLog(message, _logLevelWrite, $"{LogSender}:{category}");
         }
 
         public override void Write(string? message)
         {
-            if (message != null) BasedLogger.PushLog(message, LogLevelWrite, LogSender);
+            if (message != null) BasedLogger.PushLog(message, _logLevelWrite, LogSender);
         }
 
         public override void Write(object? o, string? category)
         {
-            if (o != null) BasedLogger.PushLog(o.ToString() ?? "", LogLevelWrite, $"{LogSender}:{category}");
+            if (o != null) BasedLogger.PushLog(o.ToString() ?? "", _logLevelWrite, $"{LogSender}:{category}");
         }
 
         public override void WriteLine(string? message)
         {
-            if (message != null) BasedLogger.PushLog(message, LogLevelWrite, LogSender);
+            if (message != null) BasedLogger.PushLog(message, _logLevelWrite, LogSender);
         }
 
         public override void WriteLine(string? message, string? category)
         {
-            if (message != null) BasedLogger.PushLog(message, LogLevelWrite, $"{LogSender}:{category}");
+            if (message != null) BasedLogger.PushLog(message, _logLevelWrite, $"{LogSender}:{category}");
         }
 
         public override void WriteLine(object? o, string? category)
         {
-            if (o != null) BasedLogger.PushLog(o.ToString() ?? "", LogLevelWrite, $"{LogSender}:{category}");
+            if (o != null) BasedLogger.PushLog(o.ToString() ?? "", _logLevelWrite, $"{LogSender}:{category}");
         }
     }
 }

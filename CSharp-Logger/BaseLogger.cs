@@ -172,7 +172,7 @@ namespace YYHEggEgg.Logger
             foreach (var fileStreamName in fileStreamNames_enumerable)
                 AddLogFile(fileStreamName);
         }
-        public BaseLogger(LoggerConfig conf, params string[] fileStreamNames)
+        public BaseLogger(LoggerConfig conf, string[] fileStreamNames)
             : this(conf, fileStreamNames_enumerable: fileStreamNames) { }
 
         public BaseLogger(LoggerConfig conf, LogFileConfig newFileStreamConf1, string fileStreamName1)
@@ -347,6 +347,10 @@ namespace YYHEggEgg.Logger
             {
                 throw new InvalidOperationException("A log with LogLevel.None cannot be pushed and handled.");
             }
+            if (!Enum.IsDefined(logLevel))
+            {
+                throw new ArgumentException("A log with an invalid level cannot be pushed and handled.", nameof(logLevel));
+            }
             if (CustomConfig.Global_Minimum_LogLevel <= logLevel)
             {
                 qlog.Enqueue(new LogDetail(content, logLevel, sender));
@@ -501,6 +505,10 @@ namespace YYHEggEgg.Logger
             if (logLevel == LogLevel.None)
             {
                 throw new InvalidOperationException("A log with LogLevel.None cannot be pushed and handled.");
+            }
+            if (!Enum.IsDefined(logLevel))
+            {
+                throw new ArgumentException("A log with an invalid level cannot be pushed and handled.", nameof(logLevel));
             }
             if (CustomConfig.Global_Minimum_LogLevel <= logLevel)
             {

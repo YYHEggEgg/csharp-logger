@@ -8,7 +8,7 @@
     <GenerateDocumentationFile>False</GenerateDocumentationFile>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Title>EggEgg.CSharp-Logger</Title>
-    <Version>3.8.57-beta</Version>
+    <Version>3.8.58-beta</Version>
     <Authors>YYHEggEgg</Authors>
     <Company>YYHEggEgg</Company>
     <Description>A convenient C# Logger implementation, with reliable console interaction encapsulation support available.</Description>
@@ -16,12 +16,15 @@
     <PackageProjectUrl>https://github.com/YYHEggEgg/csharp-logger</PackageProjectUrl>
     <RepositoryUrl>https://github.com/YYHEggEgg/csharp-logger</RepositoryUrl>
     <PackageTags>Log;CLI</PackageTags>
-    <PackageReleaseNotes>Breaking changes in v4.0.0 - Preview 9 Patch 7 (v3.8.57-beta)
+    <PackageReleaseNotes>Breaking changes in v4.0.0 - Preview 9 Patch 8 (v3.8.58-beta)
 
 - The property `Log.CustomConfig` is renamed to `Log.GlobalConfig`, and an access attempt to `Log.GlobalConfig` before invoking `Log.Initialize` will raise `InvalidOperationException`.
 - Now if the user indicates to use the program path (provided `false` for `LoggerConfig.Use_Working_Directory`) during `Log.Initialize` and it cannot be accessed, compared with the previous implementation, it will not issue a warning that the program will fallback to the working directory. Similarly, there will be no warning prompts if an error occurs when compressing past log files.
-- **Important**: In the new version, not only `latest.log` and `latest.debug.log`, but **any log files under the `logs` folder that match the wildcard `latest.*.log`** will be renamed to the last time they were written when `Log.Initialize` processes past logs.  
+- **IMPORTANT**: In the new version, the default color Logger using in Console is changed to `ConsoleColor.Gray` to be consistent to most Console implements. You can also change this setting by `Log.GlobalDefaultColor` property now.
+- **IMPORTANT**: In the new version, not only `latest.log` and `latest.debug.log`, but **any log files under the `logs` folder that match the wildcard `latest.*.log`** will be renamed to the last time they were written when `Log.Initialize` processes past logs.  
   They are also affected by automatic log compression, but this is actually consistent with past behavior.
+- Now if invoking `Log.Initialize` or `BaseLogger.Initialize` on platforms not supporting the Console with `LoggerConfig.Console_Minimum_LogLevel` not set to `LogLevel.None`, an exception will be immerdiately thrown.  
+  You can also use this logger on these platforms, but outputing logs to the Console should be disabled. Windows, macOS, Linux are treated as supported platforms currently.
 - Now at the end of the program, the leave time given to Logger is 1000ms, and the leave time given to console output (whether it is normal output or `ConsoleWrapper`) is 500ms (it will only be performed after Logger's cleaning work is completed). In previous versions, these two numbers were 300ms and 1200ms respectively.
 - The color judgment uses a new algorithm, so it may not be "bug compatible" with the previous implementation.
 - `ConsoleWrapper` uses a new algorithm, developers try to put the breaking changes caused by it below, but the fixed bugs may not be listed.
@@ -37,7 +40,7 @@
   Set it to a positive value can apply the limit,  0 can stop the history (since then), and -1 can cancel the limit. 
 - This project will not be backward compatible with any version below `.NET 6.0` in the future, including `.NET Standard 2.1`.
 
-Changes in v4.0.0 - Preview 9 Patch 7 (v3.8.57-beta)
+Changes in v4.0.0 - Preview 9 Patch 8 (v3.8.58-beta)
 
 (Note: This is the last minor preview version before the official version v4.0.0. Its latest Patch will be identical to the official version v4.0.0.)
 
@@ -51,6 +54,7 @@ Main changes:
 - Fixed the problem that due to the defect of the timing algorithm, the log processing background task will not wait for the specified time after processing the log.
 - Fixed the problem that in most cases, the waiting time for cleaning (1.5s) will reach the maximum value, and it is still possible that the console cleaning cannot be completed.
 - Fixed the problem that when not reading input by `ConsoleWrapper`, event `ConsoleWrapper.ShutDownRequest` cannot be triggered by pressing Ctrl+C, until someone starting reading input again.
+- Fixed the problem that when providing log methods like `Log.PushLog` with invalid `LogLevel`, the logs will enter the handle queue and possibly make the handle thread crash.
 - A new KMP-based algorithm is used to analyze color tag information, which speeds up processing. See [Benchmark data](https://github.com/YYHEggEgg/csharp-logger/blob/main/ColorLineUtil-report-github.md) for details.
 - Added `LogTextWriter`, but note that it uses a buffer to maintain characters that have not been wrapped; that is, all content before the newline character is not displayed in `Logger`.  
   If some external code uses the `Console` method and you use `ConsoleWrapper` (such as `CommandLineParser`), you must provide an instance of `LogTextWriter` for it.

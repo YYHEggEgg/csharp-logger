@@ -1,3 +1,5 @@
+中文 | [EN](README.md)
+
 # csharp-logger
 
 一个方便的 C# 日志记录器实现，同时有可靠的控制台交互封装支持可使用。
@@ -8,7 +10,7 @@
 
 ## 更新
 
-### v4.0.0 - Preview 9 Patch 7 (v3.8.57-beta)
+### v4.0.0 - Preview 9 Patch 8 (v3.8.58-beta)
 
 （注：这是 v4.0.0 正式版本前的最后一个次要预览版本。它的最新 Patch 将会与正式版本 v4.0.0 完全一致。）
 
@@ -22,6 +24,7 @@
 - 修复了由于计时算法缺陷，日志处理后台任务在处理完日志后不会等待规定时间的问题。
 - 修复了在大多数情况下，清理所等待的时间（1.5s）会达到最大值，且仍有可能无法完成控制台清理的问题。
 - 修复了 `ConsoleWrapper` 未在进行读取时，按 Ctrl+C 无法触发 `ConsoleWrapper.ShutDownRequest` 事件，直至下一次读取才可触发的问题。
+- 修复了为 `Log.PushLog` 等方法提供非法 `LogLevel` 时，会正常进入处理队列并可能引起内部线程崩溃的问题。
 - 使用了全新的基于 KMP 的算法来分析颜色标签信息，加快了处理速度。详见 [Benchmark 数据](https://github.com/YYHEggEgg/csharp-logger/blob/main/ColorLineUtil-report-github.md)。
 - 添加了 `LogTextWriter`，但注意其使用一个缓冲区来维护未换行的字符；也就是说，在没有输入换行符之前的所有内容都不会显示在 `Logger`。  
   如果一些外部代码使用 `Console` 的方法且您使用 `ConsoleWrapper`（例如 `CommandLineParser`），则必须为其提供 `LogTextWriter` 的实例。
@@ -51,8 +54,11 @@ Patch 更改（不计入正式版）：
 
 - `Log.CustomConfig` 属性更名为 `Log.GlobalConfig`。同时，现在在未调用 `Log.Initialize` 初始化时访问 `Log.GlobalConfig` 会引发 `InvalidOperationException`.
 - 现在如果用户在 `Log.Initialize` 时指示使用程序路径（为 `LoggerConfig.Use_Working_Directory` 提供了 `false`），并且其无法访问，相比之前的实现，其不会发出程序会 fallback 到工作目录的警告。同理，在压缩过往日志文件时如果出现了错误也不会有警告提示。
+- **重要**：在新版本中，Logger 使用的默认的控制台颜色变更为 `ConsoleColor.Gray`，以与大部分控制台实现保持一致。你现在也可以通过 `Log.GlobalDefaultColor` 属性更改此设置。
 - **重要**：在新版本中，不仅有 `latest.log` 与 `latest.debug.log`，而是**任何在 `logs` 文件夹下符合通配符 `latest.*.log` 的**日志文件都会在调用 `Log.Initialize` 进行过往日志处理时被重命名为最后一次进行写入的时间。  
   它们也同样受日志自动压缩的影响，但这实际上与过往的行为一致。
+- 现在在控制台不受支持的平台上调用 `Log.Initialize` 或 `BaseLogger.Initialize` 时，如果为 `LoggerConfig.Console_Minimum_LogLevel` 指定除 `LogLevel.None` 以外的值，将会直接抛出异常。  
+  你仍可以在这些平台上使用本 Logger，只是必须禁用控制台日志。目前认为控制台仅在 Windows, macOS, Linux 平台上受支持。
 - 现在在程序结束时，给予 Logger 的离开时间为 1000ms，而给予控制台输出（无论是普通输出还是 `ConsoleWrapper`）的离开时间为 500ms（其一定在 Logger 清理工作完毕后才进行）。在以前的版本中，这两个数字分别是 300ms 和 1200ms。
 - 颜色判断使用了全新的算法，因此其可能与以前的实现并不“bug 兼容”。
 - `ConsoleWrapper` 使用了全新的算法，开发者尽量将引起的中断性变更置于下方，但是被修复的 bug 可能不会列出。

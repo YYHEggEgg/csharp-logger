@@ -57,7 +57,7 @@ namespace YYHEggEgg.Logger.Utils
 
     internal static class ColorLineUtil
     {
-        public static ConsoleColor DefaultColor = ConsoleColor.White;
+        public static ConsoleColor DefaultColor = ConsoleColor.Gray;
 
         /// <summary>
         /// 在 <paramref name="obj"/> 中寻找字符串 <paramref name="content"/>，

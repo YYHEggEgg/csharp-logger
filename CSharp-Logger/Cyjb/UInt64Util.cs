@@ -2,6 +2,7 @@ using System.Numerics;
 
 namespace Cyjb;
 
+#pragma warning disable CS3021
 /// <summary>
 /// 提供对 <see cref="ulong"/> 的扩展方法。
 /// </summary>
@@ -186,3 +187,5 @@ internal static class UInt64Util
 	#endregion // 位运算
 
 }
+
+#pragma warning restore CS3021

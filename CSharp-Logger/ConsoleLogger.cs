@@ -45,6 +45,22 @@ namespace YYHEggEgg.Logger
             }
         }
 
+        /// <summary>
+        /// The default color used by logs in Console. 
+        /// </summary>
+        public static ConsoleColor GlobalDefaultColor
+        {
+            get => ColorLineUtil.DefaultColor;
+            set 
+            {
+                if (!Enum.IsDefined(value))
+                {
+                    throw new InvalidOperationException("Should be a valid ConsoleColor enum value.");
+                }
+                ColorLineUtil.DefaultColor = value;
+            }
+        }
+
         #region Initialize
         private static bool _initialized = false;
         private static BaseLogger? _baseLogger = null;
