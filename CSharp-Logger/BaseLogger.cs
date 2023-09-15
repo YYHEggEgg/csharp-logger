@@ -700,21 +700,29 @@ namespace YYHEggEgg.Logger
             }
             else
             {
+                string loglevel_id;
                 switch (level)
                 {
                     case LogLevel.Verbose:
-                        return $" <Verb:{sender}> ";
+                        loglevel_id = "Verb";
+                        break;
                     case LogLevel.Debug:
-                        return $" <Dbug:{sender}> ";
+                        loglevel_id = "Dbug";
+                        break;
                     case LogLevel.Information:
-                        return $" <Info:{sender}> ";
+                        loglevel_id = "Info";
+                        break;
                     case LogLevel.Warning:
-                        return $" <Warn:{sender}> ";
+                        loglevel_id = "Warn";
+                        break;
                     case LogLevel.Error:
-                        return $" <Erro:{sender}> ";
+                        loglevel_id = "Erro";
+                        break;
                     default:
                         throw new Exception("Unexpected enum value!");
                 }
+                if (sender == null) return $" <{loglevel_id}> ";
+                else return $" <{loglevel_id}:{sender}> ";
             }
         }
         #endregion

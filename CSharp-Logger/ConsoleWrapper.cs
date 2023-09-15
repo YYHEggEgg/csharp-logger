@@ -309,6 +309,11 @@ namespace YYHEggEgg.Logger
                 while (true)
                 {
                     ConsoleKeyInfo keyInfo = Console.ReadKey(true);
+                    if (keyInfo.Modifiers == ConsoleModifiers.Control && keyInfo.Key == ConsoleKey.C)
+                    {
+                        ShutdownRequest_Callback();
+                        continue;
+                    }
                     qhandle_consolekeys.Enqueue(keyInfo);
                 }
             }
@@ -389,12 +394,8 @@ namespace YYHEggEgg.Logger
                         }
                         while (qhandle_consolekeys.TryDequeue(out var keyInfo))
                         {
-                            if (keyInfo.Modifiers == ConsoleModifiers.Control && keyInfo.Key == ConsoleKey.C)
-                            {
-                                ShutdownRequest_Callback();
-                                continue;
-                            }
-                            else if (keyInfo.Key != ConsoleKey.Enter)
+                            // Ctrl+C should be handled as soon as it's read.
+                            if (keyInfo.Key != ConsoleKey.Enter)
                             {
                                 keyHandler.Handle(keyInfo);
                                 continue;

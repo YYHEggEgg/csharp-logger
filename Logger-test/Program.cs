@@ -38,6 +38,11 @@ internal class Program
             }
         );
 
+        // 0. Ctrl+C closing test
+        ConsoleWrapper.ShutDownRequest += (_, _) => Environment.Exit(0);
+        // int attempt_reading_wait_seconds = 100; // set to 100 when testing Ctrl+C
+        int attempt_reading_wait_seconds = 1;
+
         // 1. Dbug test
 #if DEBUG
         Log.Dbug("this is run on DEBUG!");
@@ -68,8 +73,8 @@ internal class Program
             "<color=Yellow></color><-nothing text|" +
             "<color=Yellow><color=White><color=Blue><>></color></color></color>");
         Log.Info("<color=Blue>blue text</color>-<>>><<<color=Yellow>yelolow text</color>/<><color=FF>no color text</color>", "Should not output if Release");
-        Log.Info("start 1st reading attempt in 1s...");
-        await Task.Delay(1000);
+        Log.Info($"start 1st reading attempt in {attempt_reading_wait_seconds}s...");
+        await Task.Delay(attempt_reading_wait_seconds * 1000);
         ConsoleWrapper.InputPrefix = "WrapperCLI> ";
         string res = ConsoleWrapper.ReadLine();
         Log.Warn(res, "ReadLine");
