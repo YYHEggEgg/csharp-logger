@@ -1,4 +1,4 @@
-中文 | [EN](README.md)
+中文 | [EN](https://github.com/YYHEggEgg/csharp-logger/blob/main/README.md)
 
 # csharp-logger
 
@@ -10,7 +10,7 @@
 
 ## 更新
 
-### v4.0.0 - Preview 9 Patch 8 (v3.8.58-beta)
+### v4.0.0 - Preview 9 Patch 9 (v3.8.59-beta)
 
 （注：这是 v4.0.0 正式版本前的最后一个次要预览版本。它的最新 Patch 将会与正式版本 v4.0.0 完全一致。）
 
@@ -24,6 +24,7 @@
 - 修复了由于计时算法缺陷，日志处理后台任务在处理完日志后不会等待规定时间的问题。
 - 修复了在大多数情况下，清理所等待的时间（1.5s）会达到最大值，且仍有可能无法完成控制台清理的问题。
 - 修复了 `ConsoleWrapper` 未在进行读取时，按 Ctrl+C 无法触发 `ConsoleWrapper.ShutDownRequest` 事件，直至下一次读取才可触发的问题。
+- 修复了 `ConsoleWrapper` 中特定情况下可输入非法字符的问题。
 - 修复了为 `Log.PushLog` 等方法提供非法 `LogLevel` 时，会正常进入处理队列并可能引起内部线程崩溃的问题。
 - 使用了全新的基于 KMP 的算法来分析颜色标签信息，加快了处理速度。详见 [Benchmark 数据](https://github.com/YYHEggEgg/csharp-logger/blob/main/ColorLineUtil-report-github.md)。
 - 添加了 `LogTextWriter`，但注意其使用一个缓冲区来维护未换行的字符；也就是说，在没有输入换行符之前的所有内容都不会显示在 `Logger`。  
@@ -46,9 +47,6 @@
 - 现在设置 `ConsoleWrapper.AutoCompleteHandler` 可对用户的输入进行自动补全。
 - 优化了 `Log`、`BaseLogger` 以及 `LoggerChannel` 类内的方法指示。
 - 现在可以通过 `ConsoleWrapper.ReadLine(false)` 来指示不将当前行的内容计入命令输入历史。这在指示用户输入只与特定上下文有关的信息（例如 `Type 'y' to confirm, 'n' to refuse` 之类的确认 prompt）时很有用。
-
-Patch 更改（不计入正式版）：
-- 修复了在不提供 sender 时，日志文件中的信息列会出现额外的冒号的问题。（PSV 日志不受影响）
 
 ### 中断性变更
 

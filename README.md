@@ -1,4 +1,4 @@
-[中文](README_CN.md) | EN
+[中文](https://github.com/YYHEggEgg/csharp-logger/blob/main/README_CN.md) | EN
 
 # csharp-logger
 
@@ -10,7 +10,7 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
 
 ## Update
 
-### v4.0.0 - Preview 9 Patch 8 (v3.8.58-beta)
+### v4.0.0 - Preview 9 Patch 9 (v3.8.59-beta)
 
 (Note: This is the last minor preview version before the official version v4.0.0. Its latest Patch will be identical to the official version v4.0.0.)
 
@@ -24,6 +24,7 @@ Main changes:
 - Fixed the problem that due to the defect of the timing algorithm, the log processing background task will not wait for the specified time after processing the log.
 - Fixed the problem that in most cases, the waiting time for cleaning (1.5s) will reach the maximum value, and it is still possible that the console cleaning cannot be completed.
 - Fixed the problem that when not reading input by `ConsoleWrapper`, event `ConsoleWrapper.ShutDownRequest` cannot be triggered by pressing Ctrl+C, until someone starting reading input again.
+- Fixed the problem that in certain conditions, `ConsoleWrapper` accepts invalid characters.
 - Fixed the problem that when providing log methods like `Log.PushLog` with invalid `LogLevel`, the logs will enter the handle queue and possibly make the handle thread crash.
 - A new KMP-based algorithm is used to analyze color tag information, which speeds up processing. See [Benchmark data](https://github.com/YYHEggEgg/csharp-logger/blob/main/ColorLineUtil-report-github.md) for details.
 - Added `LogTextWriter`, but note that it uses a buffer to maintain characters that have not been wrapped; that is, all content before the newline character is not displayed in `Logger`.  

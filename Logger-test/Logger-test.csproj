@@ -12,8 +12,4 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <!-- <ItemGroup> -->
-    <!-- <PackageReference Include="EggEgg.CSharp-Logger" Version="2.2.0.52-beta" /> -->
-  <!-- </ItemGroup> -->
-
 </Project>
