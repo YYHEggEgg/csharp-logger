@@ -10,9 +10,7 @@
 
 ## 更新
 
-### v4.0.0 - Preview 9 Patch 9 (v3.8.59-beta)
-
-（注：这是 v4.0.0 正式版本前的最后一个次要预览版本。它的最新 Patch 将会与正式版本 v4.0.0 完全一致。）
+### v4.0.0
 
 这个版本几乎重新实现了整个 logger，将静态类 `Log` 的主要功能提取并封装到了 `BaseLogger`。原有的功能不受影响，并修复了一些 bug，但可能会遇到一些中断性变更。
 
@@ -25,11 +23,11 @@
 - 修复了在大多数情况下，清理所等待的时间（1.5s）会达到最大值，且仍有可能无法完成控制台清理的问题。
 - 修复了 `ConsoleWrapper` 未在进行读取时，按 Ctrl+C 无法触发 `ConsoleWrapper.ShutDownRequest` 事件，直至下一次读取才可触发的问题。
 - 修复了 `ConsoleWrapper` 中特定情况下可输入非法字符的问题。
-- 修复了为 `Log.PushLog` 等方法提供非法 `LogLevel` 时，会正常进入处理队列并可能引起内部线程崩溃的问题。
+- 修复了为 `Log.PushLog` 在内的一些方法与成员提供非法 `LogLevel` 时，会正常进入处理队列并可能引起内部线程崩溃的问题。
 - 使用了全新的基于 KMP 的算法来分析颜色标签信息，加快了处理速度。详见 [Benchmark 数据](https://github.com/YYHEggEgg/csharp-logger/blob/main/ColorLineUtil-report-github.md)。
-- 添加了 `LogTextWriter`，但注意其使用一个缓冲区来维护未换行的字符；也就是说，在没有输入换行符之前的所有内容都不会显示在 `Logger`。  
+- 添加了 `LogTextWriter` 实现抽象类 `TextWriter`。但注意其使用一个缓冲区来维护未换行的字符；也就是说，在没有输入换行符之前的所有内容都不会显示在 `Logger`。  
   如果一些外部代码使用 `Console` 的方法且您使用 `ConsoleWrapper`（例如 `CommandLineParser`），则必须为其提供 `LogTextWriter` 的实例。
-- 添加了 `LoggerChannel`。对于实现某一段逻辑的代码，其在调用 `Log` 方法时通常会传递同一个 `sender` 参数，可以创建 `LoggerChannel` 来减少代码量并增加可维护性。
+- 为了不必在每次记录日志时都提供 `sender` 参数，添加了 `LoggerChannel`。对于实现某一段逻辑的代码，其在调用 `Log` 方法时通常会传递同一个 `sender` 参数，此时便可以以它创建 `LoggerChannel` 来减少代码量并增加可维护性。
 - 在 `Log` 静态类额外创建了一些指向 `BaseLogger` 对应方法的静态方法。
 - 现在可以通过设置 `LoggerConfig.Enable_Detailed_Time` 来设置是否启用时间细节。默认情况下，Logger 记录的时间仅精确到秒，且不包含日期，对应格式化字符串 `HH:mm:ss`。  
   开启时间细节后，将会展现日志提交时间直至七分之一秒的细节，与之相对应的格式化字符串为 `yyyy-MM-dd HH:mm:ss fff ffff`，两部分 `fff` 和 `ffff` 分别表示毫秒级别与万分之一毫秒（100 纳秒，0.1 微秒）级别，如 `2023-08-22 15:43:36 456 4362`. 此配置要求全局统一，对控制台与日志文件的输出内容均生效。
@@ -41,7 +39,7 @@
   23:14:17|Warn|TestSender|Push a warning log!
   ```
 
-- 现在可以为 `LogTraceListener` 和 `LogTextWriter` 提供 `basedlogger` 参数，来改变它们输出的目标 `BaseLogger`。默认值仍为全局静态类共享的 `Log.GlobalBasedLogger`.
+- 现在可以为 `LogTraceListener` 和 `LogTextWriter` 提供 `basedlogger` 参数，来改变它们输出的目标 `BaseLogger`。默认值仍为全局静态类 `Log` 共享的 `Log.GlobalBasedLogger`.
 - 借鉴了一些 [tonerdo/readline](https://github.com/tonerdo/readline) 的代码来实现新版的 `ConsoleWrapper`。但请注意，本版本的 nuget 包不包含对 nuget 包 [ReadLine](https://www.nuget.org/packages/ReadLine) 的引用，也不包含类 `ReadLine`。所有操作仍封装为 `ConsoleWrapper`。
 - 大幅提升了 `ConsoleWrapper` 在文本量较大时修改文本的体验。
 - 现在设置 `ConsoleWrapper.AutoCompleteHandler` 可对用户的输入进行自动补全。
@@ -60,7 +58,7 @@
 - 现在在程序结束时，给予 Logger 的离开时间为 1000ms，而给予控制台输出（无论是普通输出还是 `ConsoleWrapper`）的离开时间为 500ms（其一定在 Logger 清理工作完毕后才进行）。在以前的版本中，这两个数字分别是 300ms 和 1200ms。
 - 颜色判断使用了全新的算法，因此其可能与以前的实现并不“bug 兼容”。
 - `ConsoleWrapper` 使用了全新的算法，开发者尽量将引起的中断性变更置于下方，但是被修复的 bug 可能不会列出。
-- `ConsoleWrapper` 以前支持将多行的文本保留换行符粘贴至输入中（尽管修改文本时会出现问题）；现在并不支持这一功能，并且会将输入的所有换行符均替换为两个空格。  
+- `ConsoleWrapper` 以前支持将多行的文本保留换行符粘贴至输入中（尽管修改文本时会出现问题）；现在并不支持这一功能，并且会将粘贴的所有换行符均替换为两个空格。  
   > 识别的换行序列列表是 CR (U+000D)、LF (U+000A)，CRLF (U+000D U+000A)、NEL (U+0085)、LS (U+2028)、FF (U+000C) 和 PS (U+2029)。此列表由 Unicode Standard 第 5.8 条建议 R4 和表 5-2 提供。
 
   但是，由于一些终端重载了 `Ctrl`+`V` 快捷键，如果你的程序利用“将换行符转换为空格以供一次输入”的功能，你可能需要提示用户使用 `Ctrl`+`Alt`+`V` 快捷键，以保证内置粘贴机制的触发。在剪贴板文本极大时，使用内置粘贴还可以显著提高输入框性能。  
@@ -85,7 +83,7 @@
 - `ConsoleWrapper` 现在在程序未确认输入时将不会将行内容计入历史记录，此时按上/下方向键并不能包括未确认输入的内容。例如，在**没有线程等待 `ConsoleWrapper.ReadLine` 时**依次输入 `1[回车]2[回车][上方向键][回车]`，那么程序此后第三次调用 `ConsoleWrapper.ReadLine` 取回的数据将是空字符串（在以前的版本中将会取回 `2`）。
 - `ConsoleWrapper` 的新读入方式类似于 [GNU Readline](https://en.wikipedia.org/wiki/GNU_Readline)，但这导致 Ctrl+C 的过往行为与其产生了冲突，因此保留了 Ctrl+C 引发 `ConsoleWrapper.ShutDownRequest` 事件的功能。除此之外，其他所有下附 GNU readline 快捷键的功能均可以视为中断性变更。
 - 为了支持中文及全角字符等宽字符的输入，同时避开各种 corner case 的处理，现在 `ConsoleWrapper` 单行内可容纳的字符量减少了 1 位，最后一位作为承载宽字符的额外空间。
-- 现在当一段输入的字符量超出控制台字符位数量时，它将不会被记录在输入历史中。此默认行为可以通过操作 `ConsoleWrapper.HistoryMaximumChars` 来更改。
+- 现在当一段输入的字符量超出控制台字符位数量时，它将不会被记录在输入历史中。此默认行为可以通过操作 `ConsoleWrapper.HistoryMaximumChars` 来更改。  
   将其更改为正数可更新限制，更改为 0 可以停止（往后的）命令输入历史记录，更改为 -1 可以取消此限制。
 - 该项目未来不会向下兼容到 `.NET 6.0` 以下的任何版本，包括 `.NET Standard 2.1`。
 
@@ -129,7 +127,7 @@
   您也可以通过将其设置为 `-1` 来禁用此功能。
 - 自动压缩日志  
   如果有至少 1 天前创建的日志，则会将它们压缩成一个zip文件，例如 `logs.[Date].zip`。
-- 分隔符表格记录  
+- 将日志记录为表格  
   可以在创建每个新日志文件时，使用 `LogFileConfig.IsPipeSeparatedFormat` 指示创建的日志文件是否为竖线分隔值文件（Pipe-separated values file，PSV）。  
   将日志输出为表格有助于在数据量极大时进行分析，尤其是如果程序中大量模块化代码调用 Log 方法时不会改变 sender 参数的情况下。此配置不会对输出至控制台的内容生效，且出于一些性能上的考虑，目前只接受 `|` 作为分隔符。输出格式为：
 
@@ -141,17 +139,7 @@
 ## 最佳实践
 
 1. 在程序的入口点（也可是其他地方，总之越早越好）调用 `Log.Initialize(LoggerConfig)` 来进行全局初始化，然后开始使用日志相关方法。
-2. 如果程序使用 [CommandLineParser](https://www.nuget.org/packages/CommandLineParser)，请重定向它的输出 `TextWriter`。代码如下：
-
-   ```cs
-   public readonly static Parser DefaultCommandsParser = new Parser(config =>
-   {
-       // 在构建时设置自定义 ConsoleWriter
-       config.HelpWriter = TextWriter.Synchronized(new LogTextWriter("CommandLineParser"));
-   });
-   ```
-
-3. 谨慎配置 `LoggerConfig` 的各项功能。如果只想用作普通的日志记录器，以下是一个推荐配置：
+2. 谨慎配置 `LoggerConfig` 的各项功能。如果只想用作普通的日志记录器，以下是一个推荐配置：
 
    ```cs
    Log.Initialize(new LoggerConfig(
@@ -171,9 +159,19 @@
        ));
    ```
 
-4. 如果想要使用 `ConsoleWrapper` 的功能，需要将上示 `LoggerConfig` 中的 `use_Console_Wrapper` 设为 true，然后开始使用其功能。
-5. 在创建新日志文件时，可使用 `LogFileConfig.IsPipeSeparatedFormat` 指示创建的日志文件是否为竖线分隔值文件（Pipe-separated values file，PSV）。  
+3. 如果想要使用 `ConsoleWrapper` 的功能，需要将上示 `LoggerConfig` 中的 `use_Console_Wrapper` 设为 true，然后开始使用其功能。
+4. 在创建新日志文件时，可使用 `LogFileConfig.IsPipeSeparatedFormat` 指示创建的日志文件是否为竖线分隔值文件（Pipe-separated values file，PSV）。  
    将日志输出为表格有助于在数据量极大时进行筛选与分析，尤其是如果程序中大量模块化代码调用 Log 方法时不会改变 sender 参数的情况下。可使用 `BaseLogger(LoggerConfig, LogFileConfig)` 为统计类数据专门创建一个 `BaseLogger` 与其日志文件，并令 `content` 同样使用类似 PSV 的格式，以便于数据的查询。
-6. 可以通过将 `LoggerConfig` 中的 `enable_Detailed_Time` 设为 true，启用日志的时间细节。默认情况下，Logger 记录的时间仅精确到秒，且不包含日期，对应格式化字符串 `HH:mm:ss`。  
+5. 可以通过将 `LoggerConfig` 中的 `enable_Detailed_Time` 设为 true，启用日志的时间细节。默认情况下，Logger 记录的时间仅精确到秒，且不包含日期，对应格式化字符串 `HH:mm:ss`。  
   开启时间细节后，将会展现日志提交时间直至七分之一秒的细节，与之相对应的格式化字符串为 `yyyy-MM-dd HH:mm:ss fff ffff`，两部分 `fff` 和 `ffff` 分别表示毫秒级别与万分之一毫秒（100 纳秒，0.1 微秒）级别，如 `2023-08-22 15:43:36 456 4362`. 此配置要求全局统一，对控制台与日志文件的输出内容均生效。
+6. 如果程序使用 [CommandLineParser](https://www.nuget.org/packages/CommandLineParser)，请重定向它的输出 `TextWriter`。使用如下代码：
+
+   ```cs
+   public readonly static Parser DefaultCommandsParser = new Parser(config =>
+   {
+       // 在构建时设置自定义 ConsoleWriter
+       config.HelpWriter = TextWriter.Synchronized(new LogTextWriter("CommandLineParser"));
+   });
+   ```
+
 7. 如果你使用 `ConsoleWrapper`，最好订阅事件 `ConsoleWrapper.ShutDownRequested` 以在用户按下 Ctrl+C 时做出操作。注意引发该事件的 `EventHandler` 提供的 `sender` 与 `args` 均无实际意义。
