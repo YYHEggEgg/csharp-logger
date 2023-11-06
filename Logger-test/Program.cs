@@ -20,6 +20,7 @@ internal class Program
             enable_Detailed_Time: false
             ));
 
+        // 1. Shared log FileStream test
         BaseLogger separate_logger = new BaseLogger(new LoggerConfig(
             max_Output_Char_Count: 1024,
             use_Console_Wrapper: true,
@@ -31,19 +32,20 @@ internal class Program
             ), new LogFileConfig
             {
                 AutoFlushWriter = true,
-                FileIdentifier = "warning",
+                FileIdentifier = "Warning",
                 MinimumLogLevel = LogLevel.Warning,
                 MaximumLogLevel = LogLevel.Error,
                 IsPipeSeparatedFile = true,
             }
         );
+        separate_logger = new BaseLogger(separate_logger.CustomConfig, "warning");
 
-        // 1. Ctrl+C closing test
+        // 2. Ctrl+C closing test
         ConsoleWrapper.ShutDownRequest += (_, _) => Environment.Exit(0);
         // int attempt_reading_wait_seconds = 100; // set to 100 when testing Ctrl+C
         int attempt_reading_wait_seconds = 1;
 
-        // 2. Dbug test
+        // 3. Dbug test
 #if DEBUG
         Log.Dbug("this is run on DEBUG!");
         Log.Verb("Verbose is output to the log file, not console!");
@@ -55,13 +57,13 @@ internal class Program
         Log.PushLog("Push a warning log!", LogLevel.Warning, "TSETSender");
         Log.PushLog("Push a verbose log!", LogLevel.Verbose, "TSESTender");
 
-        // 3. Global default color set test
+        // 4. Global default color set test
         Log.Info($"Waiting for 1s...");
         await Task.Delay(1000);
         Log.GlobalDefaultColor = ConsoleColor.White;
         Log.Warn($"Global logging console color changed to white.");
 
-        // 4. LogTextWriter Encoding test
+        // 5. LogTextWriter Encoding test
         StringReader chinese_string = new("你说得对，但是《原神》是一款由米哈游自主研发的开放世界冒险游戏");
 
         LogTextWriter logwriter = new();
@@ -73,7 +75,7 @@ internal class Program
         }
         logwriter.WriteLine();
 
-        // 5. Color test
+        // 6. Color test
         Log.Erro("<color=</color>" +
             "<color=Yellow>yelolow text</color>" +
             "<color=Yellow></color><-nothing text|" +
@@ -100,7 +102,7 @@ internal class Program
         Log.Warn(res, "ReadLine_WithAutoCOmplete");
         //ConsoleWrapper.ReadLine();
 
-        // 6. History test
+        // 7. History test
         var _logchannel = Log.GetChannel("Historytest");
         _logchannel.LogWarn("Please type how many times you will test ConsoleWrapper input: ");
         var times = int.Parse(ConsoleWrapper.ReadLine());
@@ -116,7 +118,7 @@ internal class Program
             _logchannel.LogWarn(text);
         }
 
-        // 7. High output amout test
+        // 8. High output amout test
         separate_logger.Warn(() =>
         {
             var sb = new StringBuilder();

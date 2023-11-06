@@ -10,6 +10,13 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
 
 ## Update
 
+### v4.0.1
+
+- Fixed the issue whereby the file created in the constructor of `BaseLogger` using the overload `BaseLogger(LoggerConfig, LogFileConfig)` could not be utilized in the overload `BaseLogger(LoggerConfig, string)`.
+- Fixed the issue whereby after using the overload `BaseLogger(LoggerConfig, LogFileConfig)` in the constructor of `BaseLogger`, multiple files with the same name or only case-insensitive differences were allowed to be created without checks.
+
+These fixes also apply to other similar overloads.
+
 ### v4.0.0
 
 This version almost re-implements the entire logger, extracting the main functions of the static class `Log` and encapsulating them into `BaseLogger`. The original functions are not affected and some bugs have been fixed, but there may be some breaking changes.

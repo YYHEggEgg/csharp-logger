@@ -10,6 +10,13 @@
 
 ## 更新
 
+### v4.0.1
+
+- 修复了在 `BaseLogger` 构造器中使用重载 `BaseLogger(LoggerConfig, LogFileConfig)` 后，创建的文件无法在重载 `BaseLogger(LoggerConfig, string)` 中利用的问题。
+- 修复了在 `BaseLogger` 构造器中使用重载 `BaseLogger(LoggerConfig, LogFileConfig)` 后，不进行检查而允许创建多个名称相同或仅大小写不同的文件。
+
+这些修复对于其他相似的重载也适用。
+
 ### v4.0.0
 
 这个版本几乎重新实现了整个 logger，将静态类 `Log` 的主要功能提取并封装到了 `BaseLogger`。原有的功能不受影响，并修复了一些 bug，但可能会遇到一些中断性变更。

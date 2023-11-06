@@ -8,7 +8,7 @@
     <GenerateDocumentationFile>False</GenerateDocumentationFile>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Title>EggEgg.CSharp-Logger</Title>
-    <Version>4.0.0</Version>
+    <Version>4.0.1</Version>
     <Authors>YYHEggEgg</Authors>
     <Company>YYHEggEgg</Company>
     <Description>A convenient C# Logger implementation, with reliable console interaction encapsulation support available.</Description>
@@ -40,6 +40,13 @@
 - Now, if a command input line have characters exceeding the console window, it won't be recorded in the input history. You can set `ConsoleWrapper.HistoryMaximumChars` to change the default behaviour.  
   Set it to a positive value can apply the limit, 0 can stop the history (since then), and -1 can cancel the limit. 
 - This project will not be backward compatible with any version below `.NET 6.0` in the future, including `.NET Standard 2.1`.
+
+Changes in v4.0.1
+
+- Fixed the issue whereby the file created in the constructor of `BaseLogger` using the overload `BaseLogger(LoggerConfig, LogFileConfig)` could not be utilized in the overload `BaseLogger(LoggerConfig, string)`.
+- Fixed the issue whereby after using the overload `BaseLogger(LoggerConfig, LogFileConfig)` in the constructor of `BaseLogger`, multiple files with the same name or only case-insensitive differences were allowed to be created without checks.
+
+These fixes also apply to other similar overloads.
 
 Changes in v4.0.0
 

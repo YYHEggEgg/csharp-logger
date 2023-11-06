@@ -194,7 +194,13 @@ namespace YYHEggEgg.Logger
                     (fileconf.MaximumLogLevel == null ? $"{nameof(LogFileConfig)}.{nameof(LogFileConfig.MaximumLogLevel)}; " : ""), 
                     "Valid log level borders are expected for the newly created log file.");
             }
+            
             FileStreamName = fileconf.FileIdentifier;
+            if (!fileStreams.TryAdd(FileStreamName.ToLower(), this))
+            {
+                throw new ArgumentException("You cannot create multiple log files with a name (i.e., FileIdentifier) that only have different cases.");
+            }
+
             if (FileStreamName == GlobalLog_Reserved) LogPath = $"{dir}/logs/latest.log";
             else LogPath = $"{dir}/logs/latest.{FileStreamName}.log";
             logwriter = new(LogPath, true);
@@ -226,7 +232,11 @@ namespace YYHEggEgg.Logger
 
         public static LogFileStream GetInitedInstance(string fileStreamName)
         {
-            return fileStreams[fileStreamName.ToLower()];
+            if (!fileStreams.TryGetValue(fileStreamName.ToLower(), out var fileStream))
+                throw new ArgumentException("Please provide an existing log file identifier, or use reloads of LogFileConfig to create one.", nameof(fileStreamName));
+            if (fileStreamName != fileStream.FileStreamName)
+                throw new ArgumentException("The log file for the provided FileIdentifier has been created, but its case is inconsistent with the existing one.", nameof(fileStreamName));
+            return fileStream;
         }
     }
 }
