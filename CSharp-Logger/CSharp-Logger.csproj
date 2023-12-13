@@ -1,14 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFrameworks>net6.0;net8.0</TargetFrameworks>
+    <PublishAot Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">true</PublishAot>
+    <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">true</IsAotCompatible>
     <RootNamespace>YYHEggEgg.Logger</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <GenerateDocumentationFile>False</GenerateDocumentationFile>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Title>EggEgg.CSharp-Logger</Title>
-    <Version>4.0.1</Version>
+    <Version>4.0.2-beta50</Version>
     <Authors>YYHEggEgg</Authors>
     <Company>YYHEggEgg</Company>
     <Description>A convenient C# Logger implementation, with reliable console interaction encapsulation support available.</Description>
@@ -40,6 +42,12 @@
 - Now, if a command input line have characters exceeding the console window, it won't be recorded in the input history. You can set `ConsoleWrapper.HistoryMaximumChars` to change the default behaviour.  
   Set it to a positive value can apply the limit, 0 can stop the history (since then), and -1 can cancel the limit. 
 - This project will not be backward compatible with any version below `.NET 6.0` in the future, including `.NET Standard 2.1`.
+
+Changes in v4.0.2
+
+- Added support for .NET 8.0 and compatibility with Native AOT.
+- Now, when using the `BaseLogger` constructor overload `BaseLogger(LoggerConfig, LogFileConfig)` and similar overloads, you can specify `LogFileConfig.AllowFallback` to automatically use an existing log file if one has already been created.  
+  `BaseLogger.LogFileExists` can be used to check if a log file with the corresponding `FileIdentifier` already exists.
 
 Changes in v4.0.1
 

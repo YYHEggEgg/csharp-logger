@@ -1,9 +1,12 @@
-﻿namespace YYHEggEgg.Logger
+﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+
+namespace YYHEggEgg.Logger
 {
     /// <summary>
     /// The config of creating a log file.
     /// </summary>
-    public struct LogFileConfig
+    public struct LogFileConfig : IEquatable<LogFileConfig>
     {
         /// <summary>
         /// The minimum <see cref="LogLevel"/> that can be written into
@@ -34,8 +37,22 @@
         /// Specially, the identifier of <c>latest.log</c> is <c>global</c>.
         /// </summary>
         public string? FileIdentifier;
-
+        /// <summary>
+        /// Indicates whether this log file should be created in
+        /// Pipe-separated values format (PSV). 
+        /// </summary>
         public bool IsPipeSeparatedFile;
+        /// <summary>
+        /// If the log file with the same <see cref="FileIdentifier"/>
+        /// exists, this determines whether to use the existing one
+        /// (or raise an exception immediately).
+        /// </summary>
+        /// <remarks>
+        /// However, when providing this with True, an exception will
+        /// be raised if the two versions of <see cref="LogFileConfig"/>
+        /// don't match.
+        /// </remarks>
+        public bool AllowAutoFallback;
 
         public LogFileConfig()
         {
@@ -44,6 +61,47 @@
             AutoFlushWriter = true;
             FileIdentifier = null;
             IsPipeSeparatedFile = false;
+            AllowAutoFallback = false;
+        }
+
+        public bool Equals(LogFileConfig other)
+        {
+            Debug.Assert(FileIdentifier == other.FileIdentifier);
+            Debug.Assert(MinimumLogLevel == other.MinimumLogLevel);
+            Debug.Assert(MaximumLogLevel == other.MaximumLogLevel);
+            Debug.Assert(AutoFlushWriter == other.AutoFlushWriter);
+            Debug.Assert(IsPipeSeparatedFile == other.IsPipeSeparatedFile);
+            return FileIdentifier == other.FileIdentifier &&
+                MinimumLogLevel == other.MinimumLogLevel &&
+                MaximumLogLevel == other.MaximumLogLevel &&
+                AutoFlushWriter == other.AutoFlushWriter &&
+                IsPipeSeparatedFile == other.IsPipeSeparatedFile;
+        }
+
+        public override bool Equals([NotNullWhen(true)] object? obj)
+        {
+            Debug.Assert(obj is LogFileConfig);
+            Debug.Assert(obj is LogFileConfig && Equals((LogFileConfig)obj));
+            return obj is LogFileConfig && Equals((LogFileConfig)obj);
+        }
+
+        public static bool operator ==(LogFileConfig left, LogFileConfig right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(LogFileConfig left, LogFileConfig right)
+        {
+            return !(left == right);
+        }
+
+        public override int GetHashCode()
+        {
+            return (FileIdentifier?.GetHashCode() ?? 0) ^
+                (MinimumLogLevel?.GetHashCode() ?? 0) ^
+                (MaximumLogLevel?.GetHashCode() ?? 0) ^
+                (AutoFlushWriter.GetHashCode()) ^
+                IsPipeSeparatedFile.GetHashCode();
         }
     }
 }

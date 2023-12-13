@@ -10,18 +10,18 @@ internal static partial class ArrayUtil
 	/// <summary>
 	/// <see cref="Array.Empty{T}"/> 方法。
 	/// </summary>
-	private static readonly MethodInfo ArrayEmptyMethod = typeof(Array).GetMethod("Empty")!;
+	// private static readonly MethodInfo ArrayEmptyMethod = typeof(Array).GetMethod("Empty")!;
 
 	/// <summary>
 	/// 返回指定类型的空数组。
 	/// </summary>
 	/// <param name="type">空数组的元素类型。</param>
 	/// <returns>指定类型的空数组。</returns>
-	public static Array Empty(Type type)
-	{
-		ArgumentNullException.ThrowIfNull(type);
-		return (Array)ArrayEmptyMethod.MakeGenericMethod(type).Invoke(null, Array.Empty<object>())!;
-	}
+	// public static Array Empty(Type type)
+	// {
+	// 	ArgumentNullException.ThrowIfNull(type);
+	// 	return (Array)ArrayEmptyMethod.MakeGenericMethod(type).Invoke(null, Array.Empty<object>())!;
+	// }
 
 	/// <summary>
 	/// 返回当前数组是否与指定数组包含同样内容。

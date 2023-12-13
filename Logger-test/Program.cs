@@ -38,7 +38,16 @@ internal class Program
                 IsPipeSeparatedFile = true,
             }
         );
-        separate_logger = new BaseLogger(separate_logger.CustomConfig, "warning");
+        separate_logger = new BaseLogger(separate_logger.CustomConfig, "Warning");
+        separate_logger = new BaseLogger(separate_logger.CustomConfig, new LogFileConfig
+            {
+                AutoFlushWriter = true,
+                FileIdentifier = "Warning",
+                MinimumLogLevel = LogLevel.Warning,
+                MaximumLogLevel = LogLevel.Error,
+                IsPipeSeparatedFile = true,
+                AllowAutoFallback = true,
+            });
 
         // 2. Ctrl+C closing test
         ConsoleWrapper.ShutDownRequest += (_, _) => Environment.Exit(0);

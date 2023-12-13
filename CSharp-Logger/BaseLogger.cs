@@ -77,6 +77,13 @@ namespace YYHEggEgg.Logger
         private readonly ConcurrentBag<LogFileStream> writeTargetFiles = new();
         private readonly string WorkDirectory;
 
+        /// <summary>
+        /// Determine whether a log file with <paramref name="fileIdentifier"/> is registered.
+        /// </summary>
+        /// <param name="fileIdentifier"></param>
+        /// <returns></returns>
+        public static bool LogFileExists(string fileIdentifier) => LogFileStream.LogFileExists(fileIdentifier);
+
         #region Initialize
         /// <summary>
         /// Initialize the logger. If initialized before, the method will return immediately.
@@ -231,12 +238,33 @@ namespace YYHEggEgg.Logger
         /// <exception cref="ArgumentException"></exception>
         public void AddLogFile(LogFileConfig newFileStreamConfig)
         {
-            if (newFileStreamConfig.FileIdentifier == LogFileStream.GlobalLog_Reserved)
+            var fileIdentifier = newFileStreamConfig.FileIdentifier ?? "<null>";
+            if (fileIdentifier == LogFileStream.GlobalLog_Reserved)
             {
                 throw new ArgumentException("The name 'global' is reserved for latest.log" +
-                    "and you can't create an instance with the same name.");
+                    "and you can't create an instance with the same name.", fileIdentifier);
             }
-            AddNewLogFileCore(newFileStreamConfig);
+            if (fileIdentifier == null)
+            {
+                throw new ArgumentException("A new log file instance should have a valid name.", fileIdentifier);
+            }
+            if (newFileStreamConfig.AllowAutoFallback && LogFileExists(fileIdentifier))
+            {
+                var created = LogFileStream.GetInitedInstance(fileIdentifier);
+                if (!newFileStreamConfig.Equals(new LogFileConfig
+                {
+                    FileIdentifier = created.FileStreamName,
+                    MinimumLogLevel = created.MinimumLogLevel,
+                    MaximumLogLevel = created.MaximumLogLevel,
+                    IsPipeSeparatedFile = created.IsPipeSeparatedFormat,
+                    AutoFlushWriter = created.AutoFlushWriter,
+                }))
+                {
+                    throw new ArgumentException("The fallback of creating a log file requires the LogFileConfig to be the same.", fileIdentifier);
+                }
+                AddLogFile(fileIdentifier);
+            }
+            else AddNewLogFileCore(newFileStreamConfig);
         }
 
         internal void AddNewLogFileCore(LogFileConfig conf)

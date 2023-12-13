@@ -10,6 +10,12 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
 
 ## Update
 
+### v4.0.2
+
+- Added support for .NET 8.0 and compatibility with Native AOT.
+- Now, when using the `BaseLogger` constructor overload `BaseLogger(LoggerConfig, LogFileConfig)` and similar overloads, you can specify `LogFileConfig.AllowFallback` to automatically use an existing log file if one has already been created.  
+  `BaseLogger.LogFileExists` can be used to check if a log file with the corresponding `FileIdentifier` already exists.
+
 ### v4.0.1
 
 - Fixed the issue whereby the file created in the constructor of `BaseLogger` using the overload `BaseLogger(LoggerConfig, LogFileConfig)` could not be utilized in the overload `BaseLogger(LoggerConfig, string)`.

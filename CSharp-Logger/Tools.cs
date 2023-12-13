@@ -96,9 +96,9 @@ namespace YYHEggEgg.Logger.Utils
             {
                 // If using dotnet .dll to launch,
                 // Environment.ProgramPath will return the path of dotnet.exe
-                string assemblyPath = Assembly.GetExecutingAssembly().Location;
+                string assemblyPath = AppContext.BaseDirectory;
                 rtndir = Path.GetDirectoryName(assemblyPath);
-                #region Fallback 
+                #region Fallback
                 if (rtndir == null)
                 {
                     rtndir = Environment.CurrentDirectory;

@@ -10,6 +10,12 @@
 
 ## 更新
 
+### v4.0.2
+
+- 增加了对于 .NET 8.0 的支持与对于 Native AOT 的适配。
+- 现在在使用 `BaseLogger` 构造器重载 `BaseLogger(LoggerConfig, LogFileConfig)` 以及类似重载时，可以指定 `LogFileConfig.AllowFallback` 来使程序在已经创建过对应日志文件时，自动使用现有的一个。  
+  `BaseLogger.LogFileExists` 可以检查使用对应 `FileIdentifier` 的日志文件是否已经存在。
+
 ### v4.0.1
 
 - 修复了在 `BaseLogger` 构造器中使用重载 `BaseLogger(LoggerConfig, LogFileConfig)` 后，创建的文件无法在重载 `BaseLogger(LoggerConfig, string)` 中利用的问题。
