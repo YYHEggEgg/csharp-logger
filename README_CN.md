@@ -15,6 +15,12 @@
 - 增加了对于 .NET 8.0 的支持与对于 Native AOT 的适配。
 - 现在在使用 `BaseLogger` 构造器重载 `BaseLogger(LoggerConfig, LogFileConfig)` 以及类似重载时，可以指定 `LogFileConfig.AllowFallback` 来使程序在已经创建过对应日志文件时，自动使用现有的一个。  
   `BaseLogger.LogFileExists` 可以检查使用对应 `FileIdentifier` 的日志文件是否已经存在。
+- 加入了 Error Trace 特性。您可以使用 `LoggerChannel.LogErroTrace` 等扩展方法来输出异常信息。它可以将异常详细信息输出到 `latest.errtrace.log`，而只在控制台显示异常的消息（`Exception.Message`）。  
+  扩展方法可用于 `LoggerChannel` 和 `BaseLogger`。方法未添加到 `Log` 中，您需要使用 `LogTrace` 来调用。`latest.errtrace.log` 只会在第一次调用相关方法时创建。以下是一个效果示例：
+
+  ```log
+  03:06:51 <Erro:ErrorTraceTest> Error trace test raised an exception. System.NotImplementedException: This is a test error in Logger-test. (Trace ID: 38c3a0bf-b67a-457a-a5b7-8672d7fbc8a5)
+  ```
 
 ### v4.0.1
 

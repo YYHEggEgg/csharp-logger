@@ -10,7 +10,7 @@
     <GenerateDocumentationFile>False</GenerateDocumentationFile>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Title>EggEgg.CSharp-Logger</Title>
-    <Version>4.0.2-beta50</Version>
+    <Version>4.0.2-rc52</Version>
     <Authors>YYHEggEgg</Authors>
     <Company>YYHEggEgg</Company>
     <Description>A convenient C# Logger implementation, with reliable console interaction encapsulation support available.</Description>
@@ -48,13 +48,8 @@ Changes in v4.0.2
 - Added support for .NET 8.0 and compatibility with Native AOT.
 - Now, when using the `BaseLogger` constructor overload `BaseLogger(LoggerConfig, LogFileConfig)` and similar overloads, you can specify `LogFileConfig.AllowFallback` to automatically use an existing log file if one has already been created.  
   `BaseLogger.LogFileExists` can be used to check if a log file with the corresponding `FileIdentifier` already exists.
-
-Changes in v4.0.1
-
-- Fixed the issue whereby the file created in the constructor of `BaseLogger` using the overload `BaseLogger(LoggerConfig, LogFileConfig)` could not be utilized in the overload `BaseLogger(LoggerConfig, string)`.
-- Fixed the issue whereby after using the overload `BaseLogger(LoggerConfig, LogFileConfig)` in the constructor of `BaseLogger`, multiple files with the same name or only case-insensitive differences were allowed to be created without checks.
-
-These fixes also apply to other similar overloads.
+- Added the Error Trace feature. You can use extension methods such as `LoggerChannel.LogErrorTrace` to output exception information. It will output the detailed exception information to `latest.errtrace.log`, while only displaying the exception message (`Exception.Message`) on the console.  
+  The extension methods are available for both `LoggerChannel` and `BaseLogger`. The methods are not added to `Log`, so you need to use `LogTrace` to invoke them. The `latest.errtrace.log` file will only be created on the first call to the relevant methods.
 
 Changes in v4.0.0
 

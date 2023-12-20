@@ -15,6 +15,12 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
 - Added support for .NET 8.0 and compatibility with Native AOT.
 - Now, when using the `BaseLogger` constructor overload `BaseLogger(LoggerConfig, LogFileConfig)` and similar overloads, you can specify `LogFileConfig.AllowFallback` to automatically use an existing log file if one has already been created.  
   `BaseLogger.LogFileExists` can be used to check if a log file with the corresponding `FileIdentifier` already exists.
+- Added the Error Trace feature. You can use extension methods such as `LoggerChannel.LogErrorTrace` to output exception information. It will output the detailed exception information to `latest.errtrace.log`, while only displaying the exception message (`Exception.Message`) on the console.  
+  The extension methods are available for both `LoggerChannel` and `BaseLogger`. The methods are not added to `Log`, so you need to use `LogTrace` to invoke them. The `latest.errtrace.log` file will only be created on the first call to the relevant methods. Here is an example of the effect:
+
+  ```log
+  03:06:51 <Erro:ErrorTraceTest> Error trace test raised an exception. System.NotImplementedException: This is a test error in Logger-test. (Trace ID: 38c3a0bf-b67a-457a-a5b7-8672d7fbc8a5)
+  ```
 
 ### v4.0.1
 

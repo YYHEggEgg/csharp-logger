@@ -54,6 +54,16 @@ internal class Program
         // int attempt_reading_wait_seconds = 100; // set to 100 when testing Ctrl+C
         int attempt_reading_wait_seconds = 1;
 
+        // 2.5. Error Trace test
+        try
+        {
+            throw new NotImplementedException("This is a test error in Logger-test.");
+        }
+        catch (Exception ex)
+        {
+            LogTrace.ErroTrace(ex, "ErrorTraceTest", "Error trace test raised an exception.");
+        }
+
         // 3. Dbug test
 #if DEBUG
         Log.Dbug("this is run on DEBUG!");
