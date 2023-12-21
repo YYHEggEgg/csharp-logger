@@ -17,16 +17,11 @@ public static class LoggerChannelTraceExtensions
         {
             if (_initialized) return;
 
-            var inheritingLoggerConfig = new LoggerConfig(
-                max_Output_Char_Count: Log.GlobalConfig.Max_Output_Char_Count,
-                use_Console_Wrapper: Log.GlobalConfig.Use_Console_Wrapper,
-                use_Working_Directory: Log.GlobalConfig.Use_Working_Directory,
-                global_Minimum_LogLevel: LogLevel.Information,
-                console_Minimum_LogLevel: LogLevel.None,
-                debug_LogWriter_AutoFlush: true,
-                is_PipeSeparated_Format: false,
-                enable_Detailed_Time: Log.GlobalConfig.Enable_Detailed_Time
-            );
+            var inheritingLoggerConfig = Log.GlobalConfig;
+            inheritingLoggerConfig.Global_Minimum_LogLevel = LogLevel.Information;
+            inheritingLoggerConfig.Console_Minimum_LogLevel = LogLevel.None;
+            inheritingLoggerConfig.Debug_LogWriter_AutoFlush = true;
+            inheritingLoggerConfig.Is_PipeSeparated_Format = false;
 
             _tracelog = new BaseLogger(inheritingLoggerConfig, new LogFileConfig
             {

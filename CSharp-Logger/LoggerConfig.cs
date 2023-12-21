@@ -11,7 +11,7 @@ namespace YYHEggEgg.Logger
         /// If the length of the line is longer than this value, it won't be output to console and will be replaced by a tip.<para/>
         /// The default value is 16KB. Set it to negative value or 0 to disable the feature.
         /// </summary>
-        public readonly int Max_Output_Char_Count = 16 * 1024;
+        public int Max_Output_Char_Count = 16 * 1024;
         /// <summary>
         /// Whether the Logger uses <see cref="Console"/> or <see cref="ConsoleWrapper"/> implements. <para/>
         /// Generally, <see cref="Console"/> is enough. But if you wants to read the user's input while outputing logs parallel (e.g. making a command line program), you'll need <see cref="ConsoleWrapper"/>.<para/>
@@ -19,7 +19,7 @@ namespace YYHEggEgg.Logger
         /// But if your program won't output anything until get input from the user, or <b>the input string is expected to be very large</b>, you should use common <see cref="Console"/> implements.<para/>
         /// No matter you decide to use either <see cref="Console"/> or <see cref="ConsoleWrapper"/>, <b>DON'T MIX THEM!</b> The side-effect has never been tested!
         /// </summary>
-        public readonly bool Use_Console_Wrapper = false;
+        public bool Use_Console_Wrapper = false;
         /// <summary>
         /// Whether the log files will be storaged at the working directory or the program path.<para/>
         /// The working directory is equal to <see cref="Environment.CurrentDirectory"/>. <para/>
@@ -29,18 +29,18 @@ namespace YYHEggEgg.Logger
         /// But actually, working directory is changeable while running (as <see cref="Environment.CurrentDirectory"/> is writeable), but the log file path <b>won't change since <see cref="Log.Initialize(LoggerConfig)"/> is invoked,</b> for it maintains a <see cref="StreamWriter"/> instance until the process is terminated.<para/>
         /// Notice that Logger will still use the working directory when <see cref="Environment.ProcessPath"/> isn't accessible, or more clearly, when <see cref="Environment.ProcessPath"/><c> == null</c>. If it happens, you'll receive a warning. 
         /// </summary>
-        public readonly bool Use_Working_Directory = true;
+        public bool Use_Working_Directory = true;
         /// <summary>
         /// The minimum <see cref="LogLevel"/> that will be handled. <para/>
         /// Log messages with smaller <see cref="LogLevel"/> will be ignored at all.
         /// </summary>
-        public readonly LogLevel Global_Minimum_LogLevel = LogLevel.Debug;
+        public LogLevel Global_Minimum_LogLevel = LogLevel.Debug;
         /// <summary>
         /// The maximum LogLevel that will be output to the console. <para/>
         /// Log messages with smaller <see cref="LogLevel"/> won't be output to console, but will exist in the log file. <para/>
         /// Notice that this cannot be smaller than <see cref="Global_Minimum_LogLevel"/>.
         /// </summary>
-        public readonly LogLevel Console_Minimum_LogLevel = LogLevel.Information;
+        public LogLevel Console_Minimum_LogLevel = LogLevel.Information;
         /// <summary>
         /// Whether the debug.log writer will flush automatically. It decides the value of <see cref="StreamWriter.AutoFlush"/>. <para/>
         /// Some programs has a high amount of Verbose output, so they may not have the writer flush immediately. <para/>
@@ -48,7 +48,7 @@ namespace YYHEggEgg.Logger
         /// Though it's recommended to set it to true, the default value is false because of compatiable reasons. <para/>
         /// For now, the unflushed parts of the log will be lost. More optimization will come in further versions. 
         /// </summary>
-        public readonly bool Debug_LogWriter_AutoFlush = false;
+        public bool Debug_LogWriter_AutoFlush = false;
         /// <summary>
         /// Indicates whether latest.log and latest.debug.log should be created in
         /// Pipe-separated values format (PSV). Outputting logs as a table helps
@@ -65,7 +65,7 @@ namespace YYHEggEgg.Logger
         /// This configuration does not affect the content output to the console,
         /// and currently only accepts <c>|</c> as the separator for performance reasons.
         /// </summary>
-        public readonly bool Is_PipeSeparated_Format = false;
+        public bool Is_PipeSeparated_Format = false;
         /// <summary>
         /// Indicates whether to enable the time detail of the log.
         /// By default, the time recorded by Logger is only accurate to the second
@@ -80,16 +80,14 @@ namespace YYHEggEgg.Logger
         /// This configuration requires global unity and is effective for both console
         /// and log file output.
         /// </summary>
-        public readonly bool Enable_Detailed_Time = false;
+        public bool Enable_Detailed_Time = false;
 
         /// <summary>
-        /// Because of efficiency reasons, all features are defined as readonly variables and can only be set in this constructor. <para/>
+        /// Because of efficiency reasons, all features are defined as variables and can only be set in this constructor. <para/>
         /// You may check their usages in these variables' description.
         /// </summary>
         public LoggerConfig(int max_Output_Char_Count = 16 * 1024,
                             bool use_Console_Wrapper = false,
-                            // Though not recommended, previous versions use Working Directory as default,
-                            // so the default value is set to true.
                             bool use_Working_Directory = true,
                             LogLevel global_Minimum_LogLevel = LogLevel.Debug,
                             LogLevel console_Minimum_LogLevel = LogLevel.Information,

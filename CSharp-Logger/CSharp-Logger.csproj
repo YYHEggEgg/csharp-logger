@@ -10,7 +10,7 @@
     <GenerateDocumentationFile>False</GenerateDocumentationFile>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Title>EggEgg.CSharp-Logger</Title>
-    <Version>4.0.2-rc52</Version>
+    <Version>4.0.2-rc53</Version>
     <Authors>YYHEggEgg</Authors>
     <Company>YYHEggEgg</Company>
     <Description>A convenient C# Logger implementation, with reliable console interaction encapsulation support available.</Description>
@@ -50,6 +50,7 @@ Changes in v4.0.2
   `BaseLogger.LogFileExists` can be used to check if a log file with the corresponding `FileIdentifier` already exists.
 - Added the Error Trace feature. You can use extension methods such as `LoggerChannel.LogErrorTrace` to output exception information. It will output the detailed exception information to `latest.errtrace.log`, while only displaying the exception message (`Exception.Message`) on the console.  
   The extension methods are available for both `LoggerChannel` and `BaseLogger`. The methods are not added to `Log`, so you need to use `LogTrace` to invoke them. The `latest.errtrace.log` file will only be created on the first call to the relevant methods.
+- The values of `LoggerConfig` now have read-only tags removed, which means you don't always have to initialize with the constructor. Note that this does not mean that you can modify the configuration of the `Logger` after initialization; a deep copy will be automatically returned when the relevant property is called.
 
 Changes in v4.0.0
 

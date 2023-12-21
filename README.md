@@ -21,6 +21,7 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
   ```log
   03:06:51 <Erro:ErrorTraceTest> Error trace test raised an exception. System.NotImplementedException: This is a test error in Logger-test. (Trace ID: 38c3a0bf-b67a-457a-a5b7-8672d7fbc8a5)
   ```
+- The values of `LoggerConfig` now have read-only tags removed, which means you don't always have to initialize with the constructor. Note that this does not mean that you can modify the configuration of the `Logger` after initialization; a deep copy will be automatically returned when the relevant property is called.
 
 ### v4.0.1
 

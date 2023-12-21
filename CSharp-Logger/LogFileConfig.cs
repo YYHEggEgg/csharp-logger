@@ -66,11 +66,6 @@ namespace YYHEggEgg.Logger
 
         public bool Equals(LogFileConfig other)
         {
-            Debug.Assert(FileIdentifier == other.FileIdentifier);
-            Debug.Assert(MinimumLogLevel == other.MinimumLogLevel);
-            Debug.Assert(MaximumLogLevel == other.MaximumLogLevel);
-            Debug.Assert(AutoFlushWriter == other.AutoFlushWriter);
-            Debug.Assert(IsPipeSeparatedFile == other.IsPipeSeparatedFile);
             return FileIdentifier == other.FileIdentifier &&
                 MinimumLogLevel == other.MinimumLogLevel &&
                 MaximumLogLevel == other.MaximumLogLevel &&

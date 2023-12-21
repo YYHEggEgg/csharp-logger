@@ -21,6 +21,7 @@
   ```log
   03:06:51 <Erro:ErrorTraceTest> Error trace test raised an exception. System.NotImplementedException: This is a test error in Logger-test. (Trace ID: 38c3a0bf-b67a-457a-a5b7-8672d7fbc8a5)
   ```
+- 现在 `LoggerConfig` 的各项值移除了只读标签，这意味着可以不必总是使用构造器初始化了。注意，这并不意味着您可以在初始化后修改 `Logger` 的配置；在调用相关属性时将自动返回一个深拷贝。
 
 ### v4.0.1
 

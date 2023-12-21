@@ -64,7 +64,7 @@ namespace YYHEggEgg.Logger
         #region Initialize
         private static bool _initialized = false;
         private static BaseLogger? _baseLogger = null;
-        public static BaseLogger GlobalBasedLogger 
+        public static BaseLogger GlobalBasedLogger
         {
             get
             {
