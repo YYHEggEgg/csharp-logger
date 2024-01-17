@@ -10,7 +10,7 @@
     <GenerateDocumentationFile>False</GenerateDocumentationFile>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Title>EggEgg.CSharp-Logger</Title>
-    <Version>4.0.2</Version>
+    <Version>4.0.3-rc50</Version>
     <Authors>YYHEggEgg</Authors>
     <Company>YYHEggEgg</Company>
     <Description>A convenient C# Logger implementation, with reliable console interaction encapsulation support available.</Description>
@@ -42,6 +42,11 @@
 - Now, if a command input line have characters exceeding the console window, it won't be recorded in the input history. You can set `ConsoleWrapper.HistoryMaximumChars` to change the default behaviour.  
   Set it to a positive value can apply the limit, 0 can stop the history (since then), and -1 can cancel the limit. 
 - This project will not be backward compatible with any version below `.NET 6.0` in the future, including `.NET Standard 2.1`.
+
+Changes in v4.0.3
+
+- Added `CancellationToken` parameter for `ConsoleWrapper.ReadLineAsync`.
+- To improve compatibility, now `ConsoleWrapper` won't set `Console.TreatControlCAsInput` as `true` while initializing. `ConsoleWrapper.ShutDownRequest` will contain meaningful `sender` and `args` also.
 
 Changes in v4.0.2
 

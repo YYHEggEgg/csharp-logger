@@ -10,6 +10,11 @@
 
 ## 更新
 
+### v4.0.3
+
+- 为 `ConsoleWrapper.ReadLineAsync` 添加了 `CancellationToken` 参数。
+- 为了提高兼容性，现在 `ConsoleWrapper` 在初始化时不会将 `Console.TreatControlCAsInput` 设为 `true`。此时 `ConsoleWrapper.ShutDownRequest` 事件会包含有意义的 `sender` 和 `args`.
+
 ### v4.0.2
 
 - 增加了对于 .NET 8.0 的支持与对于 Native AOT 的适配。
@@ -194,4 +199,4 @@
    });
    ```
 
-7. 如果你使用 `ConsoleWrapper`，最好订阅事件 `ConsoleWrapper.ShutDownRequested` 以在用户按下 Ctrl+C 时做出操作。注意引发该事件的 `EventHandler` 提供的 `sender` 与 `args` 均无实际意义。
+7. 如果你使用 `ConsoleWrapper`，最好订阅事件 `ConsoleWrapper.ShutDownRequested` 以在用户按下 Ctrl+C 时做出操作。

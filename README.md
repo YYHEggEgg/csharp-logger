@@ -10,6 +10,11 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
 
 ## Update
 
+### v4.0.3
+
+- Added `CancellationToken` parameter for `ConsoleWrapper.ReadLineAsync`.
+- To improve compatibility, now `ConsoleWrapper` won't set `Console.TreatControlCAsInput` as `true` while initializing. `ConsoleWrapper.ShutDownRequest` will contain meaningful `sender` and `args` also.
+
 ### v4.0.2
 
 - Added support for .NET 8.0 and compatibility with Native AOT.

@@ -1,5 +1,6 @@
 ﻿using Internal.ReadLine;
 using System.Collections.Concurrent;
+using System.Reflection;
 using YYHEggEgg.Logger.readline.Abstractions;
 using YYHEggEgg.Logger.Utils;
 
@@ -7,13 +8,20 @@ using YYHEggEgg.Logger.Utils;
 namespace YYHEggEgg.Logger
 {
     /// <summary>
+    /// Invoke when <see cref="Console.CancelKeyPress"/> is triggered or <see cref="ConsoleWrapper"/> received Ctrl+C.
+    /// </summary>
+    /// <param name="sender">The sender.</param>
+    /// <param name="e">The Event args. If <see cref="ConsoleWrapper"/> received the event, the program won't terminate, so it'll be null.</param>
+    public delegate void ConsoleWrapperCancelKeyPressEventHandler(object? sender, ConsoleCancelEventArgs? e);
+
+    /// <summary>
     /// A wrapper for Console to provide a stable command line.
     /// </summary>
     public class ConsoleWrapper
     {
         private static List<string> lines; // 记录每行输入的列表
         private static ConcurrentQueue<string> readqueue = new();
-        public static event EventHandler? ShutDownRequest; // 退出事件
+        public static event ConsoleWrapperCancelKeyPressEventHandler? ShutDownRequest; // 退出事件
 
         /// <summary>
         /// The refresh time for <see cref="ReadLine"/> waiting input.
@@ -46,8 +54,6 @@ namespace YYHEggEgg.Logger
             InputPrefix = "";
             RefreshTicks = 2;
 
-            Console.TreatControlCAsInput = true; // 允许Ctrl+C被视为输入
-
             Task.Run(BackgroundReadkey);
             Task.Run(BackgroundUpdate);
         }
@@ -59,8 +65,8 @@ namespace YYHEggEgg.Logger
 
         private static void Console_CancelKeyPress(object? sender, ConsoleCancelEventArgs e)
         {
-            e.Cancel = true;
-            ShutDownRequest?.Invoke(null, EventArgs.Empty);
+            ShutDownRequest?.Invoke(sender, e);
+            if (!e.Cancel) InputPrefix = string.Empty;
         }
 
         #region Refresh Prefix
@@ -83,7 +89,7 @@ namespace YYHEggEgg.Logger
 
         #region Read & Write
         #region ReadLine
-        public static async Task<string> ReadLineAsync(bool reserve_in_history = true)
+        public static async Task<string> ReadLineAsync(bool reserve_in_history = true, CancellationToken cancellationToken = default)
         {
             AssertInitialized();
 
@@ -91,7 +97,7 @@ namespace YYHEggEgg.Logger
             while (!readqueue.TryDequeue(out result))
             {
                 isReading = true;
-                await Task.Delay(RefreshTicks);
+                await Task.Delay(RefreshTicks, cancellationToken);
             }
 
             isReading = false;
@@ -297,7 +303,9 @@ namespace YYHEggEgg.Logger
 
         #region Update Background
         private static void ShutdownRequest_Callback()
-            => ShutDownRequest?.Invoke(null, EventArgs.Empty);
+        {
+            ShutDownRequest?.Invoke(null, null);
+        }
 
         private static DelayConsole shared_absconsole = new();
         private static ConcurrentQueue<ConsoleKeyInfo> qhandle_consolekeys = new();
