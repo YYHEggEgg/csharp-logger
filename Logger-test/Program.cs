@@ -20,6 +20,11 @@ internal class Program
             enable_Detailed_Time: false
             ));
 
+        // 0. ConsoleWrapper input prompt test
+        Console.WriteLine($"Waiting for 3s. It's a bug if input prompt don't show up now.");
+        ConsoleWrapper.InputPrefix = "prompt: OK :) ";
+        try { await ConsoleWrapper.ReadLineAsync(true, new CancellationTokenSource(3000).Token); } catch (TaskCanceledException) { }
+
         // 1. Shared log FileStream test
         BaseLogger separate_logger = new BaseLogger(new LoggerConfig(
             max_Output_Char_Count: 1024,

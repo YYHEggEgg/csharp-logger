@@ -221,7 +221,7 @@ namespace Internal.ReadLine
             Console2.Write(ch);
             if (Console2.CursorLeft == Console2.BufferWidth - 1)
             {
-                Console2.Write("  ");
+                Console2.WriteLine("");
                 Console2.SetCursorPosition(0, Console2.CursorTop);
             }
         }
@@ -279,7 +279,7 @@ namespace Internal.ReadLine
                 _cursorPos++;
                 if (Console2.CursorLeft == Console2.BufferWidth - 1)
                 {
-                    Console2.Write("   ");
+                    Console2.WriteLine("");
                     Console2.SetCursorPosition(0, Console2.CursorTop);
                 }
             }

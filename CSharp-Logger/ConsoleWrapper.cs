@@ -91,19 +91,25 @@ namespace YYHEggEgg.Logger
         #region ReadLine
         public static async Task<string> ReadLineAsync(bool reserve_in_history = true, CancellationToken cancellationToken = default)
         {
-            AssertInitialized();
-
-            string? result;
-            while (!readqueue.TryDequeue(out result))
+            try
             {
-                isReading = true;
-                await Task.Delay(RefreshTicks, cancellationToken);
+                AssertInitialized();
+
+                string? result;
+                while (!readqueue.TryDequeue(out result))
+                {
+                    isReading = true;
+                    await Task.Delay(RefreshTicks, cancellationToken);
+                }
+
+                AddHistoryRecord(result, reserve_in_history);
+
+                return result;
             }
-
-            isReading = false;
-            AddHistoryRecord(result, reserve_in_history);
-
-            return result;
+            finally
+            {
+                isReading = false;
+            }
         }
 
         public static string ReadLine(bool reserve_in_history = true)
@@ -396,7 +402,6 @@ namespace YYHEggEgg.Logger
                         string cur_prefix = isReading ? InputPrefix : string.Empty;
                         if (cur_handle_writelines || _autoCompleteHandler_updated || !pre_reading)
                         {
-                            pre_reading = isReading;
                             keyHandler = KeyHandler.RecoverWrittingStatus(
                                 cur_prefix, keyHandler, _autoCompleteHandler);
                         }
@@ -416,6 +421,8 @@ namespace YYHEggEgg.Logger
                             keyHandler = new(shared_absconsole, lines, _autoCompleteHandler, cur_prefix);
                         }
                     }
+
+                    pre_reading = isReading;
                 }
                 catch { }
             }
