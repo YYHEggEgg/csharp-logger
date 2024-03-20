@@ -49,13 +49,22 @@ namespace YYHEggEgg.Logger
             
             _initialized = true;
 
-            lines = new List<string>();
+            lines ??= new List<string>();
+            keyHandler = new(shared_absconsole, lines, null, string.Empty);
             Console.CancelKeyPress += Console_CancelKeyPress;
             InputPrefix = "";
             RefreshTicks = 2;
 
             Task.Run(BackgroundReadkey);
             Task.Run(BackgroundUpdate);
+        }
+
+        public static void Initialize(IEnumerable<string> initHistory)
+        {
+            if (_initialized)
+                throw new InvalidOperationException("Can't push the history after ConsoleWrapper initialize completed.");
+            lines = new List<string>(initHistory);
+            Initialize();
         }
 
         private static void AssertInitialized()
@@ -315,7 +324,7 @@ namespace YYHEggEgg.Logger
 
         private static DelayConsole shared_absconsole = new();
         private static ConcurrentQueue<ConsoleKeyInfo> qhandle_consolekeys = new();
-        private static KeyHandler keyHandler = new(shared_absconsole, lines, null, string.Empty);
+        private static KeyHandler keyHandler = null!;
         private static async Task BackgroundReadkey()
         {
             try

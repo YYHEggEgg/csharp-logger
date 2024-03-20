@@ -82,10 +82,6 @@ namespace YYHEggEgg.Logger
         /// </summary>
         public bool Enable_Detailed_Time = false;
 
-        /// <summary>
-        /// Because of efficiency reasons, all features are defined as variables and can only be set in this constructor. <para/>
-        /// You may check their usages in these variables' description.
-        /// </summary>
         public LoggerConfig(int max_Output_Char_Count = 16 * 1024,
                             bool use_Console_Wrapper = false,
                             bool use_Working_Directory = true,
@@ -107,6 +103,18 @@ namespace YYHEggEgg.Logger
             Debug_LogWriter_AutoFlush = debug_LogWriter_AutoFlush;
             Is_PipeSeparated_Format = is_PipeSeparated_Format;
             Enable_Detailed_Time = enable_Detailed_Time;
+        }
+
+        public LoggerConfig()
+        {
+            Max_Output_Char_Count = 16 * 1024;
+            Use_Console_Wrapper = false;
+            Use_Working_Directory = true;
+            Global_Minimum_LogLevel = LogLevel.Debug;
+            Console_Minimum_LogLevel = LogLevel.Information;
+            Debug_LogWriter_AutoFlush = true;
+            Is_PipeSeparated_Format = false;
+            Enable_Detailed_Time = false;
         }
     }
 }

@@ -16,6 +16,8 @@
 - 为了提高兼容性，现在 `ConsoleWrapper` 在初始化时不会将 `Console.TreatControlCAsInput` 设为 `true`。此时 `ConsoleWrapper.ShutDownRequest` 事件会包含有意义的 `sender` 和 `args`.
 - 修复了在使用 `ConsoleWrapper` 时，如果开始读取后没有输出过日志，则可能不显示读取的 `InputPrefix` 的问题。
 - 修复了在 Windows 7 下的命令提示符使用 `ConsoleWrapper` 时，输入多行数据会产生异常的问题。
+- 修复了使用默认构造器初始化的 `LoggerConfig` 可能出现未预期的参数的问题。
+- 现在，支持使用 `Log.Initialize` 或 `ConsoleWrapper.Initialize` 在其启动时添加历史记录。
 
 ### v4.0.2
 

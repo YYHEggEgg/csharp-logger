@@ -5,7 +5,7 @@ internal class Program
 {
     private static async Task Main(string[] args)
     {
-        Log.Initialize(new LoggerConfig(
+        /*Log.Initialize(new LoggerConfig(
             max_Output_Char_Count: 1024,
             use_Console_Wrapper: true,
             use_Working_Directory: true,
@@ -18,7 +18,13 @@ internal class Program
 #endif
             debug_LogWriter_AutoFlush: true,
             enable_Detailed_Time: false
-            ));
+            ));*/
+
+        Log.Initialize(new()
+        {
+            Max_Output_Char_Count = 1024,
+            Use_Console_Wrapper = true,
+        }, new List<string> { "history1", "historypushed" });
 
         // 0. ConsoleWrapper input prompt test
         Console.WriteLine($"Waiting for 3s. It's a bug if input prompt don't show up now.");

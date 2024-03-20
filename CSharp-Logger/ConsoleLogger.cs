@@ -133,6 +133,14 @@ namespace YYHEggEgg.Logger
             }
         }
 
+        public static void Initialize(LoggerConfig conf, IEnumerable<string> initHistory)
+        {
+            if (!conf.Use_Console_Wrapper)
+                throw new InvalidOperationException("Init History can only be valid when specifying to use ConsoleWrapper.");
+            ConsoleWrapper.Initialize(initHistory);
+            Initialize(conf);
+        }
+
         internal static void AssertInitialized(bool demand_baselogger_inited = true)
         {
             if (!_initialized)
