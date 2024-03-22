@@ -524,7 +524,7 @@ namespace Internal.ReadLine
                 }
                 else
                 {
-                    if (autoCompleteHandler == null || !IsEndOfLine())
+                    if (autoCompleteHandler == null)
                         return;
 
                     string text = _text.ToString();
