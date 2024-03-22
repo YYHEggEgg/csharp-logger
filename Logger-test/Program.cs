@@ -173,12 +173,18 @@ internal class Program
 
     class SimpleAutoCmpl : IAutoCompleteHandler
     {
-        public char[] Separators { get; set; } = new char[] { ' ' };
 
-        public string[] GetSuggestions(string text, int index)
+        public SuggestionResult GetSuggestions(string text, int index)
         {
-            return new string[]
-                { "autocmp1_01", "autocmp1_02", "autocmpl_03", "测试中文autocompl01", "测试中文autocmpl02" };
+            var startIndex = text[..index].LastIndexOf(' ');
+            if (startIndex == -1) startIndex = 0;
+            var endIndex = text[index..].IndexOf(' ');
+            return new SuggestionResult
+            {
+                StartIndex = startIndex,
+                EndIndex = endIndex,
+                Suggestions = new List<string> { "autocmp1_01", "autocmp1_02", "autocmpl_03", "测试中文autocompl01", "测试中文autocmpl02" }
+            };
         }
     }
 }

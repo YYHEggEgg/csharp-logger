@@ -1,9 +1,9 @@
 using Cyjb;
 using Internal.ReadLine.Abstractions;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Text;
 using TextCopy;
+using YYHEggEgg.Logger;
 
 namespace Internal.ReadLine
 {   
@@ -16,7 +16,7 @@ namespace Internal.ReadLine
         internal int _historyIndex;
         private ConsoleKeyInfo _keyInfo;
         private Dictionary<string, Action> _keyActions;
-        private string[]? _completions;
+        private SuggestionResult? _completions;
         private int _completionStart;
         private int _completionsIndex;
         private IConsole Console2;
@@ -79,7 +79,7 @@ namespace Internal.ReadLine
         /// </summary>
         /// <returns></returns>
         private bool IsEndOfBuffer() => Console2.CursorLeft == Console2.BufferWidth - 1;
-        private bool IsInAutoCompleteMode() => _completions != null;
+        private bool IsInAutoCompleteMode() => _completions != null && _completions.Suggestions != null;
 
         /// <summary>
         /// 如果没有到达输入内容的最左端，将光标后退一格。
@@ -369,12 +369,31 @@ namespace Internal.ReadLine
         private void StartAutoComplete()
         {
             if (!IsInAutoCompleteMode()) return;
-            while (_cursorPos > _completionStart)
+#if NET8_0_OR_GREATER
+            ArgumentOutOfRangeException.ThrowIfLessThan(_completions.EndIndex, _completions.StartIndex, nameof(_completions.EndIndex));
+            ArgumentOutOfRangeException.ThrowIfNegative(_completions.StartIndex);
+#else
+            if (_completions.StartIndex < _completions.EndIndex)
+                throw new ArgumentOutOfRangeException(nameof(_completions.EndIndex));
+            if (_completions.StartIndex < 0)
+                throw new ArgumentOutOfRangeException(nameof(_completions.StartIndex));
+#endif
+
+            if (_completions.EndIndex > 0)
+            {
+                while (_cursorPos > _completions.EndIndex)
+                    MoveCursorLeft();
+                while (_cursorPos < _completions.EndIndex)
+                    MoveCursorRight();
+            }
+            else MoveCursorEnd();
+            while (_cursorPos > _completions.StartIndex)
                 Backspace();
 
             _completionsIndex = 0;
+            _completionStart = _cursorPos;
 
-            WriteString(_completions[_completionsIndex]);
+            WriteString(_completions.Suggestions[_completionsIndex]);
         }
 
         private void NextAutoComplete()
@@ -385,10 +404,10 @@ namespace Internal.ReadLine
 
             _completionsIndex++;
 
-            if (_completionsIndex == _completions.Length)
+            if (_completionsIndex == _completions.Suggestions.Count)
                 _completionsIndex = 0;
 
-            WriteString(_completions[_completionsIndex]);
+            WriteString(_completions.Suggestions[_completionsIndex]);
         }
 
         private void PreviousAutoComplete()
@@ -400,9 +419,9 @@ namespace Internal.ReadLine
             _completionsIndex--;
 
             if (_completionsIndex == -1)
-                _completionsIndex = _completions.Length - 1;
+                _completionsIndex = _completions.Suggestions.Count - 1;
 
-            WriteString(_completions[_completionsIndex]);
+            WriteString(_completions.Suggestions[_completionsIndex]);
         }
 #pragma warning restore CS8602 // 解引用可能出现空引用。
 
@@ -510,11 +529,8 @@ namespace Internal.ReadLine
 
                     string text = _text.ToString();
 
-                    _completionStart = text.LastIndexOfAny(autoCompleteHandler.Separators);
-                    _completionStart = _completionStart == -1 ? 0 : _completionStart + 1;
-
                     _completions = autoCompleteHandler.GetSuggestions(text, _completionStart);
-                    _completions = _completions?.Length == 0 ? null : _completions;
+                    _completions = _completions?.Suggestions?.Count == 0 ? null : _completions;
 
                     if (_completions == null)
                         return;
