@@ -204,8 +204,24 @@ namespace Internal.ReadLine
         /// <param name="str"></param>
         private void WriteString(string str)
         {
+#if DEBUG
+            Log.Verb("WriteString started", "readline");
+#endif
             foreach (char character in str)
+            {
+#if DEBUG
+                Log.Verb($"Writestring enumerate nxt: {character}", "readline");
+#endif
+
                 WriteChar(character);
+#if DEBUG
+                Log.Verb($"Writestring enumerate FIN", "readline");
+#endif
+            }
+#if DEBUG
+            Log.Verb("WriteString ended", "readline");
+#endif
+
         }
 
         /// <summary>
@@ -275,8 +291,17 @@ namespace Internal.ReadLine
             if (IsEndOfLine())
             {
                 _text.Append(c);
+#if DEBUG
+                Log.Verb($"WriteChar: Abstract console invoke", "readline");
+#endif
                 Console2.Write(c);
+#if DEBUG
+                Log.Verb($"WriteChar: Abstract console FIN", "readline");
+#endif
                 _cursorPos++;
+#if DEBUG
+                Log.Verb($"WriteChar: EOF; Char='{c}'; Pos(Added)={_cursorPos}", "readline");
+#endif
                 if (Console2.CursorLeft == Console2.BufferWidth - 1)
                 {
                     Console2.WriteLine("");
@@ -289,6 +314,9 @@ namespace Internal.ReadLine
                 int top = Console2.CursorTop;
                 string str = _text.ToString().Substring(_cursorPos);
                 _text.Insert(_cursorPos, c);
+#if DEBUG
+                Log.Verb($"WriteChar: Insert; Char='{c}'; Pos(Added)={_cursorPos}", "readline");
+#endif
                 ConsoleWriteChar(c);
                 ConsoleWriteString(str);
                 Console2.SetCursorPosition(left, top);
@@ -308,6 +336,9 @@ namespace Internal.ReadLine
 
             MoveCursorLeft();
             int index = _cursorPos;
+#if DEBUG
+            Log.Verb($"Backspace rmed char: {_text[index]}", "readline");
+#endif
             _text.Remove(index, 1);
             int left = Console2.CursorLeft;
             int top = Console2.CursorTop;
