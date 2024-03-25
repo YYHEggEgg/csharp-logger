@@ -35,11 +35,12 @@ namespace YYHEggEgg.Logger
         {
             bool cnCharOK = Task.Run(() =>
             {
-                Console.Write('测');
+                Console.Write("测");
+                Console.Write("试");
                 Console.GetCursorPosition();
             }).Wait(500);
             Console.SetCursorPosition(0, 0);
-            Console.Write("   ");
+            Console.Write("     ");
             Console.SetCursorPosition(0, 0);
 #if DEBUG
             Console.WriteLine($"InitAbsConsole: CNCharOK = {cnCharOK}", nameof(ConsoleWrapper));
