@@ -167,11 +167,9 @@ internal class Program
 
     class SimpleAutoCmpl : IAutoCompleteHandler
     {
-
         public SuggestionResult GetSuggestions(string text, int index)
         {
-            var startIndex = text[..index].LastIndexOf(' ');
-            if (startIndex == -1) startIndex = 0;
+            var startIndex = text[0..index].LastIndexOf(' ') + 1;
             var endIndex = text[index..].IndexOf(' ');
             return new SuggestionResult
             {

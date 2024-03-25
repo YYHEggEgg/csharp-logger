@@ -204,21 +204,21 @@ namespace Internal.ReadLine
         /// <param name="str"></param>
         private void WriteString(string str)
         {
-#if DEBUG
+#if false
             Log.Verb("WriteString started", "readline");
 #endif
             foreach (char character in str)
             {
-#if DEBUG
+#if false
                 Log.Verb($"Writestring enumerate nxt: {character}", "readline");
 #endif
 
                 WriteChar(character);
-#if DEBUG
+#if false
                 Log.Verb($"Writestring enumerate FIN", "readline");
 #endif
             }
-#if DEBUG
+#if false
             Log.Verb("WriteString ended", "readline");
 #endif
 
@@ -291,15 +291,15 @@ namespace Internal.ReadLine
             if (IsEndOfLine())
             {
                 _text.Append(c);
-#if DEBUG
+#if false
                 Log.Verb($"WriteChar: Abstract console invoke", "readline");
 #endif
                 Console2.Write(c);
-#if DEBUG
+#if false
                 Log.Verb($"WriteChar: Abstract console FIN", "readline");
 #endif
                 _cursorPos++;
-#if DEBUG
+#if false
                 Log.Verb($"WriteChar: EOF; Char='{c}'; Pos(Added)={_cursorPos}", "readline");
 #endif
                 if (Console2.CursorLeft == Console2.BufferWidth - 1)
@@ -314,7 +314,7 @@ namespace Internal.ReadLine
                 int top = Console2.CursorTop;
                 string str = _text.ToString().Substring(_cursorPos);
                 _text.Insert(_cursorPos, c);
-#if DEBUG
+#if false
                 Log.Verb($"WriteChar: Insert; Char='{c}'; Pos(Added)={_cursorPos}", "readline");
 #endif
                 ConsoleWriteChar(c);
@@ -336,7 +336,7 @@ namespace Internal.ReadLine
 
             MoveCursorLeft();
             int index = _cursorPos;
-#if DEBUG
+#if false
             Log.Verb($"Backspace rmed char: {_text[index]}", "readline");
 #endif
             _text.Remove(index, 1);
@@ -560,7 +560,7 @@ namespace Internal.ReadLine
 
                     string text = _text.ToString();
 
-                    _completions = autoCompleteHandler.GetSuggestions(text, _completionStart);
+                    _completions = autoCompleteHandler.GetSuggestions(text, _cursorPos);
                     _completions = _completions?.Suggestions?.Count == 0 ? null : _completions;
 
                     if (_completions == null)

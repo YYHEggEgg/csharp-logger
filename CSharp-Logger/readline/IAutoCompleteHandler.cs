@@ -7,11 +7,11 @@ namespace YYHEggEgg.Logger
         /// </summary>
         public IList<string>? Suggestions { get; set; }
         /// <summary>
-        /// The start index to fill in the suggestions (replace). Only apply to the first suggestion.
+        /// The start index in the provided text to fill in the suggestions (replace). Only apply to the first suggestion.
         /// </summary>
         public int StartIndex { get; set; }
         /// <summary>
-        /// The end index to fill in the suggestions (replace). If want to replace all contents after user's cursor, set -1. Only apply to the first suggestion.
+        /// The end index in the provided text to fill in the suggestions (replace). If want to replace all contents after user's cursor, set -1. Only apply to the first suggestion.
         /// </summary>
         public int EndIndex { get; set; } = -1;
     }

@@ -40,19 +40,19 @@ namespace YYHEggEgg.Logger.readline.Abstractions
 
         public void Write(char value)
         {
-#if DEBUG
+#if false
             Log.Verb("Flush", nameof(DelayConsole));
 #endif
             Flush();
-#if DEBUG
+#if false
             Log.Verb($"Console.Write({value})", nameof(DelayConsole));
 #endif
             Console.Write(value);
-#if DEBUG
+#if false
             Log.Verb("Resync start", nameof(DelayConsole));
 #endif
             Resync();
-#if DEBUG
+#if false
             Log.Verb("Resync FIN", nameof(DelayConsole));
 #endif
         }

@@ -33,7 +33,7 @@ namespace YYHEggEgg.Logger
 
         private static void InitAbsConsole()
         {
-            shared_absconsole = new Console2();
+            shared_absconsole = new DelayConsole();
         }
 
         /// <summary>

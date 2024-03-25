@@ -10,7 +10,7 @@
 
 ## 更新
 
-### v4.0.3
+### v4.1.0
 
 - 为 `ConsoleWrapper.ReadLineAsync` 添加了 `CancellationToken` 参数。
 - 为了提高兼容性，现在 `ConsoleWrapper` 在初始化时不会将 `Console.TreatControlCAsInput` 设为 `true`。此时 `ConsoleWrapper.ShutDownRequest` 事件会包含有意义的 `sender` 和 `args`.
@@ -18,6 +18,42 @@
 - 修复了在 Windows 7 下的命令提示符使用 `ConsoleWrapper` 时，输入多行数据会产生异常的问题。
 - 修复了使用默认构造器初始化的 `LoggerConfig` 可能出现未预期的参数的问题。
 - 现在，支持使用 `Log.Initialize` 或 `ConsoleWrapper.Initialize` 在其启动时添加历史记录。
+
+#### 中断性变更
+
+接口 `IAutoCompleteHandler` 的定义发生了变化，以给予实现者更好的控制。详见 `IAutoCompleteHandler` 与 `SuggestionResult` 的定义。
+
+```cs
+public class SuggestionResult
+{
+    /// <summary>
+    /// The suggestion based on the context.
+    /// </summary>
+    public IList<string>? Suggestions { get; set; }
+    /// <summary>
+    /// The start index in the provided text to fill in the suggestions (replace). Only apply to the first suggestion.
+    /// </summary>
+    public int StartIndex { get; set; }
+    /// <summary>
+    /// The end index in the provided text to fill in the suggestions (replace). If want to replace all contents after user's cursor, set -1. Only apply to the first suggestion.
+    /// </summary>
+    public int EndIndex { get; set; } = -1;
+}
+
+public interface IAutoCompleteHandler
+{
+    /// <summary>
+    /// Get the suggestions based on the current input.
+    /// </summary>
+    /// <param name="text">The full line of input.</param>
+    /// <param name="index">The position where the user's cursor on.</param>
+    SuggestionResult GetSuggestions(string text, int index);
+}
+```
+
+#### 已知问题
+
+极少部分运行环境在 `ConsoleWrapper` 的输入区域存在中文时，`Console.GetCursorPosition` 方法或 `Console.CursorLeft` 调用阻塞（除非多次按下新的字符，例如方向右键），导致出现卡顿或无法操作。尝试解决无果。
 
 ### v4.0.2
 
@@ -75,7 +111,7 @@
 - 优化了 `Log`、`BaseLogger` 以及 `LoggerChannel` 类内的方法指示。
 - 现在可以通过 `ConsoleWrapper.ReadLine(false)` 来指示不将当前行的内容计入命令输入历史。这在指示用户输入只与特定上下文有关的信息（例如 `Type 'y' to confirm, 'n' to refuse` 之类的确认 prompt）时很有用。
 
-### 中断性变更
+#### 中断性变更
 
 - `Log.CustomConfig` 属性更名为 `Log.GlobalConfig`。同时，现在在未调用 `Log.Initialize` 初始化时访问 `Log.GlobalConfig` 会引发 `InvalidOperationException`.
 - 现在如果用户在 `Log.Initialize` 时指示使用程序路径（为 `LoggerConfig.Use_Working_Directory` 提供了 `false`），并且其无法访问，相比之前的实现，其不会发出程序会 fallback 到工作目录的警告。同理，在压缩过往日志文件时如果出现了错误也不会有警告提示。

@@ -10,7 +10,7 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
 
 ## Update
 
-### v4.0.3
+### v4.1.0
 
 - Added `CancellationToken` parameter for `ConsoleWrapper.ReadLineAsync`.
 - To improve compatibility, now `ConsoleWrapper` won't set `Console.TreatControlCAsInput` as `true` while initializing. `ConsoleWrapper.ShutDownRequest` will contain meaningful `sender` and `args` also.
@@ -18,6 +18,42 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
 - Fixed an issue where using `ConsoleWrapper` with the command prompt on Windows 7 would cause an issue when inputting multiple lines of data.
 - Fixed an issue whereby using the default constructor to initialize `LoggerConfig` might result in unexpected parameters.
 - Now supports adding history at its startup using `Log.Initialize` or `ConsoleWrapper.Initialize`.
+
+#### Breaking Changes
+
+The interface API of `IAutoCompleteHandler` has been altered to provide implementers with better control. For details, refer to the definitions of `IAutoCompleteHandler` and `SuggestionResult`.
+
+```cs
+public class SuggestionResult
+{
+    /// <summary>
+    /// The suggestion based on the context.
+    /// </summary>
+    public IList<string>? Suggestions { get; set; }
+    /// <summary>
+    /// The start index in the provided text to fill in the suggestions (replace). Only apply to the first suggestion.
+    /// </summary>
+    public int StartIndex { get; set; }
+    /// <summary>
+    /// The end index in the provided text to fill in the suggestions (replace). If want to replace all contents after user's cursor, set -1. Only apply to the first suggestion.
+    /// </summary>
+    public int EndIndex { get; set; } = -1;
+}
+
+public interface IAutoCompleteHandler
+{
+    /// <summary>
+    /// Get the suggestions based on the current input.
+    /// </summary>
+    /// <param name="text">The full line of input.</param>
+    /// <param name="index">The position where the user's cursor on.</param>
+    SuggestionResult GetSuggestions(string text, int index);
+}
+```
+
+#### Known Issues
+
+In a very small number of running environments, when there is Chinese text in the input area of `ConsoleWrapper`, the `Console.GetCursorPosition` method or the `Console.CursorLeft` call becomes blocked (unless new characters are pressed multiple times, such as the right arrow key), resulting in lag or unresponsiveness. Attempts to resolve this issue have been unsuccessful.
 
 ### v4.0.2
 
