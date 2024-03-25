@@ -1,4 +1,5 @@
 ﻿using Internal.ReadLine;
+using Internal.ReadLine.Abstractions;
 using System.Collections.Concurrent;
 using System.Reflection;
 using YYHEggEgg.Logger.readline.Abstractions;
@@ -30,6 +31,22 @@ namespace YYHEggEgg.Logger
         public static int RefreshTicks { get; set; }
         private static bool _initialized = false;
 
+        private static void InitAbsConsole()
+        {
+            bool cnCharOK = Task.Run(() =>
+            {
+                Console.Write('测');
+                Console.GetCursorPosition();
+            }).Wait(500);
+            Console.SetCursorPosition(0, 0);
+            Console.Write("   ");
+            Console.SetCursorPosition(0, 0);
+#if DEBUG
+            Console.WriteLine($"InitAbsConsole: CNCharOK = {cnCharOK}", nameof(ConsoleWrapper));
+#endif
+            shared_absconsole = cnCharOK ? new DelayConsole() : new Console2();
+        }
+
         /// <summary>
         /// This method has SIDE EFFECT, so don't use <see cref="Console"/> after invoked it.
         /// <para/>
@@ -50,6 +67,7 @@ namespace YYHEggEgg.Logger
             _initialized = true;
 
             lines ??= new List<string>();
+            InitAbsConsole();
             keyHandler = new(shared_absconsole, lines, null, string.Empty);
             Console.CancelKeyPress += Console_CancelKeyPress;
             InputPrefix = "";
@@ -322,7 +340,7 @@ namespace YYHEggEgg.Logger
             ShutDownRequest?.Invoke(null, null);
         }
 
-        private static DelayConsole shared_absconsole = new();
+        private static IConsole shared_absconsole = null!;
         private static ConcurrentQueue<ConsoleKeyInfo> qhandle_consolekeys = new();
         private static KeyHandler keyHandler = null!;
         private static async Task BackgroundReadkey()

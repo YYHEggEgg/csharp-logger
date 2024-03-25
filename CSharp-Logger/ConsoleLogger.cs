@@ -91,7 +91,11 @@ namespace YYHEggEgg.Logger
         public static void Initialize(LoggerConfig conf)
         {
             if (_initialized) return;
+            InitializeCore(conf);
+        }
 
+        private static void InitializeCore(LoggerConfig conf)
+        {
             if (conf.Console_Minimum_LogLevel != LogLevel.None 
                 && !Tools.CheckIfSupportedOS())
             {
@@ -133,10 +137,33 @@ namespace YYHEggEgg.Logger
             }
         }
 
+        /// <summary>
+        /// Initialize the logger and add the provided history to 
+        /// <see cref="ConsoleWrapper"/>. If initialized before, 
+        /// the method will throw <see cref="InvalidOperationException"/>
+        /// because .
+        /// </summary>
+        /// <exception cref="InvalidOperationException">
+        /// The current OS is not supported to output logs to 
+        /// the console. To continue use logging on this OS,
+        /// set <see cref="LoggerConfig.Console_Minimum_LogLevel"/>
+        /// to <see cref="LogLevel.None"/>.
+        /// <para/> or <para/> 
+        /// <see cref="ConsoleWrapper"/> and any features
+        /// related to console is not supported on current OS.
+        /// To continue use logging on this OS, set
+        /// <see cref="LoggerConfig.Use_Console_Wrapper"/>
+        /// to <see cref="false"/>.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">
+        /// Init History can only be valid when specifying 
+        /// to use ConsoleWrapper.
+        /// </exception>
         public static void Initialize(LoggerConfig conf, IEnumerable<string> initHistory)
         {
             if (!conf.Use_Console_Wrapper)
                 throw new InvalidOperationException("Init History can only be valid when specifying to use ConsoleWrapper.");
+            if (_initialized) return;
             ConsoleWrapper.Initialize(initHistory);
             Initialize(conf);
         }
