@@ -33,19 +33,7 @@ namespace YYHEggEgg.Logger
 
         private static void InitAbsConsole()
         {
-            bool cnCharOK = Task.Run(() =>
-            {
-                Console.Write("测");
-                Console.Write("试");
-                Console.GetCursorPosition();
-            }).Wait(500);
-            Console.SetCursorPosition(0, 0);
-            Console.Write("     ");
-            Console.SetCursorPosition(0, 0);
-#if DEBUG
-            Console.WriteLine($"InitAbsConsole: CNCharOK = {cnCharOK}", nameof(ConsoleWrapper));
-#endif
-            shared_absconsole = cnCharOK ? new DelayConsole() : new Console2();
+            shared_absconsole = new Console2();
         }
 
         /// <summary>
