@@ -70,7 +70,7 @@ namespace YYHEggEgg.Logger
         {
             if (_initialized)
                 throw new InvalidOperationException("Can't push the history after ConsoleWrapper initialize completed.");
-            lines = new List<string>(initHistory);
+            lines = new List<string>(initHistory.Where(x => x.Length <= HistoryMaximumChars));
             Initialize();
         }
 
@@ -156,7 +156,7 @@ namespace YYHEggEgg.Logger
                 {
                     if ((lines.Count == 0 || lines[lines.Count - 1] != content)
                         && !string.IsNullOrEmpty(content)
-                        && (_history_char_limit == -1 || content.Length <= _history_char_limit))
+                        && content.Length <= _history_char_limit)
                         lines.Add(content);
                 }
             }
@@ -310,6 +310,8 @@ namespace YYHEggEgg.Logger
             {
                 if (_custom_history_limit == int.MinValue)
                     return Console.WindowHeight * Console.WindowWidth;
+                else if (_custom_history_limit == -1)
+                    return int.MaxValue;
                 else return _custom_history_limit;
             }
             set

@@ -17,7 +17,7 @@
 - 修复了在使用 `ConsoleWrapper` 时，如果开始读取后没有输出过日志，则可能不显示读取的 `InputPrefix` 的问题。
 - 修复了在 Windows 7 下的命令提示符使用 `ConsoleWrapper` 时，输入多行数据会产生异常的问题。
 - 修复了使用默认构造器初始化的 `LoggerConfig` 可能出现未预期的参数的问题。
-- 现在，支持使用 `Log.Initialize` 或 `ConsoleWrapper.Initialize` 在其启动时添加历史记录。
+- 现在，支持使用 `Log.Initialize` 或 `ConsoleWrapper.Initialize` 在其启动时添加历史记录。注意：其仍受历史记录最大字符数的限制。您可以在 `Initialize` 前更改 `ConsoleWapper.HistoryMaximumChars`.
 
 #### 中断性变更
 

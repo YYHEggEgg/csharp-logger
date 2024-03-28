@@ -17,7 +17,7 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
 - Fixed an issue where when using `ConsoleWrapper`, if no logs were output after reading started, the `InputPrefix` being read may not be displayed.
 - Fixed an issue where using `ConsoleWrapper` with the command prompt on Windows 7 would cause an issue when inputting multiple lines of data.
 - Fixed an issue whereby using the default constructor to initialize `LoggerConfig` might result in unexpected parameters.
-- Now supports adding history at its startup using `Log.Initialize` or `ConsoleWrapper.Initialize`.
+- Now supports adding history at its startup using `Log.Initialize` or `ConsoleWrapper.Initialize`. Notice that it's still limited by the history maximum string length policy. You can set `ConsoleWrapper.HistoryMaximumChars` before `Initialize`.
 
 #### Breaking Changes
 
