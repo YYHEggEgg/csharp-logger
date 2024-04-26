@@ -5,7 +5,10 @@ public static class LoggerChannelTraceExtensions
     private static object _exception_lck = "<3 from miHomo Technology";
     private static Dictionary<string, Guid> _trace_ids = new();
     private static int _total_characters = 0;
-    private const int MAXIMUM_MEMORY_CHARS = 4 * 1024 * 1024; // >= 4MB
+    /// <summary>
+    /// Set the maximum chars count of exception content stored in the memory. LogTrace use it to reuse trace-ids for exceptions with the same content.
+    /// </summary>
+    public static int MaximumStoredChars { get; set; } = 4 * 1024 * 1024;
     private static bool _initialized = false;
     private static BaseLogger? _tracelog;
 
@@ -41,6 +44,14 @@ public static class LoggerChannelTraceExtensions
         (Guid traceid, bool isnew) rtn;
         lock (_exception_lck)
         {
+            Guid? cleared = null;
+            _total_characters += ex_full_content.Length;
+            if (_total_characters > MaximumStoredChars)
+            {
+                cleared = _trace_ids[ex_full_content];
+                _trace_ids.Clear();
+            }
+
             if (!_trace_ids.TryGetValue(ex_full_content, out Guid id))
             {
                 rtn = (Guid.NewGuid(), true);
@@ -48,13 +59,8 @@ public static class LoggerChannelTraceExtensions
                 return rtn;
             }
 
-            _total_characters += ex_full_content.Length;
-            if (_total_characters > MAXIMUM_MEMORY_CHARS)
-            {
-                var tmp = _trace_ids[ex_full_content];
-                _trace_ids.Clear();
-                _trace_ids.Add(ex_full_content, tmp);
-            }
+            if (cleared != null)
+                _trace_ids.Add(ex_full_content, cleared.Value);
             rtn = (id, false);
             return rtn;
         }
@@ -247,6 +253,13 @@ public static class BaseLoggerTraceExtensions
 
 public static class LogTrace
 {
+    /// <inheritdoc cref="LoggerChannelTraceExtensions.MaximumStoredChars"/>
+    public static int MaximumStoredChars
+    {
+         get => LoggerChannelTraceExtensions.MaximumStoredChars;
+         set => LoggerChannelTraceExtensions.MaximumStoredChars = value;
+    }
+
     /// <summary>
     /// Output <see cref="Exception.Message"/> with
     /// a given <see cref="LogLevel"/> to the global main logger,

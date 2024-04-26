@@ -8,6 +8,16 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
 
 [![NuGet](https://img.shields.io/nuget/v/EggEgg.CSharp-Logger.svg)](https://www.nuget.org/packages/EggEgg.CSharp-Logger)
 
+## Contents
+
+- [Update](#update)
+  - [v4.1.0](#v4-1-0)
+  - [v4.0.2](#v4-0-2)
+  - [v4.0.1](#v4-0-1)
+  - [v4.0.0](#v4-0-0)
+- [Features](#features)
+- [Best Practices](#best-practices)
+
 ## Update
 
 ### v4.1.0
@@ -18,6 +28,8 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
 - Fixed an issue where using `ConsoleWrapper` with the command prompt on Windows 7 would cause an issue when inputting multiple lines of data.
 - Fixed an issue whereby using the default constructor to initialize `LoggerConfig` might result in unexpected parameters.
 - Now supports adding history at its startup using `Log.Initialize` or `ConsoleWrapper.Initialize`. Notice that it's still limited by the history maximum string length policy. You can set `ConsoleWrapper.HistoryMaximumChars` before `Initialize`.
+- If the `ConsoleWrapper.AutoCompleteHandler` you have set throws an exception while processing `GetSuggestions`, a warning will be displayed, and the information will be output to the `latest.errtrace.log`.
+- You can now set `LogTrace.MaximumStoredChars` to control the amount of characters stored, which is used to store the content of exceptions in order to reuse the Trace ID.
 
 #### Breaking Changes
 
@@ -111,7 +123,7 @@ Main changes:
 - Optimized the method indication in the `Log`, `BaseLogger` and `LoggerChannel` classes.
 - Now you can indicate that the content of the current line should not be included in the command input history by using `ConsoleWrapper.ReadLine(false)`. This is useful when prompting the user to input information that is specific to a certain context (e.g., a confirmation prompt like `Type 'y' to confirm, 'n' to refuse`).
 
-### Breaking changes
+#### Breaking changes
 
 - The property `Log.CustomConfig` is renamed to `Log.GlobalConfig`, and an access attempt to `Log.GlobalConfig` before invoking `Log.Initialize` will raise `InvalidOperationException`.
 - Now if the user indicates to use the program path (provided `false` for `LoggerConfig.Use_Working_Directory`) during `Log.Initialize` and it cannot be accessed, compared with the previous implementation, it will not issue a warning that the program will fallback to the working directory. Similarly, there will be no warning prompts if an error occurs when compressing past log files.

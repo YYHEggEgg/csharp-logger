@@ -8,6 +8,16 @@
 
 [![NuGet](https://img.shields.io/nuget/v/EggEgg.CSharp-Logger.svg)](https://www.nuget.org/packages/EggEgg.CSharp-Logger)
 
+## 目录
+
+- [更新](#更新)
+  - [v4.1.0](#v4-1-0)
+  - [v4.0.2](#v4-0-2)
+  - [v4.0.1](#v4-0-1)
+  - [v4.0.0](#v4-0-0)
+- [功能](#功能)
+- [最佳实践](#最佳实践)
+
 ## 更新
 
 ### v4.1.0
@@ -18,6 +28,8 @@
 - 修复了在 Windows 7 下的命令提示符使用 `ConsoleWrapper` 时，输入多行数据会产生异常的问题。
 - 修复了使用默认构造器初始化的 `LoggerConfig` 可能出现未预期的参数的问题。
 - 现在，支持使用 `Log.Initialize` 或 `ConsoleWrapper.Initialize` 在其启动时添加历史记录。注意：其仍受历史记录最大字符数的限制。您可以在 `Initialize` 前更改 `ConsoleWapper.HistoryMaximumChars`.
+- 现在如果您设定的 `ConsoleWrapper.AutoCompleteHandler` 在处理 `GetSuggestions` 时抛出了异常，将会显示一条警告并输出信息到 `latest.errtrace.log`.
+- 现在可以设置 `LogTrace.MaximumStoredChars` 来控制其存储字符的量，用于存储异常的内容以重用 Trace ID.
 
 #### 中断性变更
 

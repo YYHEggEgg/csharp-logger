@@ -6,7 +6,7 @@ using TextCopy;
 using YYHEggEgg.Logger;
 
 namespace Internal.ReadLine
-{   
+{
     internal partial class KeyHandler
     {
         private int _cursorPos;
@@ -36,7 +36,7 @@ namespace Internal.ReadLine
             var actual_ch_len = ch.Width();
             if (_target_consolewidth - (_display_len % _target_consolewidth) >= 2)
                 _display_len += actual_ch_len;
-            else _display_len = (int)Math.Ceiling((double)_display_len / _target_consolewidth) 
+            else _display_len = (int)Math.Ceiling((double)_display_len / _target_consolewidth)
                     * _target_consolewidth + actual_ch_len;
         }
 
@@ -560,7 +560,14 @@ namespace Internal.ReadLine
 
                     string text = _text.ToString();
 
-                    _completions = autoCompleteHandler.GetSuggestions(text, _cursorPos);
+                    try
+                    {
+                        _completions = autoCompleteHandler.GetSuggestions(text, _cursorPos);
+                    }
+                    catch (Exception ex)
+                    {
+                        LogTrace.WarnTrace(ex, nameof(KeyHandler), $"Auto Complete Handler ({autoCompleteHandler.GetType().FullName}) threw an exception.");
+                    }
                     _completions = _completions?.Suggestions?.Count == 0 ? null : _completions;
 
                     if (_completions == null)
