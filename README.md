@@ -11,10 +11,10 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
 ## Contents
 
 - [Update](#update)
-  - [v4.1.0](#v4-1-0)
-  - [v4.0.2](#v4-0-2)
-  - [v4.0.1](#v4-0-1)
-  - [v4.0.0](#v4-0-0)
+  - [v4.1.0](#v410)
+  - [v4.0.2](#v402)
+  - [v4.0.1](#v401)
+  - [v4.0.0](#v400)
 - [Features](#features)
 - [Best Practices](#best-practices)
 
