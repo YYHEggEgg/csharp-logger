@@ -120,6 +120,12 @@ namespace Internal.ReadLine
                 Console2.SetCursorPosition(_console_cursorLeft_tmp, _console_cursorTop_tmp);
                 _cursorPos = _cursorPos_tmp;
             }
+
+            var pos = 0;
+            if (_cursorPos > 0 && _cursorPos - 1 < _text.Length - 1 && _text[_cursorPos - 1].Width() == 1 && CharUtil.Width(_text.ToString(_cursorPos - 1, 2), ref pos) == 2)
+            {
+                MoveCursorLeft();
+            }
         }
 
         private void MoveCursorHome()
@@ -169,6 +175,10 @@ namespace Internal.ReadLine
             }
 
             _cursorPos++;
+
+            var pos = 0;
+            if (_cursorPos - 1 < _text.Length - 1 && _text[_cursorPos - 1].Width() == 1 && CharUtil.Width(_text.ToString(_cursorPos - 1, 2), ref pos) == 2)
+                MoveCursorRight();
         }
 
         private void MoveCursorEnd()
@@ -339,13 +349,21 @@ namespace Internal.ReadLine
 #if false
             Log.Verb($"Backspace rmed char: {_text[index]}", "readline");
 #endif
-            _text.Remove(index, 1);
+            int rmcount = 1;
+            if (index < _text.Length - 1)
+            {
+                var tmppos = 0;
+                if (_text[index].Width() == 1 && CharUtil.Width(_text.ToString(index, 2), ref tmppos) == 2)
+                    rmcount = 2;
+            }
+            _text.Remove(index, rmcount);
+
             int left = Console2.CursorLeft;
             int top = Console2.CursorTop;
             ConsoleWriteStringBuilder(_text, index);
             ConsoleWriteString("  ");
             Console2.SetCursorPosition(left, top);
-            _cursorLimit--;
+            _cursorLimit -= rmcount;
         }
 
         /// <summary>
@@ -357,13 +375,23 @@ namespace Internal.ReadLine
                 return;
 
             int index = _cursorPos;
-            _text.Remove(index, 1);
+            int rmcount = 1;
+            if (index < _text.Length - 1)
+            {
+                var tmppos = 0;
+                if (_text[index].Width() == 1 && CharUtil.Width(_text.ToString(index, 2), ref tmppos) == 2)
+                {
+                    rmcount = 2;
+                }
+            }
+            _text.Remove(index, rmcount);
+
             int left = Console2.CursorLeft;
             int top = Console2.CursorTop;
             ConsoleWriteStringBuilder(_text, index);
             ConsoleWriteString("  ");
             Console2.SetCursorPosition(left, top);
-            _cursorLimit--;
+            _cursorLimit -= rmcount;
         }
 
         /// <summary>
@@ -545,7 +573,7 @@ namespace Internal.ReadLine
                 while (!IsStartOfLine() && _text[_cursorPos - 1] != ' ')
                     Backspace();
             };
-            _keyActions["ControlT"] = TransposeChars;
+            // _keyActions["ControlT"] = TransposeChars; // FORBIDDEN
             _autoCompleteHandler = autoCompleteHandler;
             _keyActions["Tab"] = () =>
             {

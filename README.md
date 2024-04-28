@@ -30,6 +30,7 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
 - Now supports adding history at its startup using `Log.Initialize` or `ConsoleWrapper.Initialize`. Notice that it's still limited by the history maximum string length policy. You can set `ConsoleWrapper.HistoryMaximumChars` before `Initialize`.
 - If the `ConsoleWrapper.AutoCompleteHandler` you have set throws an exception while processing `GetSuggestions`, a warning will be displayed, and the information will be output to the `latest.errtrace.log`.
 - You can now set `LogTrace.MaximumStoredChars` to control the amount of characters stored, which is used to store the content of exceptions in order to reuse the Trace ID.
+- The ConsoleWrapper was unable to treat a pair of Unicode surrogate characters (e.g. emojis) as a single character when performing console operations (such as cursor movement, character deletion).
 
 #### Breaking Changes
 
@@ -65,7 +66,8 @@ public interface IAutoCompleteHandler
 
 #### Known Issues
 
-In a very small number of running environments, when there is Chinese text in the input area of `ConsoleWrapper`, the `Console.GetCursorPosition` method or the `Console.CursorLeft` call becomes blocked (unless new characters are pressed multiple times, such as the right arrow key), resulting in lag or unresponsiveness. Attempts to resolve this issue have been unsuccessful.
+- In a very small number of running environments, when there is Chinese text in the input area of `ConsoleWrapper`, the `Console.GetCursorPosition` method or the `Console.CursorLeft` call becomes blocked (unless new characters are pressed multiple times, such as the right arrow key), resulting in lag or unresponsiveness. Attempts to resolve this issue have been unsuccessful.
+- If a pair of Unicode surrogate characters (e.g. emojis) appeared in the input area of the ConsoleWrapper, they would display incorrectly when wrapped to the end of a line or a specific position. The actual text and cursor operations were not affected.
 
 ### v4.0.2
 

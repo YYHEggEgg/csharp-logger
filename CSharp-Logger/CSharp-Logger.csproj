@@ -10,7 +10,7 @@
     <GenerateDocumentationFile>False</GenerateDocumentationFile>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Title>EggEgg.CSharp-Logger</Title>
-    <Version>4.1.0-rc56</Version>
+    <Version>4.1.0-rc57</Version>
     <Authors>YYHEggEgg</Authors>
     <Company>YYHEggEgg</Company>
     <Description>A convenient C# Logger implementation, with reliable console interaction encapsulation support available.</Description>
