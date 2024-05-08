@@ -286,90 +286,83 @@ namespace YYHEggEgg.Logger
         }
 
         #region Log Methods
+        /// <inheritdoc cref="Verb(string?, DateTime, string?)"/>
+        public void Verb(string? content, string? sender = null) =>
+            Verb(content, DateTime.Now, sender);
+
         /// <summary>
         /// Put a log with Verbose Level to the handle queue.
         /// Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/>
         /// is no more than <see cref="LogLevel.Verbose"/>.
         /// </summary>
-        /// <param name="content">The log content.</param>
-        /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>
-        public void Verb(string content, string? sender = null)
-        {
-            if (CustomConfig.Global_Minimum_LogLevel == LogLevel.Verbose)
-            {
-                qlog.Enqueue(new LogDetail(content, LogLevel.Verbose, sender));
-            }
-        }
+        /// <inheritdoc cref="PushLog(string?, LogLevel, DateTime, string?)"/>
+        public void Verb(string? content, DateTime logTime, string? sender = null) =>
+            PushKnownLogEnumUnchecked(content, LogLevel.Verbose, logTime, sender);
+
+        /// <inheritdoc cref="Dbug(string?, DateTime, string?)"/>
+        public void Dbug(string? content, string? sender = null) =>
+            Dbug(content, DateTime.Now, sender);
 
         /// <summary>
         /// Put a log with Debug Level to the handle queue.
         /// Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/>
         /// is no more than <see cref="LogLevel.Debug"/>.
         /// </summary>
-        /// <param name="content">The log content.</param>
-        /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>
-        public void Dbug(string content, string? sender = null)
-        {
-            if (CustomConfig.Global_Minimum_LogLevel <= LogLevel.Debug)
-            {
-                qlog.Enqueue(new LogDetail(content, LogLevel.Debug, sender));
-            }
-        }
+        /// <inheritdoc cref="PushLog(string?, LogLevel, DateTime, string?)"/>
+        public void Dbug(string? content, DateTime logTime, string? sender = null) =>
+            PushKnownLogEnumUnchecked(content, LogLevel.Debug, logTime, sender);
+
+        /// <inheritdoc cref="Info(string?, DateTime, string?)"/>
+        public void Info(string? content, string? sender = null) =>
+            Info(content, DateTime.Now, sender);
 
         /// <summary>
         /// Put a log with Info Level to the handle queue.
         /// Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/>
-        /// is no more than <see cref="LogLevel.Information"/>. 
+        /// is no more than <see cref="LogLevel.Information"/>.
         /// </summary>
-        /// <param name="content">The log content.</param>
-        /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>
-        public void Info(string content, string? sender = null)
-        {
-            if (CustomConfig.Global_Minimum_LogLevel <= LogLevel.Information)
-            {
-                qlog.Enqueue(new LogDetail(content, LogLevel.Information, sender));
-            }
-        }
+        /// <inheritdoc cref="PushLog(string?, LogLevel, DateTime, string?)"/>
+        public void Info(string? content, DateTime logTime, string? sender = null) =>
+            PushKnownLogEnumUnchecked(content, LogLevel.Information, logTime, sender);
+
+        /// <inheritdoc cref="Warn(string?, DateTime, string?))"/>
+        public void Warn(string? content, string? sender = null) =>
+            Warn(content, DateTime.Now, sender);
 
         /// <summary>
         /// Put a log with Warning Level to the handle queue.
         /// Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/>
-        /// is no more than <see cref="LogLevel.Warning"/>. 
+        /// is no more than <see cref="LogLevel.Warning"/>.
         /// </summary>
-        /// <param name="content">The log content.</param>
-        /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>
-        public void Warn(string content, string? sender = null)
-        {
-            if (CustomConfig.Global_Minimum_LogLevel <= LogLevel.Warning)
-            {
-                qlog.Enqueue(new LogDetail(content, LogLevel.Warning, sender));
-            }
-        }
+        /// <inheritdoc cref="PushLog(string?, LogLevel, DateTime, string?)"/>
+        public void Warn(string? content, DateTime logTime, string? sender = null) =>
+            PushKnownLogEnumUnchecked(content, LogLevel.Warning, logTime, sender);
 
+        /// <inhericdoc cref="Erro(string?, DateTime, string?)"/>
+        public void Erro(string? content, string? sender = null) =>
+            Erro(content, DateTime.Now, sender);
         /// <summary>
         /// Put a log with Error Level to the handle queue.
         /// Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/>
-        /// is no more than <see cref="LogLevel.Error"/>. 
+        /// is no more than <see cref="LogLevel.Error"/>.
         /// </summary>
-        /// <param name="content">The log content.</param>
-        /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>
-        public void Erro(string content, string? sender = null)
-        {
-            if (CustomConfig.Global_Minimum_LogLevel <= LogLevel.Error)
-            {
-                qlog.Enqueue(new LogDetail(content, LogLevel.Error, sender));
-            }
-        }
+        /// <inheritdoc cref="PushLog(string?, LogLevel, DateTime, string?)"/>
+        public void Erro(string? content, DateTime logTime, string? sender = null) =>
+            PushKnownLogEnumUnchecked(content, LogLevel.Error, logTime, sender);
+
+        /// <inheritdoc cref="PushLog(string?, LogLevel, DateTime, string?))"/>
+        public void PushLog(string? content, LogLevel logLevel, string? sender = null) => PushLog(content, logLevel, DateTime.Now, sender);
 
         /// <summary>
         /// Put a log with a certain Level to the handle queue.
         /// Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/>
-        /// is no more than <paramref name="logLevel"/>. 
+        /// is no more than <paramref name="logLevel"/>.
         /// </summary>
         /// <param name="content">The log content.</param>
         /// <param name="logLevel">The <see cref="LogLevel"/> of this log message.</param>
         /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>
-        public void PushLog(string content, LogLevel logLevel, string? sender = null)
+        /// <param name="logTime">The time this log claim to be.</param>
+        public void PushLog(string? content, LogLevel logLevel, DateTime logTime, string? sender = null)
         {
             if (logLevel == LogLevel.None)
             {
@@ -379,155 +372,120 @@ namespace YYHEggEgg.Logger
             {
                 throw new ArgumentException("A log with an invalid level cannot be pushed and handled.", nameof(logLevel));
             }
+            PushKnownLogEnumUnchecked(content, logLevel, logTime, sender);
+        }
+
+        private void PushKnownLogEnumUnchecked(string? content, LogLevel logLevel, DateTime logTime, string? sender)
+        {
             if (CustomConfig.Global_Minimum_LogLevel <= logLevel)
             {
-                qlog.Enqueue(new LogDetail(content, logLevel, sender));
+                qlog.Enqueue(new LogDetail(content, logLevel, sender, logTime));
             }
         }
+
+        /// <inheritdoc cref="Verb(Func{string?}, DateTime, string?, Action{Exception}?)"/>
+        public void Verb(Func<string?> getcontent_func, string? sender = null,
+            Action<Exception>? on_getcontent_error = null) =>
+            Verb(getcontent_func, DateTime.Now, sender, on_getcontent_error);
 
         /// <summary>
         /// Put a <see cref="Func{TResult}"/> with Verbose Level to the handle queue,
         /// and invoke the func afterwards to get the content.
         /// Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/>
-        /// is no more than <paramref name="logLevel"/>. 
+        /// is no more than <paramref name="logLevel"/>.
         /// </summary>
-        /// <param name="getcontent_func">
-        /// The func used to get the log content. It'll be invoked afterwards by
-        /// the logger's background refreshing task.
-        /// </param>
-        /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>
-        /// <param name="on_getcontent_error">
-        /// The Action used to handle the error in <paramref name="getcontent_func"/>.
-        /// If not providing it, the logger will report the exception to
-        /// <see cref="Log.Warn(string, string?)"/> in a certain format.
-        /// </param>
-        public void Verb(Func<string> getcontent_func, string? sender = null,
-            Action<Exception>? on_getcontent_error = null)
-        {
-            if (CustomConfig.Global_Minimum_LogLevel == LogLevel.Verbose)
-            {
-                qlog.Enqueue(new LogDetail(string.Empty, LogLevel.Verbose, sender, getcontent_func, on_getcontent_error));
-            }
-        }
+        /// <inheritdoc cref="PushLog(Func{string?}, LogLevel, DateTime, string?, Action{Exception}?)"/>
+        public void Verb(Func<string?> getcontent_func, DateTime logTime, string? sender = null,
+            Action<Exception>? on_getcontent_error = null) =>
+            PushCallbackLogEnumUnchecked(getcontent_func, LogLevel.Verbose, logTime, sender, on_getcontent_error);
+
+
+        /// <inheritdoc cref="Dbug(Func{string?}, DateTime, string?, Action{Exception}?)"/>
+        public void Dbug(Func<string?> getcontent_func, string? sender = null,
+            Action<Exception>? on_getcontent_error = null) =>
+            Dbug(getcontent_func, DateTime.Now, sender, on_getcontent_error);
 
         /// <summary>
         /// Put a <see cref="Func{TResult}"/> with Debug Level to the handle queue,
         /// and invoke the func afterwards to get the content.
         /// Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/>
-        /// is no more than <paramref name="logLevel"/>. 
+        /// is no more than <paramref name="logLevel"/>.
         /// </summary>
-        /// <param name="getcontent_func">
-        /// The func used to get the log content. It'll be invoked afterwards by
-        /// the logger's background refreshing task.
-        /// </param>
-        /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>
-        /// <param name="on_getcontent_error">
-        /// The Action used to handle the error in <paramref name="getcontent_func"/>.
-        /// If not providing it, the logger will report the exception to
-        /// <see cref="Log.Warn(string, string?)"/> in a certain format.
-        /// </param>
-        public void Dbug(Func<string> getcontent_func, string? sender = null,
-            Action<Exception>? on_getcontent_error = null)
-        {
-            if (CustomConfig.Global_Minimum_LogLevel <= LogLevel.Debug)
-            {
-                qlog.Enqueue(new LogDetail(string.Empty, LogLevel.Debug, sender, getcontent_func, on_getcontent_error));
-            }
-        }
+        /// <inheritdoc cref="PushLog(Func{string?}, LogLevel, DateTime, string?, Action{Exception}?)"/>
+        public void Dbug(Func<string?> getcontent_func, DateTime logTime, string? sender = null,
+            Action<Exception>? on_getcontent_error = null) =>
+            PushCallbackLogEnumUnchecked(getcontent_func, LogLevel.Debug, logTime, sender, on_getcontent_error);
+
+        /// <inheritdoc cref="Info(Func{string?}, DateTime, string?, Action{Exception}?)"/>
+        public void Info(Func<string?> getcontent_func, string? sender = null,
+            Action<Exception>? on_getcontent_error = null) =>
+            Info(getcontent_func, DateTime.Now, sender, on_getcontent_error);
 
         /// <summary>
         /// Put a <see cref="Func{TResult}"/> with Information Level to the handle queue,
         /// and invoke the func afterwards to get the content.
         /// Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/>
-        /// is no more than <paramref name="logLevel"/>. 
+        /// is no more than <paramref name="logLevel"/>.
         /// </summary>
-        /// <param name="getcontent_func">
-        /// The func used to get the log content. It'll be invoked afterwards by
-        /// the logger's background refreshing task.
-        /// </param>
-        /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>
-        /// <param name="on_getcontent_error">
-        /// The Action used to handle the error in <paramref name="getcontent_func"/>.
-        /// If not providing it, the logger will report the exception to
-        /// <see cref="Log.Warn(string, string?)"/> in a certain format.
-        /// </param>
-        public void Info(Func<string> getcontent_func, string? sender = null,
-            Action<Exception>? on_getcontent_error = null)
-        {
-            if (CustomConfig.Global_Minimum_LogLevel <= LogLevel.Information)
-            {
-                qlog.Enqueue(new LogDetail(string.Empty, LogLevel.Information, sender, getcontent_func, on_getcontent_error));
-            }
-        }
+        /// <inheritdoc cref="PushLog(Func{string?}, LogLevel, DateTime, string?, Action{Exception}?)"/>
+        public void Info(Func<string?> getcontent_func, DateTime logTime, string? sender = null,
+            Action<Exception>? on_getcontent_error = null) =>
+            PushCallbackLogEnumUnchecked(getcontent_func, LogLevel.Information, logTime, sender, on_getcontent_error);
+
+        /// <inheritdoc cref="Warn(Func{string?}, DateTime, string?, Action{Exception}?)"/>
+        public void Warn(Func<string?> getcontent_func, string? sender = null,
+            Action<Exception>? on_getcontent_error = null) =>
+            Warn(getcontent_func, DateTime.Now, sender, on_getcontent_error);
 
         /// <summary>
         /// Put a <see cref="Func{TResult}"/> with Warning Level to the handle queue,
         /// and invoke the func afterwards to get the content.
         /// Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/>
-        /// is no more than <paramref name="logLevel"/>. 
+        /// is no more than <paramref name="logLevel"/>.
         /// </summary>
-        /// <param name="getcontent_func">
-        /// The func used to get the log content. It'll be invoked afterwards by
-        /// the logger's background refreshing task.
-        /// </param>
-        /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>
-        /// <param name="on_getcontent_error">
-        /// The Action used to handle the error in <paramref name="getcontent_func"/>.
-        /// If not providing it, the logger will report the exception to
-        /// <see cref="Log.Warn(string, string?)"/> in a certain format.
-        /// </param>
-        public void Warn(Func<string> getcontent_func, string? sender = null,
-            Action<Exception>? on_getcontent_error = null)
-        {
-            if (CustomConfig.Global_Minimum_LogLevel <= LogLevel.Warning)
-            {
-                qlog.Enqueue(new LogDetail(string.Empty, LogLevel.Warning, sender, getcontent_func, on_getcontent_error));
-            }
-        }
+        /// <inheritdoc cref="PushLog(Func{string?}, LogLevel, DateTime, string?, Action{Exception}?)"/>
+        public void Warn(Func<string?> getcontent_func, DateTime logTime, string? sender = null,
+            Action<Exception>? on_getcontent_error = null) =>
+            PushCallbackLogEnumUnchecked(getcontent_func, LogLevel.Warning,logTime, sender, on_getcontent_error);
+
+        /// <inheritdoc cref="Erro(Func{string?}, DateTime, string?, Action{Exception}?)"/>
+        public void Erro(Func<string?> getcontent_func, string? sender = null,
+            Action<Exception>? on_getcontent_error = null) =>
+            Erro(getcontent_func, DateTime.Now, sender, on_getcontent_error);
 
         /// <summary>
         /// Put a <see cref="Func{TResult}"/> with Error Level to the handle queue,
         /// and invoke the func afterwards to get the content.
         /// Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/>
-        /// is no more than <paramref name="logLevel"/>. 
+        /// is no more than <paramref name="logLevel"/>.
         /// </summary>
-        /// <param name="getcontent_func">
-        /// The func used to get the log content. It'll be invoked afterwards by
-        /// the logger's background refreshing task.
-        /// </param>
-        /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>
-        /// <param name="on_getcontent_error">
-        /// The Action used to handle the error in <paramref name="getcontent_func"/>.
-        /// If not providing it, the logger will report the exception to
-        /// <see cref="Log.Warn(string, string?)"/> in a certain format.
-        /// </param>
-        public void Erro(Func<string> getcontent_func, string? sender = null,
-            Action<Exception>? on_getcontent_error = null)
-        {
-            if (CustomConfig.Global_Minimum_LogLevel <= LogLevel.Error)
-            {
-                qlog.Enqueue(new LogDetail(string.Empty, LogLevel.Error, sender, getcontent_func, on_getcontent_error));
-            }
-        }
+        /// <inheritdoc cref="PushLog(Func{string?}, LogLevel, DateTime, string?, Action{Exception}?)"/>
+        public void Erro(Func<string?> getcontent_func, DateTime logTime, string? sender = null,
+            Action<Exception>? on_getcontent_error = null) =>
+            PushCallbackLogEnumUnchecked(getcontent_func, LogLevel.Error, logTime, sender, on_getcontent_error);
+
+        /// <inheritdoc cref="PushLog(Func{string?}, LogLevel, DateTime, string?, Action{Exception}?)"/>
+        public void PushLog(Func<string?> getcontent_func, LogLevel logLevel,
+            string? sender = null, Action<Exception>? on_getcontent_error = null) =>
+            PushLog(getcontent_func, logLevel, DateTime.Now, sender, on_getcontent_error);
 
         /// <summary>
         /// Put a <see cref="Func{TResult}"/> with a certain Level to the handle queue,
         /// and invoke the func afterwards to get the content.
         /// Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/>
-        /// is no more than <paramref name="logLevel"/>. 
+        /// is no more than <paramref name="logLevel"/>.
         /// </summary>
         /// <param name="getcontent_func">
         /// The func used to get the log content. It'll be invoked afterwards by
         /// the logger's background refreshing task.
         /// </param>
-        /// <param name="logLevel">The <see cref="LogLevel"/> of this log message.</param>
-        /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>
         /// <param name="on_getcontent_error">
         /// The Action used to handle the error in <paramref name="getcontent_func"/>.
         /// If not providing it, the logger will report the exception to
         /// <see cref="Log.Warn(string, string?)"/> in a certain format.
         /// </param>
-        public void PushLog(Func<string> getcontent_func, LogLevel logLevel, 
+        /// <inheritdoc cref="PushLog(string?, LogLevel, DateTime, string?)"/>
+        public void PushLog(Func<string?> getcontent_func, LogLevel logLevel, DateTime logTime,
             string? sender = null, Action<Exception>? on_getcontent_error = null)
         {
             if (logLevel == LogLevel.None)
@@ -538,9 +496,14 @@ namespace YYHEggEgg.Logger
             {
                 throw new ArgumentException("A log with an invalid level cannot be pushed and handled.", nameof(logLevel));
             }
+            PushCallbackLogEnumUnchecked(getcontent_func, logLevel, logTime, sender, on_getcontent_error);
+        }
+
+        private void PushCallbackLogEnumUnchecked(Func<string?> getcontent_func, LogLevel logLevel, DateTime logTime, string? sender, Action<Exception>? on_getcontent_error)
+        {
             if (CustomConfig.Global_Minimum_LogLevel <= logLevel)
             {
-                qlog.Enqueue(new LogDetail(string.Empty, logLevel, sender, getcontent_func, on_getcontent_error));
+                qlog.Enqueue(new LogDetail(null, logLevel, sender, logTime, getcontent_func, on_getcontent_error));
             }
         }
         #endregion
@@ -549,24 +512,23 @@ namespace YYHEggEgg.Logger
         internal struct LogDetail
         {
             public LogLevel level;
-            public string content;
+            public string? content;
             public string? sender;
             public DateTime create_time;
-            public Func<string>? getcontent_func;
+            public Func<string?>? getcontent_func;
             public Action<Exception>? on_getcontent_error;
 
-            public LogDetail(string con, LogLevel lvl, string? snd, 
-                Func<string>? getcontent_func = null, Action<Exception>? on_getcontent_error = null)
+            public LogDetail(string? con, LogLevel lvl, string? snd, DateTime create_time,
+                Func<string?>? getcontent_func = null, Action<Exception>? on_getcontent_error = null)
             {
                 level = lvl;
                 content = con;
                 sender = snd;
-                var nowtime = DateTime.Now;
-                create_time = nowtime;
+                this.create_time = create_time;
                 this.getcontent_func = getcontent_func;
                 this.on_getcontent_error = on_getcontent_error ?? new(ex =>
                 {
-                    Log.Warn($"Delay log content (pushed on {FormatTime(nowtime)}) get failed: {ex}", snd);
+                    Log.Warn($"Delay log content (pushed on {FormatTime(create_time)}) get failed: {ex}", snd);
                 });
             }
 
@@ -610,7 +572,7 @@ namespace YYHEggEgg.Logger
                 string header = GetConsoleLogInfo(level, sender);
                 string res = $"{nowtime}{header}{content}";
 
-                if (conf.Max_Output_Char_Count < 0 || content.Length < conf.Max_Output_Char_Count)
+                if (conf.Max_Output_Char_Count < 0 || (content?.Length ?? 0) < conf.Max_Output_Char_Count)
                     return ColorLineUtil.AnalyzeColorText(res);
                 else
                     return ColorLineUtil.AnalyzeColorText(
@@ -679,7 +641,7 @@ namespace YYHEggEgg.Logger
         #endregion
 
         /// <summary>
-        /// Write info <[level]:[sender]> like <Info:KCP>. 
+        /// Write info <[level]:[sender]> like <Info:KCP>.
         /// </summary>
         private static string GetConsoleLogInfo(LogLevel level, string? sender)
         {
