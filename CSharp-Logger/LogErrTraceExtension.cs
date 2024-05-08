@@ -44,24 +44,23 @@ public static class LoggerChannelTraceExtensions
         (Guid traceid, bool isnew) rtn;
         lock (_exception_lck)
         {
-            Guid? cleared = null;
             _total_characters += ex_full_content.Length;
             if (_total_characters > MaximumStoredChars)
             {
-                cleared = _trace_ids[ex_full_content];
                 _trace_ids.Clear();
+                _total_characters = 0;
             }
 
             if (!_trace_ids.TryGetValue(ex_full_content, out Guid id))
             {
                 rtn = (Guid.NewGuid(), true);
                 _trace_ids.Add(ex_full_content, rtn.traceid);
-                return rtn;
+                _total_characters += ex_full_content.Length;
             }
-
-            if (cleared != null)
-                _trace_ids.Add(ex_full_content, cleared.Value);
-            rtn = (id, false);
+            else
+            {
+                rtn = (id, false);
+            }
             return rtn;
         }
     }
@@ -79,13 +78,6 @@ public static class LoggerChannelTraceExtensions
         Exception? ex, LogLevel logLevel, string? prompt = null)
     {
         Initialize();
-        #region Fuck
-        // nari don't like TargetInvocationException
-        if (ex is System.Reflection.TargetInvocationException tiex)
-        {
-            ex = tiex.InnerException;
-        }
-        #endregion
 
         var traceinfo = ex?.ToString() ?? string.Empty;
         var extype = ex?.GetType().ToString() ?? "<Unknown exception>";
