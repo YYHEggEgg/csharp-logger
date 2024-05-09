@@ -191,247 +191,186 @@ namespace YYHEggEgg.Logger
 #pragma warning restore CS8604 // 引用类型参数可能为 null。
         }
 
-        /// <summary>
-        /// Add an existing <see cref="LogFileStream"/> to the logger.
-        /// </summary>
-        /// <param name="fileStreamName"></param>
+        /// <inheritdoc cref="BaseLogger.AddLogFile(string)"/>
         public static void AddLogFile(string fileStreamName)
         {
             AssertInitialized();
             _baseLogger.AddLogFile(fileStreamName);
         }
 
-        /// <summary>
-        /// Create a log file and build a log file stream for it, with the given <see cref="LogFileConfig"/>.
-        /// </summary>
-        /// <param name="newFileStreamConfig"></param>
-        /// <exception cref="ArgumentException"></exception>
+        /// <inheritdoc cref="BaseLogger.AddLogFile(LogFileConfig)"/>
         public static void AddLogFile(LogFileConfig newFileStreamConfig)
         {
             AssertInitialized();
             _baseLogger.AddLogFile(newFileStreamConfig);
         }
 
-        /// <summary>
-        /// Put a log with Verbose Level to the handle queue.
-        /// Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/>
-        /// is no more than <see cref="LogLevel.Verbose"/>.
-        /// Notice that messages put here will only be written to <c>latest.debug.log</c>.
-        /// </summary>
-        /// <param name="content">The log content.</param>
-        /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>ded to use <see cref="nameof"/> to provide this param.</param>
-        public static void Verb(string content, string? sender = null)
+        /// <inheritdoc cref="BaseLogger.Verb(string?, string?)"/>
+        public static void Verb(string? content, string? sender = null)
         {
             AssertInitialized();
             _baseLogger.Verb(content, sender);
         }
 
-        /// <summary>
-        /// Put a log with Debug Level to the handle queue.
-        /// Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/>
-        /// is no more than <see cref="LogLevel.Debug"/>.
-        /// Notice that messages put here will only be written to <c>latest.debug.log</c>.
-        /// </summary>
-        /// <param name="content">The log content.</param>
-        /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>ded to use <see cref="nameof"/> to provide this param.</param>
-        public static void Dbug(string content, string? sender = null)
+        /// <inheritdoc cref="BaseLogger.Verb(string?, DateTime, string?)"/>
+        public static void Verb(string? content, DateTime logTime, string? sender = null)
+        {
+            AssertInitialized();
+            _baseLogger.Verb(content, logTime, sender);
+        }
+
+        /// <inheritdoc cref="BaseLogger.Dbug(string?, string?)"/>
+        public static void Dbug(string? content, string? sender = null)
         {
             AssertInitialized();
             _baseLogger.Dbug(content, sender);
         }
 
-        /// <summary>
-        /// Put a log with Info Level to the handle queue.
-        /// Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/>
-        /// is no more than <see cref="LogLevel.Information"/>. 
-        /// </summary>
-        /// <param name="content">The log content.</param>
-        /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>ded to use <see cref="nameof"/> to provide this param.</param>
-        public static void Info(string content, string? sender = null)
+        /// <inheritdoc cref="BaseLogger.Dbug(string?, DateTime, string?)"/>
+        public static void Dbug(string? content, DateTime logTime, string? sender = null)
+        {
+            AssertInitialized();
+            _baseLogger.Dbug(content, logTime, sender);
+        }
+
+        /// <inheritdoc cref="BaseLogger.Info(string?, string?)"/>
+        public static void Info(string? content, string? sender = null)
         {
             AssertInitialized();
             _baseLogger.Info(content, sender);
         }
 
-        /// <summary>
-        /// Put a log with Warning Level to the handle queue.
-        /// Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/>
-        /// is no more than <see cref="LogLevel.Warning"/>. 
-        /// </summary>
-        /// <param name="content">The log content.</param>
-        /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>ded to use <see cref="nameof"/> to provide this param.</param>
-        public static void Warn(string content, string? sender = null)
+        /// <inheritdoc cref="BaseLogger.Info(string?, DateTime, string?)"/>
+        public static void Info(string? content, DateTime logTime, string? sender = null)
+        {
+            AssertInitialized();
+            _baseLogger.Info(content, logTime, sender);
+        }
+
+        /// <inheritdoc cref="BaseLogger.Warn(string?, string?)"/>
+        public static void Warn(string? content, string? sender = null)
         {
             AssertInitialized();
             _baseLogger.Warn(content, sender);
         }
 
-        /// <summary>
-        /// Put a log with Error Level to the handle queue.
-        /// Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/>
-        /// is no more than <see cref="LogLevel.Error"/>. 
-        /// </summary>
-        /// <param name="content">The log content.</param>
-        /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>ded to use <see cref="nameof"/> to provide this param.</param>
-        public static void Erro(string content, string? sender = null)
+        /// <inheritdoc cref="BaseLogger.Warn(string?, DateTime, string?)"/>
+        public static void Warn(string? content, DateTime logTime, string? sender = null)
+        {
+            AssertInitialized();
+            _baseLogger.Warn(content, logTime, sender);
+        }
+
+        /// <inheritdoc cref="BaseLogger.Erro(string?, string?)"/>
+        public static void Erro(string? content, string? sender = null)
         {
             AssertInitialized();
             _baseLogger.Erro(content, sender);
         }
 
-        /// <summary>
-        /// Put a log with a certain Level to the handle queue.
-        /// Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/>
-        /// is no more than <paramref name="logLevel"/>. 
-        /// </summary>
-        /// <param name="content">The log content.</param>
-        /// <param name="logLevel">The <see cref="LogLevel"/> of this log message.</param>
-        /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>
-        public static void PushLog(string content, LogLevel logLevel, string? sender = null)
+        /// <inheritdoc cref="BaseLogger.Erro(string?, DateTime, string?)"/>
+        public static void Erro(string? content, DateTime logTime, string? sender = null)
+        {
+            AssertInitialized();
+            _baseLogger.Erro(content, logTime, sender);
+        }
+
+        /// <inheritdoc cref="BaseLogger.PushLog(string?, LogLevel, string?)"/>
+        public static void PushLog(string? content, LogLevel logLevel, string? sender = null)
         {
             AssertInitialized();
             _baseLogger.PushLog(content, logLevel, sender);
         }
-        
-        /// <summary>
-        /// Put a <see cref="Func{TResult}"/> with Verbose Level to the handle queue,
-        /// and invoke the func afterwards to get the content.
-        /// Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/>
-        /// is no more than <paramref name="logLevel"/>.
-        /// Notice that messages put here will only be written to <c>latest.debug.log</c>.
-        /// </summary>
-        /// <param name="getcontent_func">
-        /// The func used to get the log content. It'll be invoked afterwards by
-        /// the logger's background refreshing task.
-        /// </param>
-        /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>
-        /// <param name="on_getcontent_error">
-        /// The Action used to handle the error in <paramref name="getcontent_func"/>.
-        /// If not providing it, the logger will report the exception to
-        /// <see cref="Log.Warn(string, string?)"/> in a certain format.
-        /// </param>
-        public static void Verb(Func<string> getcontent_func, string? sender = null,
-            Action<Exception>? on_getcontent_error = null)
+
+        /// <inheritdoc cref="BaseLogger.PushLog(string?, LogLevel, DateTime, string?)"/>
+        public static void PushLog(string? content, LogLevel logLevel, DateTime logTime, string? sender = null)
+        {
+            AssertInitialized();
+            _baseLogger.PushLog(content, logLevel, logTime, sender);
+        }
+
+        /// <inheritdoc cref="BaseLogger.Verb(Func{string?}, string?, Action{Exception}?)"/>
+        public static void Verb(Func<string?> getcontent_func, string? sender = null, Action<Exception>? on_getcontent_error = null)
         {
             AssertInitialized();
             _baseLogger.Verb(getcontent_func, sender, on_getcontent_error);
         }
 
-        /// <summary>
-        /// Put a <see cref="Func{TResult}"/> with Debug Level to the handle queue,
-        /// and invoke the func afterwards to get the content.
-        /// Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/>
-        /// is no more than <paramref name="logLevel"/>.
-        /// Notice that messages put here will only be written to <c>latest.debug.log</c>.
-        /// </summary>
-        /// <param name="getcontent_func">
-        /// The func used to get the log content. It'll be invoked afterwards by
-        /// the logger's background refreshing task.
-        /// </param>
-        /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>
-        /// <param name="on_getcontent_error">
-        /// The Action used to handle the error in <paramref name="getcontent_func"/>.
-        /// If not providing it, the logger will report the exception to
-        /// <see cref="Log.Warn(string, string?)"/> in a certain format.
-        /// </param>
-        public static void Dbug(Func<string> getcontent_func, string? sender = null,
-            Action<Exception>? on_getcontent_error = null)
+        /// <inheritdoc cref="BaseLogger.Verb(Func{string?}, DateTime, string?, Action{Exception}?)"/>
+        public static void Verb(Func<string?> getcontent_func, DateTime logTime, string? sender = null, Action<Exception>? on_getcontent_error = null)
+        {
+            AssertInitialized();
+            _baseLogger.Verb(getcontent_func, logTime, sender, on_getcontent_error);
+        }
+
+        /// <inheritdoc cref="BaseLogger.Dbug(Func{string?}, string?, Action{Exception}?)"/>
+        public static void Dbug(Func<string?> getcontent_func, string? sender = null, Action<Exception>? on_getcontent_error = null)
         {
             AssertInitialized();
             _baseLogger.Dbug(getcontent_func, sender, on_getcontent_error);
         }
 
-        /// <summary>
-        /// Put a <see cref="Func{TResult}"/> with Information Level to the handle queue,
-        /// and invoke the func afterwards to get the content.
-        /// Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/>
-        /// is no more than <paramref name="logLevel"/>. 
-        /// </summary>
-        /// <param name="getcontent_func">
-        /// The func used to get the log content. It'll be invoked afterwards by
-        /// the logger's background refreshing task.
-        /// </param>
-        /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>
-        /// <param name="on_getcontent_error">
-        /// The Action used to handle the error in <paramref name="getcontent_func"/>.
-        /// If not providing it, the logger will report the exception to
-        /// <see cref="Log.Warn(string, string?)"/> in a certain format.
-        /// </param>
-        public static void Info(Func<string> getcontent_func, string? sender = null,
-            Action<Exception>? on_getcontent_error = null)
+        /// <inheritdoc cref="BaseLogger.Dbug(Func{string?}, DateTime, string?, Action{Exception}?)"/>
+        public static void Dbug(Func<string?> getcontent_func, DateTime logTime, string? sender = null, Action<Exception>? on_getcontent_error = null)
+        {
+            AssertInitialized();
+            _baseLogger.Dbug(getcontent_func, logTime, sender, on_getcontent_error);
+        }
+
+        /// <inheritdoc cref="BaseLogger.Info(Func{string?}, string?, Action{Exception}?)"/>
+        public static void Info(Func<string?> getcontent_func, string? sender = null, Action<Exception>? on_getcontent_error = null)
         {
             AssertInitialized();
             _baseLogger.Info(getcontent_func, sender, on_getcontent_error);
         }
 
-        /// <summary>
-        /// Put a <see cref="Func{TResult}"/> with Warning Level to the handle queue,
-        /// and invoke the func afterwards to get the content.
-        /// Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/>
-        /// is no more than <paramref name="logLevel"/>. 
-        /// </summary>
-        /// <param name="getcontent_func">
-        /// The func used to get the log content. It'll be invoked afterwards by
-        /// the logger's background refreshing task.
-        /// </param>
-        /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>
-        /// <param name="on_getcontent_error">
-        /// The Action used to handle the error in <paramref name="getcontent_func"/>.
-        /// If not providing it, the logger will report the exception to
-        /// <see cref="Log.Warn(string, string?)"/> in a certain format.
-        /// </param>
-        public static void Warn(Func<string> getcontent_func, string? sender = null,
-            Action<Exception>? on_getcontent_error = null)
+        /// <inheritdoc cref="BaseLogger.Info(Func{string?}, DateTime, string?, Action{Exception}?)"/>
+        public static void Info(Func<string?> getcontent_func, DateTime logTime, string? sender = null, Action<Exception>? on_getcontent_error = null)
+        {
+            AssertInitialized();
+            _baseLogger.Info(getcontent_func, logTime, sender, on_getcontent_error);
+        }
+
+        /// <inheritdoc cref="BaseLogger.Warn(Func{string?}, string?, Action{Exception}?)"/>
+        public static void Warn(Func<string?> getcontent_func, string? sender = null, Action<Exception>? on_getcontent_error = null)
         {
             AssertInitialized();
             _baseLogger.Warn(getcontent_func, sender, on_getcontent_error);
         }
 
-        /// <summary>
-        /// Put a <see cref="Func{TResult}"/> with Error Level to the handle queue,
-        /// and invoke the func afterwards to get the content.
-        /// Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/>
-        /// is no more than <paramref name="logLevel"/>. 
-        /// </summary>
-        /// <param name="getcontent_func">
-        /// The func used to get the log content. It'll be invoked afterwards by
-        /// the logger's background refreshing task.
-        /// </param>
-        /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>
-        /// <param name="on_getcontent_error">
-        /// The Action used to handle the error in <paramref name="getcontent_func"/>.
-        /// If not providing it, the logger will report the exception to
-        /// <see cref="Log.Warn(string, string?)"/> in a certain format.
-        /// </param>
-        public static void Erro(Func<string> getcontent_func, string? sender = null,
-            Action<Exception>? on_getcontent_error = null)
+        /// <inheritdoc cref="BaseLogger.Warn(Func{string?}, DateTime, string?, Action{Exception}?)"/>
+        public static void Warn(Func<string?> getcontent_func, DateTime logTime, string? sender = null, Action<Exception>? on_getcontent_error = null)
+        {
+            AssertInitialized();
+            _baseLogger.Warn(getcontent_func, logTime, sender, on_getcontent_error);
+        }
+
+        /// <inheritdoc cref="BaseLogger.Erro(Func{string?}, string?, Action{Exception}?)"/>
+        public static void Erro(Func<string?> getcontent_func, string? sender = null, Action<Exception>? on_getcontent_error = null)
         {
             AssertInitialized();
             _baseLogger.Erro(getcontent_func, sender, on_getcontent_error);
         }
 
-        /// <summary>
-        /// Put a <see cref="Func{TResult}"/> with a certain Level to the handle queue,
-        /// and invoke the func afterwards to get the content.
-        /// Only handled when <see cref="LoggerConfig.Global_Minimum_LogLevel"/>
-        /// is no more than <paramref name="logLevel"/>. 
-        /// </summary>
-        /// <param name="getcontent_func">
-        /// The func used to get the log content. It'll be invoked afterwards by
-        /// the logger's background refreshing task.
-        /// </param>
-        /// <param name="logLevel">The <see cref="LogLevel"/> of this log message.</param>
-        /// <param name="sender">The sender of this log. It's recommended to use <see cref="nameof"/> to provide this param.</param>
-        /// <param name="on_getcontent_error">
-        /// The Action used to handle the error in <paramref name="getcontent_func"/>.
-        /// If not providing it, the logger will report the exception to
-        /// <see cref="Log.Warn(string, string?)"/> in a certain format.
-        /// </param>
-        public static void PushLog(Func<string> getcontent_func, LogLevel logLevel, 
-            string? sender = null, Action<Exception>? on_getcontent_error = null)
+        /// <inheritdoc cref="BaseLogger.Erro(Func{string?}, DateTime, string?, Action{Exception}?)"/>
+        public static void Erro(Func<string?> getcontent_func, DateTime logTime, string? sender = null, Action<Exception>? on_getcontent_error = null)
+        {
+            AssertInitialized();
+            _baseLogger.Erro(getcontent_func, logTime, sender, on_getcontent_error);
+        }
+
+        /// <inheritdoc cref="BaseLogger.PushLog(Func{string?}, LogLevel, string?, Action{Exception}?)"/>
+        public static void PushLog(Func<string?> getcontent_func, LogLevel logLevel, string? sender = null, Action<Exception>? on_getcontent_error = null)
         {
             AssertInitialized();
             _baseLogger.PushLog(getcontent_func, logLevel, sender, on_getcontent_error);
+        }
+
+        /// <inheritdoc cref="BaseLogger.PushLog(Func{string?}, LogLevel, DateTime, string?, Action{Exception}?)"/>
+        public static void PushLog(Func<string?> getcontent_func, LogLevel logLevel, DateTime logTime, string? sender = null, Action<Exception>? on_getcontent_error = null)
+        {
+            AssertInitialized();
+            _baseLogger.PushLog(getcontent_func, logLevel, logTime, sender, on_getcontent_error);
         }
     }
 }

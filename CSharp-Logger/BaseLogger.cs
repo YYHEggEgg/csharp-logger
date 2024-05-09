@@ -384,8 +384,7 @@ namespace YYHEggEgg.Logger
         }
 
         /// <inheritdoc cref="Verb(Func{string?}, DateTime, string?, Action{Exception}?)"/>
-        public void Verb(Func<string?> getcontent_func, string? sender = null,
-            Action<Exception>? on_getcontent_error = null) =>
+        public void Verb(Func<string?> getcontent_func, string? sender = null, Action<Exception>? on_getcontent_error = null) =>
             Verb(getcontent_func, DateTime.Now, sender, on_getcontent_error);
 
         /// <summary>
@@ -395,14 +394,12 @@ namespace YYHEggEgg.Logger
         /// is no more than <paramref name="logLevel"/>.
         /// </summary>
         /// <inheritdoc cref="PushLog(Func{string?}, LogLevel, DateTime, string?, Action{Exception}?)"/>
-        public void Verb(Func<string?> getcontent_func, DateTime logTime, string? sender = null,
-            Action<Exception>? on_getcontent_error = null) =>
+        public void Verb(Func<string?> getcontent_func, DateTime logTime, string? sender = null, Action<Exception>? on_getcontent_error = null) =>
             PushCallbackLogEnumUnchecked(getcontent_func, LogLevel.Verbose, logTime, sender, on_getcontent_error);
 
 
         /// <inheritdoc cref="Dbug(Func{string?}, DateTime, string?, Action{Exception}?)"/>
-        public void Dbug(Func<string?> getcontent_func, string? sender = null,
-            Action<Exception>? on_getcontent_error = null) =>
+        public void Dbug(Func<string?> getcontent_func, string? sender = null, Action<Exception>? on_getcontent_error = null) =>
             Dbug(getcontent_func, DateTime.Now, sender, on_getcontent_error);
 
         /// <summary>
@@ -412,13 +409,11 @@ namespace YYHEggEgg.Logger
         /// is no more than <paramref name="logLevel"/>.
         /// </summary>
         /// <inheritdoc cref="PushLog(Func{string?}, LogLevel, DateTime, string?, Action{Exception}?)"/>
-        public void Dbug(Func<string?> getcontent_func, DateTime logTime, string? sender = null,
-            Action<Exception>? on_getcontent_error = null) =>
+        public void Dbug(Func<string?> getcontent_func, DateTime logTime, string? sender = null, Action<Exception>? on_getcontent_error = null) =>
             PushCallbackLogEnumUnchecked(getcontent_func, LogLevel.Debug, logTime, sender, on_getcontent_error);
 
         /// <inheritdoc cref="Info(Func{string?}, DateTime, string?, Action{Exception}?)"/>
-        public void Info(Func<string?> getcontent_func, string? sender = null,
-            Action<Exception>? on_getcontent_error = null) =>
+        public void Info(Func<string?> getcontent_func, string? sender = null, Action<Exception>? on_getcontent_error = null) =>
             Info(getcontent_func, DateTime.Now, sender, on_getcontent_error);
 
         /// <summary>
@@ -428,13 +423,11 @@ namespace YYHEggEgg.Logger
         /// is no more than <paramref name="logLevel"/>.
         /// </summary>
         /// <inheritdoc cref="PushLog(Func{string?}, LogLevel, DateTime, string?, Action{Exception}?)"/>
-        public void Info(Func<string?> getcontent_func, DateTime logTime, string? sender = null,
-            Action<Exception>? on_getcontent_error = null) =>
+        public void Info(Func<string?> getcontent_func, DateTime logTime, string? sender = null, Action<Exception>? on_getcontent_error = null) =>
             PushCallbackLogEnumUnchecked(getcontent_func, LogLevel.Information, logTime, sender, on_getcontent_error);
 
         /// <inheritdoc cref="Warn(Func{string?}, DateTime, string?, Action{Exception}?)"/>
-        public void Warn(Func<string?> getcontent_func, string? sender = null,
-            Action<Exception>? on_getcontent_error = null) =>
+        public void Warn(Func<string?> getcontent_func, string? sender = null, Action<Exception>? on_getcontent_error = null) =>
             Warn(getcontent_func, DateTime.Now, sender, on_getcontent_error);
 
         /// <summary>
@@ -444,13 +437,11 @@ namespace YYHEggEgg.Logger
         /// is no more than <paramref name="logLevel"/>.
         /// </summary>
         /// <inheritdoc cref="PushLog(Func{string?}, LogLevel, DateTime, string?, Action{Exception}?)"/>
-        public void Warn(Func<string?> getcontent_func, DateTime logTime, string? sender = null,
-            Action<Exception>? on_getcontent_error = null) =>
+        public void Warn(Func<string?> getcontent_func, DateTime logTime, string? sender = null, Action<Exception>? on_getcontent_error = null) =>
             PushCallbackLogEnumUnchecked(getcontent_func, LogLevel.Warning,logTime, sender, on_getcontent_error);
 
         /// <inheritdoc cref="Erro(Func{string?}, DateTime, string?, Action{Exception}?)"/>
-        public void Erro(Func<string?> getcontent_func, string? sender = null,
-            Action<Exception>? on_getcontent_error = null) =>
+        public void Erro(Func<string?> getcontent_func, string? sender = null, Action<Exception>? on_getcontent_error = null) =>
             Erro(getcontent_func, DateTime.Now, sender, on_getcontent_error);
 
         /// <summary>
@@ -460,13 +451,11 @@ namespace YYHEggEgg.Logger
         /// is no more than <paramref name="logLevel"/>.
         /// </summary>
         /// <inheritdoc cref="PushLog(Func{string?}, LogLevel, DateTime, string?, Action{Exception}?)"/>
-        public void Erro(Func<string?> getcontent_func, DateTime logTime, string? sender = null,
-            Action<Exception>? on_getcontent_error = null) =>
+        public void Erro(Func<string?> getcontent_func, DateTime logTime, string? sender = null, Action<Exception>? on_getcontent_error = null) =>
             PushCallbackLogEnumUnchecked(getcontent_func, LogLevel.Error, logTime, sender, on_getcontent_error);
 
         /// <inheritdoc cref="PushLog(Func{string?}, LogLevel, DateTime, string?, Action{Exception}?)"/>
-        public void PushLog(Func<string?> getcontent_func, LogLevel logLevel,
-            string? sender = null, Action<Exception>? on_getcontent_error = null) =>
+        public void PushLog(Func<string?> getcontent_func, LogLevel logLevel, string? sender = null, Action<Exception>? on_getcontent_error = null) =>
             PushLog(getcontent_func, logLevel, DateTime.Now, sender, on_getcontent_error);
 
         /// <summary>
@@ -485,8 +474,7 @@ namespace YYHEggEgg.Logger
         /// <see cref="Log.Warn(string, string?)"/> in a certain format.
         /// </param>
         /// <inheritdoc cref="PushLog(string?, LogLevel, DateTime, string?)"/>
-        public void PushLog(Func<string?> getcontent_func, LogLevel logLevel, DateTime logTime,
-            string? sender = null, Action<Exception>? on_getcontent_error = null)
+        public void PushLog(Func<string?> getcontent_func, LogLevel logLevel, DateTime logTime, string? sender = null, Action<Exception>? on_getcontent_error = null)
         {
             if (logLevel == LogLevel.None)
             {
