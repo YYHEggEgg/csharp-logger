@@ -31,6 +31,7 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
 - If the `ConsoleWrapper.AutoCompleteHandler` you have set throws an exception while processing `GetSuggestions`, a warning will be displayed, and the information will be output to the `latest.errtrace.log`.
 - You can now set `LogTrace.MaximumStoredChars` to control the amount of characters stored, which is used to store the content of exceptions in order to reuse the Trace ID.
 - The ConsoleWrapper was unable to treat a pair of Unicode surrogate characters (e.g. emojis) as a single character when performing console operations (such as cursor movement, character deletion).
+- Now you can change the time used for logging by including `DateTime` in the logging parameters. For more details, please refer to the corresponding method overload.
 
 #### Breaking Changes
 

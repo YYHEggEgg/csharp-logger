@@ -31,6 +31,7 @@
 - 现在如果您设定的 `ConsoleWrapper.AutoCompleteHandler` 在处理 `GetSuggestions` 时抛出了异常，将会显示一条警告并输出信息到 `latest.errtrace.log`.
 - 现在可以设置 `LogTrace.MaximumStoredChars` 来控制其存储字符的量，用于存储异常的内容以重用 Trace ID.
 - 修复了 `ConsoleWrapper` 在遇到成 Unicode 代理项对的两个字符（例如 emoji）时，控制台操作（如光标移动、删除字符）无法将其视为单个字符。
+- 现在您可以通过在日志记录参数中加入 `DateTime` 来改变日志写入时所用的时间。有关详细信息，请参阅对应方法重载。
 
 #### 中断性变更
 
