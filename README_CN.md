@@ -27,11 +27,13 @@
 - 修复了在使用 `ConsoleWrapper` 时，如果开始读取后没有输出过日志，则可能不显示读取的 `InputPrefix` 的问题。
 - 修复了在 Windows 7 下的命令提示符使用 `ConsoleWrapper` 时，输入多行数据会产生异常的问题。
 - 修复了使用默认构造器初始化的 `LoggerConfig` 可能出现未预期的参数的问题。
-- 现在，支持使用 `Log.Initialize` 或 `ConsoleWrapper.Initialize` 在其启动时添加历史记录。注意：其仍受历史记录最大字符数的限制。您可以在 `Initialize` 前更改 `ConsoleWapper.HistoryMaximumChars`.
+- 现在，支持使用 `ConsoleWrapper.ChangeHistory` 更改输入控制台的历史记录，将原有的历史记录清空并替换。注意：其仍受历史记录最大字符数的限制。您可以考虑更改 `ConsoleWapper.HistoryMaximumChars`.
 - 现在如果您设定的 `ConsoleWrapper.AutoCompleteHandler` 在处理 `GetSuggestions` 时抛出了异常，将会显示一条警告并输出信息到 `latest.errtrace.log`.
 - 现在可以设置 `LogTrace.MaximumStoredChars` 来控制其存储字符的量，用于存储异常的内容以重用 Trace ID.
 - 修复了 `ConsoleWrapper` 在遇到成 Unicode 代理项对的两个字符（例如 emoji）时，控制台操作（如光标移动、删除字符）无法将其视为单个字符。
 - 现在您可以通过在日志记录参数中加入 `DateTime` 来改变日志写入时所用的时间。有关详细信息，请参阅对应方法重载。
+- 修复了在使用 `ConsoleWrapper` 输入时，如果有日志输出，则历史记录的滚动进度被重置的问题。
+- 修复了在使用 `ConsoleWrapper` 时按方向上键，上一次的命令输入可能不会立刻可用的问题（即先弹出上上条输入，再按一次方向下键才能找到上条输入）。
 
 #### 中断性变更
 

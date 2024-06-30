@@ -32,6 +32,8 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
 - You can now set `LogTrace.MaximumStoredChars` to control the amount of characters stored, which is used to store the content of exceptions in order to reuse the Trace ID.
 - The ConsoleWrapper was unable to treat a pair of Unicode surrogate characters (e.g. emojis) as a single character when performing console operations (such as cursor movement, character deletion).
 - Now you can change the time used for logging by including `DateTime` in the logging parameters. For more details, please refer to the corresponding method overload.
+- Fixed an issue whereby the scroll progress of the history was reset when there was log output with `ConsoleWrapper` accessing input.
+- Fixed an issue where pressing the up arrow key while using `ConsoleWrapper` might not immediately bring up the previous command input (i.e., the second previous input appears first, and the previous input can be found by pressing the down arrow key once).
 
 #### Breaking Changes
 

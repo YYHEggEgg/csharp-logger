@@ -689,6 +689,7 @@ namespace Internal.ReadLine
             IAutoCompleteHandler? autoCompleteHandler)
         {
             KeyHandler keyHandler = new(previous_stat.Console2, previous_stat._history, autoCompleteHandler, prompt);
+            keyHandler._historyIndex = previous_stat._historyIndex;
 
             #region Auto Completion
             if (autoCompleteHandler != null &&

@@ -66,14 +66,6 @@ namespace YYHEggEgg.Logger
             Task.Run(BackgroundUpdate);
         }
 
-        public static void Initialize(IEnumerable<string> initHistory)
-        {
-            if (_initialized)
-                throw new InvalidOperationException("Can't push the history after ConsoleWrapper initialize completed.");
-            lines = new List<string>(initHistory.Where(x => x.Length <= HistoryMaximumChars));
-            Initialize();
-        }
-
         private static void AssertInitialized()
         {
             if (!_initialized) Initialize();
@@ -157,7 +149,11 @@ namespace YYHEggEgg.Logger
                     if ((lines.Count == 0 || lines[lines.Count - 1] != content)
                         && !string.IsNullOrEmpty(content)
                         && content.Length <= _history_char_limit)
+                    {
                         lines.Add(content);
+                        if (keyHandler._historyIndex == lines.Count - 1)
+                            keyHandler._historyIndex++;
+                    }
                 }
             }
         }
@@ -287,7 +283,22 @@ namespace YYHEggEgg.Logger
         #endregion
         #endregion
 
-        #region History Limit
+        #region History
+        /// <summary>
+        /// Change the history of command line. Notice that user's history will be totally replaced after invoking this.
+        /// </summary>
+        public static void ChangeHistory(IEnumerable<string> initHistory)
+        {
+            AssertInitialized();
+            lock (lines)
+            {
+                lines.Clear();
+                lines.AddRange(initHistory.Where(x => x.Length <= HistoryMaximumChars));
+                if (keyHandler != null) keyHandler._historyIndex = lines.Count;
+                _inputprefix_changed = true; // TODO: Custom signal. Or not to do?
+            }
+        }
+
         private static int _custom_history_limit = int.MinValue;
 
         /// <summary>

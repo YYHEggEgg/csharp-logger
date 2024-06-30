@@ -159,14 +159,6 @@ namespace YYHEggEgg.Logger
         /// Init History can only be valid when specifying 
         /// to use ConsoleWrapper.
         /// </exception>
-        public static void Initialize(LoggerConfig conf, IEnumerable<string> initHistory)
-        {
-            if (!conf.Use_Console_Wrapper)
-                throw new InvalidOperationException("Init History can only be valid when specifying to use ConsoleWrapper.");
-            if (_initialized) return;
-            ConsoleWrapper.Initialize(initHistory);
-            Initialize(conf);
-        }
 
         internal static void AssertInitialized(bool demand_baselogger_inited = true)
         {

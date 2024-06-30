@@ -18,7 +18,7 @@ internal class Program
 #endif
             debug_LogWriter_AutoFlush: true,
             enable_Detailed_Time: false
-            ), new List<string> { "history1", "historypushed" });
+            ));
 
         // 0. ConsoleWrapper input prompt test
         Console.WriteLine($"Waiting for 3s. It's a bug if input prompt don't show up now.");
@@ -110,8 +110,10 @@ internal class Program
         ConsoleWrapper.InputPrefix = "WrapperCLI> ";
         string res = ConsoleWrapper.ReadLine();
         Log.Warn(res, "ReadLine");
+        // 7. Auto Complete test
         Log.Info("Now auto complete enabled... (Press Tab/Shift+Tab)");
         bool waiting = true;
+        // 8. Write & Read Combined test
         _ = Task.Run(async () =>
         {
             while (waiting)
@@ -120,13 +122,20 @@ internal class Program
                 await Task.Delay(1000);
             }
         });
+        // 9. History reload test
+        _ = Task.Run(async () =>
+        {
+            Log.Warn("The history is about to be replaced after 3s.", "Background_TestChangeHistory");
+            await Task.Delay(3000);
+            ConsoleWrapper.ChangeHistory(new List<string> { "history1", "historypushed" });
+        });
         ConsoleWrapper.AutoCompleteHandler = new SimpleAutoCmpl();
         res = ConsoleWrapper.ReadLine();
         waiting = false;
         Log.Warn(res, "ReadLine_WithAutoCOmplete");
         //ConsoleWrapper.ReadLine();
 
-        // 7. History test
+        // 10. History usage test
         var _logchannel = Log.GetChannel("Historytest");
         _logchannel.LogWarn("Please type how many times you will test ConsoleWrapper input: ");
         var times = int.Parse(ConsoleWrapper.ReadLine());
@@ -142,7 +151,7 @@ internal class Program
             _logchannel.LogWarn(text);
         }
 
-        // 8. High output amout test
+        // 11. High output amout test
         separate_logger.Warn(() =>
         {
             var sb = new StringBuilder();
@@ -160,7 +169,7 @@ internal class Program
 
         // ConsoleWrapper.ReadLine();
 
-        // 8. Sudden terminate test
+        // 12. Sudden terminate test
         Log.Warn($"The clearup succeed!");
         Environment.Exit(0);
     }
