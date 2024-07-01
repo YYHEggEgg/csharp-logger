@@ -429,14 +429,20 @@ namespace Internal.ReadLine
         {
             if (!IsInAutoCompleteMode()) return;
 #if NET8_0_OR_GREATER
-            ArgumentOutOfRangeException.ThrowIfLessThan(_completions.EndIndex, _completions.StartIndex, nameof(_completions.EndIndex));
             ArgumentOutOfRangeException.ThrowIfNegative(_completions.StartIndex);
 #else
-            if (_completions.StartIndex < _completions.EndIndex)
-                throw new ArgumentOutOfRangeException(nameof(_completions.EndIndex));
             if (_completions.StartIndex < 0)
                 throw new ArgumentOutOfRangeException(nameof(_completions.StartIndex));
 #endif
+            if (_completions.EndIndex >= 0)
+            {
+#if NET8_0_OR_GREATER
+                ArgumentOutOfRangeException.ThrowIfLessThan(_completions.EndIndex, _completions.StartIndex, nameof(_completions.EndIndex));
+#else
+                if (_completions.StartIndex < _completions.EndIndex)
+                    throw new ArgumentOutOfRangeException(nameof(_completions.EndIndex));
+#endif
+            }
 
             if (_completions.EndIndex > 0)
             {

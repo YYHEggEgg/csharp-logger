@@ -11,7 +11,7 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
 ## Contents
 
 - [Update](#update)
-  - [v4.1.0](#v410)
+  - [v5.0.0](#v500)
   - [v4.0.2](#v402)
   - [v4.0.1](#v401)
   - [v4.0.0](#v400)
@@ -20,7 +20,7 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
 
 ## Update
 
-### v4.1.0
+### v5.0.0
 
 - Added `CancellationToken` parameter for `ConsoleWrapper.ReadLineAsync`.
 - To improve compatibility, now `ConsoleWrapper` won't set `Console.TreatControlCAsInput` as `true` while initializing. `ConsoleWrapper.ShutDownRequest` will contain meaningful `sender` and `args` also.
@@ -34,6 +34,7 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
 - Now you can change the time used for logging by including `DateTime` in the logging parameters. For more details, please refer to the corresponding method overload.
 - Fixed an issue whereby the scroll progress of the history was reset when there was log output with `ConsoleWrapper` accessing input.
 - Fixed an issue where pressing the up arrow key while using `ConsoleWrapper` might not immediately bring up the previous command input (i.e., the second previous input appears first, and the previous input can be found by pressing the down arrow key once).
+- Fixed an issue whereby the first use of certain auto-complete results with `ConsoleWrapper` would not respond, and subsequent uses would result in misaligned auto-completion.
 
 #### Breaking Changes
 

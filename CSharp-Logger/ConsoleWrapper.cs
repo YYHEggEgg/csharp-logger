@@ -453,7 +453,10 @@ namespace YYHEggEgg.Logger
 
                     pre_reading = isReading;
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    LogTrace.DbugTrace(ex, nameof(ConsoleWrapper), $"Internal handler meet unexpected error. Please report to EggEgg.CSharp-Logger.");
+                }
             }
         }
         #endregion
