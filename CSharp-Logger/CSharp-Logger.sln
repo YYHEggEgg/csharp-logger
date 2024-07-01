@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CSharp-Logger", "CSharp-Log
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Logger-test", "..\Logger-test\Logger-test.csproj", "{941FE88C-2B2E-4221-B990-0A3F8A440AEF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LoggerHostingTest", "..\LoggerHostingTest\LoggerHostingTest.csproj", "{1636A404-C4CA-4A5D-BAB4-663A51B674CC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{941FE88C-2B2E-4221-B990-0A3F8A440AEF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{941FE88C-2B2E-4221-B990-0A3F8A440AEF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{941FE88C-2B2E-4221-B990-0A3F8A440AEF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1636A404-C4CA-4A5D-BAB4-663A51B674CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1636A404-C4CA-4A5D-BAB4-663A51B674CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1636A404-C4CA-4A5D-BAB4-663A51B674CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1636A404-C4CA-4A5D-BAB4-663A51B674CC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

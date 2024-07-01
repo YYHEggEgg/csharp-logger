@@ -418,6 +418,11 @@ namespace YYHEggEgg.Logger
                         // Keep the KeyHandler status
                         keyHandler.ClearWrittingStatus();
                     }
+                    else if (!isReading && _autoCompleteHandler_updated)
+                    {
+                        _autoCompleteHandler_updated = false;
+                    }
+  
                     if (cur_handle_writelines)
                     {
                         while (writelines.TryDequeue(out var line))

@@ -22,19 +22,20 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
 
 ### v5.0.0
 
+- Fixed the issue where pressing the up arrow key while using `ConsoleWrapper` might not immediately bring up the previous command input (i.e., the second previous input appears first, and the previous input can be found by pressing the down arrow key once).
+- Fixed the issue whereby the first use of certain auto-complete results with `ConsoleWrapper` would not respond, and subsequent uses would result in misaligned auto-completion.
+- Fixed the issue when using `ConsoleWrapper`, after the program started and before `ConsoleWrapper.ReadLineAsync` or its equivalent method was called, the background thread kept looping without waiting, causing the CPU to remain fully loaded. **This issue affects all versions with version number 4.x.**
+- Fixed the issue whereby the `ConsoleWrapper` was unable to treat a pair of Unicode surrogate characters (e.g. emojis) as a single character when performing console operations (such as cursor movement, character deletion).
 - Added `CancellationToken` parameter for `ConsoleWrapper.ReadLineAsync`.
 - To improve compatibility, now `ConsoleWrapper` won't set `Console.TreatControlCAsInput` as `true` while initializing. `ConsoleWrapper.ShutDownRequest` will contain meaningful `sender` and `args` also.
-- Fixed an issue where when using `ConsoleWrapper`, if no logs were output after reading started, the `InputPrefix` being read may not be displayed.
-- Fixed an issue where using `ConsoleWrapper` with the command prompt on Windows 7 would cause an issue when inputting multiple lines of data.
-- Fixed an issue whereby using the default constructor to initialize `LoggerConfig` might result in unexpected parameters.
+- Fixed the issue whereby when using `ConsoleWrapper`, if no logs were output after reading started, the `InputPrefix` being read may not be displayed.
+- Fixed the issue whereby using `ConsoleWrapper` with the command prompt on Windows 7 would cause an issue when inputting multiple lines of data.
+- Fixed the issue whereby using the default constructor to initialize `LoggerConfig` might result in unexpected parameters.
 - Now supports adding history at its startup using `Log.Initialize` or `ConsoleWrapper.Initialize`. Notice that it's still limited by the history maximum string length policy. You can set `ConsoleWrapper.HistoryMaximumChars` before `Initialize`.
 - If the `ConsoleWrapper.AutoCompleteHandler` you have set throws an exception while processing `GetSuggestions`, a warning will be displayed, and the information will be output to the `latest.errtrace.log`.
 - You can now set `LogTrace.MaximumStoredChars` to control the amount of characters stored, which is used to store the content of exceptions in order to reuse the Trace ID.
-- The ConsoleWrapper was unable to treat a pair of Unicode surrogate characters (e.g. emojis) as a single character when performing console operations (such as cursor movement, character deletion).
 - Now you can change the time used for logging by including `DateTime` in the logging parameters. For more details, please refer to the corresponding method overload.
-- Fixed an issue whereby the scroll progress of the history was reset when there was log output with `ConsoleWrapper` accessing input.
-- Fixed an issue where pressing the up arrow key while using `ConsoleWrapper` might not immediately bring up the previous command input (i.e., the second previous input appears first, and the previous input can be found by pressing the down arrow key once).
-- Fixed an issue whereby the first use of certain auto-complete results with `ConsoleWrapper` would not respond, and subsequent uses would result in misaligned auto-completion.
+- Fixed the issue whereby the scroll progress of the history was reset when there was log output with `ConsoleWrapper` accessing input.
 
 #### Breaking Changes
 
