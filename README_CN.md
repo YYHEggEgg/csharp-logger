@@ -25,6 +25,7 @@
 - 修复了在使用 `ConsoleWrapper` 时按方向上键，上一次的命令输入可能不会立刻可用的问题（即先弹出上上条输入，再按一次方向下键才能找到上条输入）。
 - 修复了在使用 `ConsoleWrapper` 时，对于自动填充的特定结果第一次使用不会响应，且之后出现填充错位的问题。
 - 修复了在使用 `ConsoleWrapper` 时，在程序启动后至 `ConsoleWrapper.ReadLineAsync` 或其等效方法被调用之前，后台线程保持循环而不暂停，导致 CPU 始终处于满载的问题。**此问题影响所有版本号为 4.x 的版本。**
+- 修复了在使用 `ConsoleWrapper` 输入时，控制台窗口大小突然变化（变小）会引起输入无法正常工作且频繁有异常抛出的问题。
 - 修复了 `ConsoleWrapper` 在遇到成 Unicode 代理项对的两个字符（例如 emoji）时，控制台操作（如光标移动、删除字符）无法将其视为单个字符。
 - 为 `ConsoleWrapper.ReadLineAsync` 添加了 `CancellationToken` 参数。
 - 为了提高兼容性，现在 `ConsoleWrapper` 在初始化时不会将 `Console.TreatControlCAsInput` 设为 `true`。此时 `ConsoleWrapper.ShutDownRequest` 事件会包含有意义的 `sender` 和 `args`.

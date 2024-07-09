@@ -5,7 +5,6 @@ using System.Reflection;
 using YYHEggEgg.Logger.readline.Abstractions;
 using YYHEggEgg.Logger.Utils;
 
-#pragma warning disable CS8618 // 在退出构造函数时，不可为 null 的字段必须包含非 null 值。请考虑声明为可以为 null。
 namespace YYHEggEgg.Logger
 {
     /// <summary>
@@ -20,7 +19,7 @@ namespace YYHEggEgg.Logger
     /// </summary>
     public class ConsoleWrapper
     {
-        private static List<string> lines; // 记录每行输入的列表
+        private static List<string> lines = null!; // 记录每行输入的列表
         private static ConcurrentQueue<string> readqueue = new();
         public static event ConsoleWrapperCancelKeyPressEventHandler? ShutDownRequest; // 退出事件
 
@@ -78,7 +77,7 @@ namespace YYHEggEgg.Logger
         }
 
         #region Refresh Prefix
-        private static string _inputPrefix;
+        private static string _inputPrefix = null!;
         /// <summary>
         /// The command line input prefix. When you invoke <see cref="ConsoleWrapper.ReadLine()"/> or <see cref="ConsoleWrapper.ReadLineAsync()"/>, <see cref="ConsoleWrapper"/> will add a prefix to the user's input.
         /// <para>For example, if this is set to "&gt; ", then user will see "&gt; " at the bottom of the console.</para>
@@ -416,7 +415,15 @@ namespace YYHEggEgg.Logger
                     {
                         _autoCompleteHandler_updated = false;
                         // Keep the KeyHandler status
-                        keyHandler.ClearWrittingStatus();
+                        try
+                        {
+                            keyHandler.ClearWrittingStatus();
+                        }
+                        // Catch console suddenly smallen
+                        catch (ArgumentOutOfRangeException)
+                        {
+                            Console.WriteLine();
+                        }
                     }
                     else if (!isReading && _autoCompleteHandler_updated)
                     {
@@ -436,8 +443,21 @@ namespace YYHEggEgg.Logger
                         string cur_prefix = isReading ? InputPrefix : string.Empty;
                         if (cur_handle_writelines || _autoCompleteHandler_updated || !pre_reading)
                         {
-                            keyHandler = KeyHandler.RecoverWrittingStatus(
-                                cur_prefix, keyHandler, _autoCompleteHandler);
+                            while (true)
+                            {
+                                try
+                                {
+                                    keyHandler = KeyHandler.RecoverWrittingStatus(
+                                        cur_prefix, keyHandler, _autoCompleteHandler);
+                                    break;
+                                }
+                                // Catch console suddenly smallen
+                                catch (ArgumentOutOfRangeException)
+                                {
+                                    shared_absconsole.Clear();
+                                    continue;
+                                }
+                            }
                         }
                         while (qhandle_consolekeys.TryDequeue(out var keyInfo))
                         {
@@ -467,4 +487,3 @@ namespace YYHEggEgg.Logger
         #endregion
     }
 }
-#pragma warning restore CS8618 // 在退出构造函数时，不可为 null 的字段必须包含非 null 值。请考虑声明为可以为 null。

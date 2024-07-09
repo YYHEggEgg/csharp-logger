@@ -25,6 +25,7 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
 - Fixed the issue where pressing the up arrow key while using `ConsoleWrapper` might not immediately bring up the previous command input (i.e., the second previous input appears first, and the previous input can be found by pressing the down arrow key once).
 - Fixed the issue whereby the first use of certain auto-complete results with `ConsoleWrapper` would not respond, and subsequent uses would result in misaligned auto-completion.
 - Fixed the issue when using `ConsoleWrapper`, after the program started and before `ConsoleWrapper.ReadLineAsync` or its equivalent method was called, the background thread kept looping without waiting, causing the CPU to remain fully loaded. **This issue affects all versions with version number 4.x.**
+- Fixed the issue when using `ConsoleWrapper`, if the console window size changes (becomes smaller) suddenly, input won't function properly and exceptions are thrown too frequently.
 - Fixed the issue whereby the `ConsoleWrapper` was unable to treat a pair of Unicode surrogate characters (e.g. emojis) as a single character when performing console operations (such as cursor movement, character deletion).
 - Added `CancellationToken` parameter for `ConsoleWrapper.ReadLineAsync`.
 - To improve compatibility, now `ConsoleWrapper` won't set `Console.TreatControlCAsInput` as `true` while initializing. `ConsoleWrapper.ShutDownRequest` will contain meaningful `sender` and `args` also.
