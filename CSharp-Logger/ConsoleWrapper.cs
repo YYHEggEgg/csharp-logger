@@ -51,7 +51,7 @@ namespace YYHEggEgg.Logger
                 throw new InvalidOperationException(
                     "ConsoleWrapper and any features related " +
                     "to console is not supported on current OS.");
-            
+
             _initialized = true;
 
             lines ??= new List<string>();
@@ -429,7 +429,7 @@ namespace YYHEggEgg.Logger
                     {
                         _autoCompleteHandler_updated = false;
                     }
-  
+
                     if (cur_handle_writelines)
                     {
                         while (writelines.TryDequeue(out var line))
@@ -462,11 +462,13 @@ namespace YYHEggEgg.Logger
                         while (qhandle_consolekeys.TryDequeue(out var keyInfo))
                         {
                             // Ctrl+C should be handled as soon as it's read.
-                            if (keyInfo.Key != ConsoleKey.Enter)
+                            if (keyInfo.Key != ConsoleKey.Enter &&
+                                (keyInfo.Modifiers != ConsoleModifiers.Control || (keyInfo.Key != ConsoleKey.M && keyInfo.Key != ConsoleKey.J)))
                             {
                                 keyHandler.Handle(keyInfo);
                                 continue;
                             }
+
                             Console.WriteLine();
                             readqueue.Enqueue(keyHandler.Text);
                             // if ((lines.Count == 0 || lines[lines.Count - 1] != keyHandler.Text)

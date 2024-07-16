@@ -34,9 +34,10 @@
 - 修复了使用默认构造器初始化的 `LoggerConfig` 可能出现未预期的参数的问题。
 - 现在，支持使用 `ConsoleWrapper.ChangeHistory` 更改输入控制台的历史记录，将原有的历史记录清空并替换。注意：其仍受历史记录最大字符数的限制。您可以考虑更改 `ConsoleWapper.HistoryMaximumChars`.
 - 现在如果您设定的 `ConsoleWrapper.AutoCompleteHandler` 在处理 `GetSuggestions` 时抛出了异常，将会显示一条警告并输出信息到 `latest.errtrace.log`.
-- 现在可以设置 `LogTrace.MaximumStoredChars` 来控制其存储字符的量，用于存储异常的内容以重用 Trace ID.
+- 现在可以设置 `LogTrace.MaximumStoredChars` 来控制其存储字符的量，其用于存储异常的内容以重用 Trace ID. 默认值为 4M 个 `char`.
 - 现在您可以通过在日志记录参数中加入 `DateTime` 来改变日志写入时所用的时间。有关详细信息，请参阅对应方法重载。
 - 修复了在使用 `ConsoleWrapper` 输入时，如果有日志输出，则历史记录的滚动进度被重置的问题。
+- 修复了使用 `ConsoleWrapper` 输入时，按 `Ctrl + J` 与 `Ctrl + K` 等效回车键的功能不生效的问题。
 
 #### 中断性变更
 
@@ -74,6 +75,7 @@ public interface IAutoCompleteHandler
 
 - 极少部分运行环境在 `ConsoleWrapper` 的输入区域存在中文时，`Console.GetCursorPosition` 方法或 `Console.CursorLeft` 调用阻塞（除非多次按下新的字符，例如方向右键），导致出现卡顿或无法操作。尝试解决无果。
 - 如果在 `ConsoleWrapper` 的输入区域出现了成 Unicode 代理项对的两个字符（例如 emoji），其在被排列到行末或特定位置会出现显示异常。实际文本与光标操作不受影响。
+- 本 Logger 所有版本的 `ConsoleWrapper` 均与 `dotnet watch run` 工作不佳，除非您为 `dotnet watch` 指定 `--non-interactive` 选项，因为两者均直接使用 `Console.ReadKey`.
 
 ### v4.0.2
 

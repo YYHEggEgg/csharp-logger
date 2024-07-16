@@ -34,7 +34,7 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
 - Fixed the issue whereby using the default constructor to initialize `LoggerConfig` might result in unexpected parameters.
 - Now supports adding history at its startup using `Log.Initialize` or `ConsoleWrapper.Initialize`. Notice that it's still limited by the history maximum string length policy. You can set `ConsoleWrapper.HistoryMaximumChars` before `Initialize`.
 - If the `ConsoleWrapper.AutoCompleteHandler` you have set throws an exception while processing `GetSuggestions`, a warning will be displayed, and the information will be output to the `latest.errtrace.log`.
-- You can now set `LogTrace.MaximumStoredChars` to control the amount of characters stored, which is used to store the content of exceptions in order to reuse the Trace ID.
+- You can now set `LogTrace.MaximumStoredChars` to control the amount of characters stored, which is used to store the content of exceptions in order to reuse the Trace ID. The default value is 4M `char`.
 - Now you can change the time used for logging by including `DateTime` in the logging parameters. For more details, please refer to the corresponding method overload.
 - Fixed the issue whereby the scroll progress of the history was reset when there was log output with `ConsoleWrapper` accessing input.
 
@@ -74,6 +74,7 @@ public interface IAutoCompleteHandler
 
 - In a very small number of running environments, when there is Chinese text in the input area of `ConsoleWrapper`, the `Console.GetCursorPosition` method or the `Console.CursorLeft` call becomes blocked (unless new characters are pressed multiple times, such as the right arrow key), resulting in lag or unresponsiveness. Attempts to resolve this issue have been unsuccessful.
 - If a pair of Unicode surrogate characters (e.g. emojis) appeared in the input area of the ConsoleWrapper, they would display incorrectly when wrapped to the end of a line or a specific position. The actual text and cursor operations were not affected.
+- `ConsoleWrapper` in all versions of this logger can't cope with `dotnet watch run` well unless you specify `--non-interactive` option for `dotnet watch`, because they both use `Console.ReadKey`.
 
 ### v4.0.2
 
