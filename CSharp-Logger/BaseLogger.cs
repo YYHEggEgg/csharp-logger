@@ -131,26 +131,38 @@ namespace YYHEggEgg.Logger
         public BaseLogger(LoggerConfig conf, LogFileConfig newFileStreamConf1)
             : this(conf)
         {
-            AddLogFile(newFileStreamConf1);
+            if (conf.Enable_File_Logging)
+            {
+                AddLogFile(newFileStreamConf1);
+            }
         }
         public BaseLogger(LoggerConfig conf, LogFileConfig newFileStreamConf1, LogFileConfig newFileStreamConf2)
             : this(conf)
         {
-            AddLogFile(newFileStreamConf1);
-            AddLogFile(newFileStreamConf2);
+            if (conf.Enable_File_Logging)
+            {
+                AddLogFile(newFileStreamConf1);
+                AddLogFile(newFileStreamConf2);
+            }
         }
         public BaseLogger(LoggerConfig conf, LogFileConfig newFileStreamConf1, LogFileConfig newFileStreamConf2, LogFileConfig newFileStreamConf3)
             : this(conf)
         {
-            AddLogFile(newFileStreamConf1);
-            AddLogFile(newFileStreamConf2);
-            AddLogFile(newFileStreamConf3);
+            if (conf.Enable_File_Logging)
+            {
+                AddLogFile(newFileStreamConf1);
+                AddLogFile(newFileStreamConf2);
+                AddLogFile(newFileStreamConf3);
+            }
         }
         public BaseLogger(LoggerConfig conf, IEnumerable<LogFileConfig> newFileStreamConfs_enumerable)
             : this(conf)
         {
-            foreach (var newFileStreamConf in newFileStreamConfs_enumerable)
-                AddLogFile(newFileStreamConf);
+            if (conf.Enable_File_Logging)
+            {
+                foreach (var newFileStreamConf in newFileStreamConfs_enumerable)
+                    AddLogFile(newFileStreamConf);
+            }
         }
         public BaseLogger(LoggerConfig conf, params LogFileConfig[] newFileStreamConfs)
             : this(conf, newFileStreamConfs_enumerable: newFileStreamConfs) { }
@@ -158,26 +170,38 @@ namespace YYHEggEgg.Logger
         public BaseLogger(LoggerConfig conf, string fileStreamName1)
             : this(conf)
         {
-            AddLogFile(fileStreamName1);
+            if (conf.Enable_File_Logging)
+            {
+                AddLogFile(fileStreamName1);
+            }
         }
         public BaseLogger(LoggerConfig conf, string fileStreamName1, string fileStreamName2)
             : this(conf)
         {
-            AddLogFile(fileStreamName1);
-            AddLogFile(fileStreamName2);
+            if (conf.Enable_File_Logging)
+            {
+                AddLogFile(fileStreamName1);
+                AddLogFile(fileStreamName2);
+            }
         }
         public BaseLogger(LoggerConfig conf, string fileStreamName1, string fileStreamName2, string fileStreamName3)
             : this(conf)
         {
-            AddLogFile(fileStreamName1);
-            AddLogFile(fileStreamName2);
-            AddLogFile(fileStreamName3);
+            if (conf.Enable_File_Logging)
+            {
+                AddLogFile(fileStreamName1);
+                AddLogFile(fileStreamName2);
+                AddLogFile(fileStreamName3);
+            }
         }
         public BaseLogger(LoggerConfig conf, IEnumerable<string> fileStreamNames_enumerable)
             : this(conf)
         {
-            foreach (var fileStreamName in fileStreamNames_enumerable)
-                AddLogFile(fileStreamName);
+            if (conf.Enable_File_Logging)
+            {
+                foreach (var fileStreamName in fileStreamNames_enumerable)
+                    AddLogFile(fileStreamName);
+            }
         }
         public BaseLogger(LoggerConfig conf, string[] fileStreamNames)
             : this(conf, fileStreamNames_enumerable: fileStreamNames) { }
@@ -185,38 +209,53 @@ namespace YYHEggEgg.Logger
         public BaseLogger(LoggerConfig conf, LogFileConfig newFileStreamConf1, string fileStreamName1)
             : this(conf)
         {
-            AddLogFile(newFileStreamConf1);
-            AddLogFile(fileStreamName1);
+            if (conf.Enable_File_Logging)
+            {
+                AddLogFile(newFileStreamConf1);
+                AddLogFile(fileStreamName1);
+            }
         }
         public BaseLogger(LoggerConfig conf, LogFileConfig newFileStreamConf1, LogFileConfig newFileStreamConf2, string fileStreamName1)
             : this(conf)
         {
-            AddLogFile(newFileStreamConf1);
-            AddLogFile(newFileStreamConf2);
-            AddLogFile(fileStreamName1);
+            if (conf.Enable_File_Logging)
+            {
+                AddLogFile(newFileStreamConf1);
+                AddLogFile(newFileStreamConf2);
+                AddLogFile(fileStreamName1);
+            }
         }
         public BaseLogger(LoggerConfig conf, LogFileConfig newFileStreamConf1, string fileStreamName1, string fileStreamName2)
             : this(conf)
         {
-            AddLogFile(newFileStreamConf1);
-            AddLogFile(fileStreamName1);
-            AddLogFile(fileStreamName2);
+            if (conf.Enable_File_Logging)
+            {
+                AddLogFile(newFileStreamConf1);
+                AddLogFile(fileStreamName1);
+                AddLogFile(fileStreamName2);
+            }
         }
         public BaseLogger(LoggerConfig conf, LogFileConfig newFileStreamConf1, LogFileConfig newFileStreamConf2, string fileStreamName1, string fileStreamName2)
             : this(conf)
         {
-            AddLogFile(newFileStreamConf1);
-            AddLogFile(newFileStreamConf2);
-            AddLogFile(fileStreamName1);
-            AddLogFile(fileStreamName2);
+            if (conf.Enable_File_Logging)
+            {
+                AddLogFile(newFileStreamConf1);
+                AddLogFile(newFileStreamConf2);
+                AddLogFile(fileStreamName1);
+                AddLogFile(fileStreamName2);
+            }
         }
         public BaseLogger(LoggerConfig conf, IEnumerable<LogFileConfig> newFileStreamConfs_enumerable, IEnumerable<string> fileStreamNames_enumerable)
             : this(conf)
         {
-            foreach (var newFileStreamConf in newFileStreamConfs_enumerable)
-                AddLogFile(newFileStreamConf);
-            foreach (var fileStreamName in fileStreamNames_enumerable)
-                AddLogFile(fileStreamName);
+            if (conf.Enable_File_Logging)
+            {
+                foreach (var newFileStreamConf in newFileStreamConfs_enumerable)
+                    AddLogFile(newFileStreamConf);
+                foreach (var fileStreamName in fileStreamNames_enumerable)
+                    AddLogFile(fileStreamName);
+            }
         }
         public BaseLogger(LoggerConfig conf, LogFileConfig[] newFileStreamConfs, string[] fileStreamNames)
             : this(conf, newFileStreamConfs_enumerable: newFileStreamConfs, fileStreamNames_enumerable: fileStreamNames) { }
