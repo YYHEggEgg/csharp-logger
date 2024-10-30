@@ -11,6 +11,7 @@
 ## 目录
 
 - [更新](#更新)
+  - [v5.0.1](#v501)
   - [v5.0.0](#v500)
   - [v4.0.2](#v402)
   - [v4.0.1](#v401)
@@ -19,6 +20,22 @@
 - [最佳实践](#最佳实践)
 
 ## 更新
+
+### v5.0.1
+
+#### 添加可以控制文件日志和磁盘操作的字段
+
+在 LoggerConfig 中新增了 3 个字段：
+
+- `Customized_Global_LogFile_Config` 和 `Customized_Debug_LogFile_Config` 可为预定义日志文件 `latest.log` 和 `latest.debug.log` 提供自定义配置。将 `MinimumLogLevel` 设为 `LogLevel.None` 可以防止文件的创建。  
+  请注意，如果为此实例的某些字段提供 null，它们将不遵循 `Log.GlobalConfig` 的默认行为（而通过 `BaseLogger` 构造函数创建文件时会遵循），而是遵循此预定义日志文件本身的先前默认行为。
+- `Enable_Disk_Operations` 决定是否启用磁盘操作。
+
+它们的综合行为总结如下：
+
+ - 如果 `Enable_Disk_Operations` 为 true（默认值），一切将照常进行。您仍可以将 `Customized_Global_LogFile_Config.MinimumLogLevel` 设置为 `LogLevel.None` 以防止创建 `latest.log`。
+ - 只有当 `Enable_Disk_Operations` 为 false 时，日志压缩才可以禁用。`Customized_Global_LogFile_Config` 应为 null 或者具有 `MinimumLogLevel` 为 `LogLevel.None` 的值；使用 `LogTrace.*Trace`、`BaseLogger.*Trace`、`LoggerChannel.Log*Trace` 会导致异常。
+ - 当 `Enable_Disk_Operations` 为 false 时，使用任何 `BaseLogger` 构造函数都会导致异常；如果您需要它的实例，请使用 `Log.GlobalLogger`。
 
 ### v5.0.0
 

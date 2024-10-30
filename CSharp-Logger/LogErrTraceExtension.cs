@@ -16,6 +16,9 @@ public static class LoggerChannelTraceExtensions
 
     private static void Initialize()
     {
+        if (!Log.GlobalConfig.Enable_Disk_Operations)
+            throw new InvalidOperationException("You can't use LogTrace methods when disk operations " +
+                "are globally disabled, for storing exception details requires a file.");
         lock (_exception_lck)
         {
             if (_initialized) return;

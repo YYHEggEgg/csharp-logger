@@ -36,6 +36,12 @@ namespace YYHEggEgg.Logger
         /// <c>latest.debug.log</c> is <c>debug</c>.
         /// Specially, the identifier of <c>latest.log</c> is <c>global</c>.
         /// </summary>
+        /// <remarks>
+        /// The file will be created as is the originally expected file name;
+        /// but other Logger operations that require reference by the identifier
+        /// (like <see cref="BaseLogger(LoggerConfig, string)"/>) don't distinguish
+        /// the character cases.
+        /// </remarks>
         public string? FileIdentifier;
         /// <summary>
         /// Indicates whether this log file should be created in
@@ -45,7 +51,10 @@ namespace YYHEggEgg.Logger
         /// <summary>
         /// If the log file with the same <see cref="FileIdentifier"/>
         /// exists, this determines whether to use the existing one
-        /// (or raise an exception immediately).
+        /// (or raise an exception immediately). <para/>
+        /// This only take effect when brand-new constructing of another
+        /// log file is requested. It CAN'T AVOID log stream being consumed
+        /// when referred to by <see cref="FileIdentifier"/> only.
         /// </summary>
         /// <remarks>
         /// However, when providing this with True, an exception will

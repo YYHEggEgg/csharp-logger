@@ -125,44 +125,38 @@ namespace YYHEggEgg.Logger
                    "should be provided the same value when initializing any BaseLogger " +
                    "because of performace and other reasons.");
             }
+            if (conf.Enable_Disk_Operations != Log.GlobalConfig.Enable_Disk_Operations)
+            {
+                throw new InvalidOperationException("LoggerConfig.Enable_Disk_Operations requires " +
+                    "unity under the program scope. If you just want to disable the default " +
+                    "log files, consider LoggerConfig.Customized_Global_LogFile_Config.");
+            }
         }
 
         #region .ctors
         public BaseLogger(LoggerConfig conf, LogFileConfig newFileStreamConf1)
             : this(conf)
         {
-            if (conf.Enable_File_Logging)
-            {
-                AddLogFile(newFileStreamConf1);
-            }
+            AddLogFile(newFileStreamConf1);
         }
         public BaseLogger(LoggerConfig conf, LogFileConfig newFileStreamConf1, LogFileConfig newFileStreamConf2)
             : this(conf)
         {
-            if (conf.Enable_File_Logging)
-            {
-                AddLogFile(newFileStreamConf1);
-                AddLogFile(newFileStreamConf2);
-            }
+            AddLogFile(newFileStreamConf1);
+            AddLogFile(newFileStreamConf2);
         }
         public BaseLogger(LoggerConfig conf, LogFileConfig newFileStreamConf1, LogFileConfig newFileStreamConf2, LogFileConfig newFileStreamConf3)
             : this(conf)
         {
-            if (conf.Enable_File_Logging)
-            {
-                AddLogFile(newFileStreamConf1);
-                AddLogFile(newFileStreamConf2);
-                AddLogFile(newFileStreamConf3);
-            }
+            AddLogFile(newFileStreamConf1);
+            AddLogFile(newFileStreamConf2);
+            AddLogFile(newFileStreamConf3);
         }
         public BaseLogger(LoggerConfig conf, IEnumerable<LogFileConfig> newFileStreamConfs_enumerable)
             : this(conf)
         {
-            if (conf.Enable_File_Logging)
-            {
-                foreach (var newFileStreamConf in newFileStreamConfs_enumerable)
-                    AddLogFile(newFileStreamConf);
-            }
+            foreach (var newFileStreamConf in newFileStreamConfs_enumerable)
+                AddLogFile(newFileStreamConf);
         }
         public BaseLogger(LoggerConfig conf, params LogFileConfig[] newFileStreamConfs)
             : this(conf, newFileStreamConfs_enumerable: newFileStreamConfs) { }
@@ -170,38 +164,26 @@ namespace YYHEggEgg.Logger
         public BaseLogger(LoggerConfig conf, string fileStreamName1)
             : this(conf)
         {
-            if (conf.Enable_File_Logging)
-            {
-                AddLogFile(fileStreamName1);
-            }
+            AddLogFile(fileStreamName1);
         }
         public BaseLogger(LoggerConfig conf, string fileStreamName1, string fileStreamName2)
             : this(conf)
         {
-            if (conf.Enable_File_Logging)
-            {
-                AddLogFile(fileStreamName1);
-                AddLogFile(fileStreamName2);
-            }
+            AddLogFile(fileStreamName1);
+            AddLogFile(fileStreamName2);
         }
         public BaseLogger(LoggerConfig conf, string fileStreamName1, string fileStreamName2, string fileStreamName3)
             : this(conf)
         {
-            if (conf.Enable_File_Logging)
-            {
-                AddLogFile(fileStreamName1);
-                AddLogFile(fileStreamName2);
-                AddLogFile(fileStreamName3);
-            }
+            AddLogFile(fileStreamName1);
+            AddLogFile(fileStreamName2);
+            AddLogFile(fileStreamName3);
         }
         public BaseLogger(LoggerConfig conf, IEnumerable<string> fileStreamNames_enumerable)
             : this(conf)
         {
-            if (conf.Enable_File_Logging)
-            {
-                foreach (var fileStreamName in fileStreamNames_enumerable)
-                    AddLogFile(fileStreamName);
-            }
+            foreach (var fileStreamName in fileStreamNames_enumerable)
+                AddLogFile(fileStreamName);
         }
         public BaseLogger(LoggerConfig conf, string[] fileStreamNames)
             : this(conf, fileStreamNames_enumerable: fileStreamNames) { }
@@ -209,53 +191,38 @@ namespace YYHEggEgg.Logger
         public BaseLogger(LoggerConfig conf, LogFileConfig newFileStreamConf1, string fileStreamName1)
             : this(conf)
         {
-            if (conf.Enable_File_Logging)
-            {
-                AddLogFile(newFileStreamConf1);
-                AddLogFile(fileStreamName1);
-            }
+            AddLogFile(newFileStreamConf1);
+            AddLogFile(fileStreamName1);
         }
         public BaseLogger(LoggerConfig conf, LogFileConfig newFileStreamConf1, LogFileConfig newFileStreamConf2, string fileStreamName1)
             : this(conf)
         {
-            if (conf.Enable_File_Logging)
-            {
-                AddLogFile(newFileStreamConf1);
-                AddLogFile(newFileStreamConf2);
-                AddLogFile(fileStreamName1);
-            }
+            AddLogFile(newFileStreamConf1);
+            AddLogFile(newFileStreamConf2);
+            AddLogFile(fileStreamName1);
         }
         public BaseLogger(LoggerConfig conf, LogFileConfig newFileStreamConf1, string fileStreamName1, string fileStreamName2)
             : this(conf)
         {
-            if (conf.Enable_File_Logging)
-            {
-                AddLogFile(newFileStreamConf1);
-                AddLogFile(fileStreamName1);
-                AddLogFile(fileStreamName2);
-            }
+            AddLogFile(newFileStreamConf1);
+            AddLogFile(fileStreamName1);
+            AddLogFile(fileStreamName2);
         }
         public BaseLogger(LoggerConfig conf, LogFileConfig newFileStreamConf1, LogFileConfig newFileStreamConf2, string fileStreamName1, string fileStreamName2)
             : this(conf)
         {
-            if (conf.Enable_File_Logging)
-            {
-                AddLogFile(newFileStreamConf1);
-                AddLogFile(newFileStreamConf2);
-                AddLogFile(fileStreamName1);
-                AddLogFile(fileStreamName2);
-            }
+            AddLogFile(newFileStreamConf1);
+            AddLogFile(newFileStreamConf2);
+            AddLogFile(fileStreamName1);
+            AddLogFile(fileStreamName2);
         }
         public BaseLogger(LoggerConfig conf, IEnumerable<LogFileConfig> newFileStreamConfs_enumerable, IEnumerable<string> fileStreamNames_enumerable)
             : this(conf)
         {
-            if (conf.Enable_File_Logging)
-            {
-                foreach (var newFileStreamConf in newFileStreamConfs_enumerable)
-                    AddLogFile(newFileStreamConf);
-                foreach (var fileStreamName in fileStreamNames_enumerable)
-                    AddLogFile(fileStreamName);
-            }
+            foreach (var newFileStreamConf in newFileStreamConfs_enumerable)
+                AddLogFile(newFileStreamConf);
+            foreach (var fileStreamName in fileStreamNames_enumerable)
+                AddLogFile(fileStreamName);
         }
         public BaseLogger(LoggerConfig conf, LogFileConfig[] newFileStreamConfs, string[] fileStreamNames)
             : this(conf, newFileStreamConfs_enumerable: newFileStreamConfs, fileStreamNames_enumerable: fileStreamNames) { }
@@ -277,6 +244,11 @@ namespace YYHEggEgg.Logger
         /// <exception cref="ArgumentException"></exception>
         public void AddLogFile(LogFileConfig newFileStreamConfig)
         {
+            if (!Log.GlobalConfig.Enable_Disk_Operations)
+            {
+                throw new InvalidOperationException("Disk operations are forcefully disabled " +
+                    "globally, so no new log files should be created.");
+            }
             var fileIdentifier = newFileStreamConfig.FileIdentifier ?? "<null>";
             if (fileIdentifier == LogFileStream.GlobalLog_Reserved)
             {
@@ -477,7 +449,7 @@ namespace YYHEggEgg.Logger
         /// </summary>
         /// <inheritdoc cref="PushLog(Func{string?}, LogLevel, DateTime, string?, Action{Exception}?)"/>
         public void Warn(Func<string?> getcontent_func, DateTime logTime, string? sender = null, Action<Exception>? on_getcontent_error = null) =>
-            PushCallbackLogEnumUnchecked(getcontent_func, LogLevel.Warning,logTime, sender, on_getcontent_error);
+            PushCallbackLogEnumUnchecked(getcontent_func, LogLevel.Warning, logTime, sender, on_getcontent_error);
 
         /// <inheritdoc cref="Erro(Func{string?}, DateTime, string?, Action{Exception}?)"/>
         public void Erro(Func<string?> getcontent_func, string? sender = null, Action<Exception>? on_getcontent_error = null) =>

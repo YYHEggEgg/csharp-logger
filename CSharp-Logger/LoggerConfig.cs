@@ -36,7 +36,7 @@ namespace YYHEggEgg.Logger
         /// </summary>
         public LogLevel Global_Minimum_LogLevel = LogLevel.Debug;
         /// <summary>
-        /// The maximum LogLevel that will be output to the console. <para/>
+        /// The minimum LogLevel that will be output to the console. <para/>
         /// Log messages with smaller <see cref="LogLevel"/> won't be output to console, but will exist in the log file. <para/>
         /// Notice that this cannot be smaller than <see cref="Global_Minimum_LogLevel"/>.
         /// </summary>
@@ -82,14 +82,33 @@ namespace YYHEggEgg.Logger
         /// </summary>
         public bool Enable_Detailed_Time = false;
         /// <summary>
-        /// Determines whether to enable logging to files. <para/>
-        /// When set to <c>true</c>, logs will be written to log files according to the configured
-        /// log file settings and levels. When set to <c>false</c>, file logging will be disabled,
-        /// and only console logging (if configured) will occur. <para/>
-        /// This is useful if you want to allow logging exclusively to the console
-        /// without creating or updating any log files on disk.
+        /// Determines whether to enable disk operations.<para/>
+        /// When set to <c>true</c>, any disk interactions will be prohibited (including
+        /// previous log files compression, default log files creation).<para/>
+        /// If this option is enabled under a global scope, any attempts to create
+        /// another log file explicitly (using
+        /// <see cref="BaseLogger(LoggerConfig, LogFileConfig)"/>) and making contradictory
+        /// against the original default behaviour (providing configurations like
+        /// <see cref="Customized_Global_LogFile_Config"/> with <see langword="not null"/>
+        /// and <see cref="LogFileConfig.MinimumLogLevel"/> not <see cref="LogLevel.None"/>)
+        /// may lead to an exception.
         /// </summary>
-        public bool Enable_File_Logging = true;
+        public bool Enable_Disk_Operations = true;
+        /// <summary>
+        /// The custom configuration of <c>latest.log</c>.
+        /// </summary>
+        /// <remarks>
+        /// Provide <see cref="LogLevel.None"/> to <see cref="LogFileConfig.MinimumLogLevel"/> can prevent this file from being created. <para/>
+        /// Notice that if providing certain fields of this instance with null, they will not
+        /// follow the default behaviour of <see cref="Log.GlobalConfig"/>, but the previous
+        /// default behaviour of this pre-defined log file itself.
+        /// </remarks>
+        public LogFileConfig? Customized_Global_LogFile_Config = null;
+        /// <summary>
+        /// The custom configuration of <c>latest.debug.log</c>.
+        /// </summary>
+        /// <inheritdoc cref="Customized_Global_LogFile_Config"/>
+        public LogFileConfig? Customized_Debug_LogFile_Config = null;
 
         public LoggerConfig(int max_Output_Char_Count = 16 * 1024,
                             bool use_Console_Wrapper = false,
@@ -99,7 +118,9 @@ namespace YYHEggEgg.Logger
                             bool debug_LogWriter_AutoFlush = false,
                             bool is_PipeSeparated_Format = false,
                             bool enable_Detailed_Time = false,
-                            bool enable_file_logging = true)
+                            bool enable_Disk_Operations = true,
+                            LogFileConfig? customized_Global_LogFile_Config = null,
+                            LogFileConfig? customized_Debug_LogFile_Config = null)
         {
             Max_Output_Char_Count = max_Output_Char_Count;
             Use_Console_Wrapper = use_Console_Wrapper;
@@ -113,7 +134,9 @@ namespace YYHEggEgg.Logger
             Debug_LogWriter_AutoFlush = debug_LogWriter_AutoFlush;
             Is_PipeSeparated_Format = is_PipeSeparated_Format;
             Enable_Detailed_Time = enable_Detailed_Time;
-            Enable_File_Logging = enable_file_logging;
+            Enable_Disk_Operations = enable_Disk_Operations;
+            Customized_Global_LogFile_Config = customized_Global_LogFile_Config;
+            Customized_Debug_LogFile_Config = customized_Debug_LogFile_Config;
         }
 
         public LoggerConfig()
@@ -126,7 +149,7 @@ namespace YYHEggEgg.Logger
             Debug_LogWriter_AutoFlush = true;
             Is_PipeSeparated_Format = false;
             Enable_Detailed_Time = false;
-            Enable_File_Logging = true;
+            Enable_Disk_Operations = true;
         }
     }
 }
