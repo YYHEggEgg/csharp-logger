@@ -18,7 +18,7 @@ internal class Program
 #endif
             debug_LogWriter_AutoFlush: true,
             enable_Detailed_Time: false,
-            enable_file_logging: true
+            enable_Disk_Operations: true
             ));
 
         // 0. ConsoleWrapper input prompt test
@@ -35,7 +35,7 @@ internal class Program
             console_Minimum_LogLevel: LogLevel.Information,
             debug_LogWriter_AutoFlush: true,
             enable_Detailed_Time: false,
-            enable_file_logging: true
+            enable_Disk_Operations: true
             ), new LogFileConfig
              {
                 AutoFlushWriter = true,

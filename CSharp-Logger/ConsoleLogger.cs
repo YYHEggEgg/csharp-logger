@@ -91,8 +91,24 @@ namespace YYHEggEgg.Logger
         /// </exception>
         public static void Initialize(LoggerConfig conf)
         {
+            CheckGlobalLoggerConfig(conf);
             if (_initialized) return;
             InitializeCore(conf);
+        }
+
+        private static void CheckGlobalLoggerConfig(LoggerConfig conf)
+        {
+            if (!conf.Enable_Disk_Operations)
+            {
+                if (conf.Customized_Global_LogFile_Config?.MinimumLogLevel != LogLevel.None)
+                    throw new InvalidOperationException("If disabled disk operations for logger " +
+                        "under the prorgam scope, either provide conf.Customized_Global_LogFile_Config " +
+                        "with null, or a customized config with MinimumLogLevel set to LogLevel.None.");
+                if (conf.Customized_Debug_LogFile_Config?.MinimumLogLevel != LogLevel.None)
+                    throw new InvalidOperationException("If disabled disk operations for logger " +
+                        "under the prorgam scope, either provide conf.Customized_Debug_LogFile_Config " +
+                        "with null, or a customized config with MinimumLogLevel set to LogLevel.None.");
+            }
         }
 
         private static void InitializeCore(LoggerConfig conf)
@@ -115,28 +131,36 @@ namespace YYHEggEgg.Logger
             BaseLogger.LogDetail.DetailedTimeFormat = conf.Enable_Detailed_Time;
             _baseLogger = new BaseLogger(conf);
 
-            if (conf.Enable_File_Logging)
+            if (conf.Enable_Disk_Operations)
             {
                 LogFileStream.HandlePastLogs(Tools.GetLoggerWorkingDir(conf));
 
-                _baseLogger.AddNewLogFileCore(new LogFileConfig
-                {
-                    FileIdentifier = "global",
-                    AutoFlushWriter = true,
-                    MinimumLogLevel = LogLevel.Information,
-                    MaximumLogLevel = LogLevel.Error,
-                    IsPipeSeparatedFile = conf.Is_PipeSeparated_Format,
-                });
-                if (conf.Global_Minimum_LogLevel <= LogLevel.Debug)
+                var glbfileconf = conf.Customized_Global_LogFile_Config;
+                if (glbfileconf?.MinimumLogLevel != LogLevel.None)
                 {
                     _baseLogger.AddNewLogFileCore(new LogFileConfig
                     {
-                        FileIdentifier = "debug",
-                        AutoFlushWriter = conf.Debug_LogWriter_AutoFlush,
-                        MinimumLogLevel = LogLevel.Verbose,
-                        MaximumLogLevel = LogLevel.Error,
-                        IsPipeSeparatedFile = conf.Is_PipeSeparated_Format,
+                        FileIdentifier = LogFileStream.GlobalLog_Reserved,
+                        AutoFlushWriter = glbfileconf?.AutoFlushWriter ?? true,
+                        MinimumLogLevel = glbfileconf?.MinimumLogLevel ?? LogLevel.Information,
+                        MaximumLogLevel = glbfileconf?.MaximumLogLevel ?? LogLevel.Error,
+                        IsPipeSeparatedFile = glbfileconf?.IsPipeSeparatedFile ?? conf.Is_PipeSeparated_Format,
                     });
+                }
+                var dbgfileconf = conf.Customized_Debug_LogFile_Config;
+                if (dbgfileconf?.MinimumLogLevel != LogLevel.None)
+                {
+                    if (conf.Global_Minimum_LogLevel <= LogLevel.Debug)
+                    {
+                        _baseLogger.AddNewLogFileCore(new LogFileConfig
+                        {
+                            FileIdentifier = "debug",
+                            AutoFlushWriter = dbgfileconf?.AutoFlushWriter ?? conf.Debug_LogWriter_AutoFlush,
+                            MinimumLogLevel = dbgfileconf?.MinimumLogLevel ?? LogLevel.Verbose,
+                            MaximumLogLevel = dbgfileconf?.MaximumLogLevel ?? LogLevel.Error,
+                            IsPipeSeparatedFile = dbgfileconf?.IsPipeSeparatedFile ?? conf.Is_PipeSeparated_Format,
+                        });
+                    }
                 }
             }
         }

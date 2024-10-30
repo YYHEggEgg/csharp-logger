@@ -11,6 +11,7 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
 ## Contents
 
 - [Update](#update)
+  - [v5.0.1](#v501)
   - [v5.0.0](#v500)
   - [v4.0.2](#v402)
   - [v4.0.1](#v401)
@@ -19,6 +20,22 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
 - [Best Practices](#best-practices)
 
 ## Update
+
+### v5.0.1
+
+#### Added fields that can control file logging and disk operations
+
+There're 3 new fields in `LoggerConfig`:
+
+- `Customized_Global_LogFile_Config` & `Customized_Debug_LogFile_Config` are the custom configuration of pre-defined log file `latest.log` & `latest.debug.log`. Provide `LogLevel.None` to `MinimumLogLevel` can prevent the file from being created.  
+  Notice that if providing certain fields of this instance with null, they will not follow the default behaviour of Log.GlobalConfig (while creating file through `BaseLogger` constructors do), but the previous default behaviour of this pre-defined log file itself.
+- `Enable_Disk_Operations` determines whether to enable disk operations.
+
+Their combined behaviour summarizes:
+
+- If `Enable_Disk_Operations` is true (default), everything will go as common. You can also sets `Customized_Global_LogFile_Config.MinimumLogLevel` to `LogLevel.None` to prevent the creation of `latest.log`.
+- Only when `Enable_Disk_Operations` is false can the log compression be disabled. `Customized_Global_LogFile_Config` should be either null, or a value with `MinimumLogLevel` of `LogLevel.None`; usage of `LogTrace.*Trace`, `BaseLogger.*Trace`, `LoggerChannel.Log*Trace` cause an exception.
+- When `Enable_Disk_Operations` is false, usage of any `BaseLogger` constructors results in an exception; use `Log.GlobalLogger` if you need an instance of it.
 
 ### v5.0.0
 
