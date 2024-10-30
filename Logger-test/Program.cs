@@ -17,7 +17,8 @@ internal class Program
             console_Minimum_LogLevel: LogLevel.Warning,
 #endif
             debug_LogWriter_AutoFlush: true,
-            enable_Detailed_Time: false
+            enable_Detailed_Time: false,
+            enable_file_logging: true
             ));
 
         // 0. ConsoleWrapper input prompt test
@@ -33,15 +34,16 @@ internal class Program
             global_Minimum_LogLevel: LogLevel.Verbose,
             console_Minimum_LogLevel: LogLevel.Information,
             debug_LogWriter_AutoFlush: true,
-            enable_Detailed_Time: false
+            enable_Detailed_Time: false,
+            enable_file_logging: true
             ), new LogFileConfig
-            {
+             {
                 AutoFlushWriter = true,
                 FileIdentifier = "Warning",
                 MinimumLogLevel = LogLevel.Warning,
                 MaximumLogLevel = LogLevel.Error,
                 IsPipeSeparatedFile = true,
-            }
+             }
         );
         separate_logger = new BaseLogger(separate_logger.CustomConfig, "Warning");
         separate_logger = new BaseLogger(separate_logger.CustomConfig, new LogFileConfig

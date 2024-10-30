@@ -81,6 +81,15 @@ namespace YYHEggEgg.Logger
         /// and log file output.
         /// </summary>
         public bool Enable_Detailed_Time = false;
+        /// <summary>
+        /// Determines whether to enable logging to files. <para/>
+        /// When set to <c>true</c>, logs will be written to log files according to the configured
+        /// log file settings and levels. When set to <c>false</c>, file logging will be disabled,
+        /// and only console logging (if configured) will occur. <para/>
+        /// This is useful if you want to allow logging exclusively to the console
+        /// without creating or updating any log files on disk.
+        /// </summary>
+        public bool Enable_File_Logging = true;
 
         public LoggerConfig(int max_Output_Char_Count = 16 * 1024,
                             bool use_Console_Wrapper = false,
@@ -89,7 +98,8 @@ namespace YYHEggEgg.Logger
                             LogLevel console_Minimum_LogLevel = LogLevel.Information,
                             bool debug_LogWriter_AutoFlush = false,
                             bool is_PipeSeparated_Format = false,
-                            bool enable_Detailed_Time = false)
+                            bool enable_Detailed_Time = false,
+                            bool enable_file_logging = true)
         {
             Max_Output_Char_Count = max_Output_Char_Count;
             Use_Console_Wrapper = use_Console_Wrapper;
@@ -103,6 +113,7 @@ namespace YYHEggEgg.Logger
             Debug_LogWriter_AutoFlush = debug_LogWriter_AutoFlush;
             Is_PipeSeparated_Format = is_PipeSeparated_Format;
             Enable_Detailed_Time = enable_Detailed_Time;
+            Enable_File_Logging = enable_file_logging;
         }
 
         public LoggerConfig()
@@ -115,6 +126,7 @@ namespace YYHEggEgg.Logger
             Debug_LogWriter_AutoFlush = true;
             Is_PipeSeparated_Format = false;
             Enable_Detailed_Time = false;
+            Enable_File_Logging = true;
         }
     }
 }

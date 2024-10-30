@@ -1,4 +1,5 @@
 ﻿using YYHEggEgg.Logger.Utils;
+using static System.Reflection.Metadata.BlobBuilder;
 
 #pragma warning disable CS8602 // 在退出构造函数时，不可为 null 的字段必须包含非 null 值。请考虑声明为可以为 null。
 namespace YYHEggEgg.Logger
@@ -112,28 +113,31 @@ namespace YYHEggEgg.Logger
             _initialized = true;
 
             BaseLogger.LogDetail.DetailedTimeFormat = conf.Enable_Detailed_Time;
-            
-            LogFileStream.HandlePastLogs(Tools.GetLoggerWorkingDir(conf));
-            
             _baseLogger = new BaseLogger(conf);
-            _baseLogger.AddNewLogFileCore(new LogFileConfig
+
+            if (conf.Enable_File_Logging)
             {
-                FileIdentifier = "global",
-                AutoFlushWriter = true,
-                MinimumLogLevel = LogLevel.Information,
-                MaximumLogLevel = LogLevel.Error,
-                IsPipeSeparatedFile = conf.Is_PipeSeparated_Format,
-            });
-            if (conf.Global_Minimum_LogLevel <= LogLevel.Debug)
-            {
+                LogFileStream.HandlePastLogs(Tools.GetLoggerWorkingDir(conf));
+
                 _baseLogger.AddNewLogFileCore(new LogFileConfig
                 {
-                    FileIdentifier = "debug",
-                    AutoFlushWriter = conf.Debug_LogWriter_AutoFlush,
-                    MinimumLogLevel = LogLevel.Verbose,
+                    FileIdentifier = "global",
+                    AutoFlushWriter = true,
+                    MinimumLogLevel = LogLevel.Information,
                     MaximumLogLevel = LogLevel.Error,
                     IsPipeSeparatedFile = conf.Is_PipeSeparated_Format,
                 });
+                if (conf.Global_Minimum_LogLevel <= LogLevel.Debug)
+                {
+                    _baseLogger.AddNewLogFileCore(new LogFileConfig
+                    {
+                        FileIdentifier = "debug",
+                        AutoFlushWriter = conf.Debug_LogWriter_AutoFlush,
+                        MinimumLogLevel = LogLevel.Verbose,
+                        MaximumLogLevel = LogLevel.Error,
+                        IsPipeSeparatedFile = conf.Is_PipeSeparated_Format,
+                    });
+                }
             }
         }
 
