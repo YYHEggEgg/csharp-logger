@@ -1,8 +1,16 @@
-﻿using System.Text;
+﻿// #define DEBUG_NO_DISK_OP
+
+using System.Text;
 using YYHEggEgg.Logger;
 
 internal class Program
 {
+#if DEBUG_NO_DISK_OP
+    public const bool DEBUG_NO_DISK_OP = true;
+#else
+    public const bool DEBUG_NO_DISK_OP = false;
+#endif // DEBUG_NO_DISK_OP
+
     private static async Task Main(string[] args)
     {
         Log.Initialize(new LoggerConfig(
@@ -18,7 +26,7 @@ internal class Program
 #endif
             debug_LogWriter_AutoFlush: true,
             enable_Detailed_Time: false,
-            enable_Disk_Operations: true
+            enable_Disk_Operations: !DEBUG_NO_DISK_OP
             ));
 
         // 0. ConsoleWrapper input prompt test
@@ -35,26 +43,31 @@ internal class Program
             console_Minimum_LogLevel: LogLevel.Information,
             debug_LogWriter_AutoFlush: true,
             enable_Detailed_Time: false,
-            enable_Disk_Operations: true
-            ), new LogFileConfig
-             {
-                AutoFlushWriter = true,
-                FileIdentifier = "Warning",
-                MinimumLogLevel = LogLevel.Warning,
-                MaximumLogLevel = LogLevel.Error,
-                IsPipeSeparatedFile = true,
-             }
-        );
-        separate_logger = new BaseLogger(separate_logger.CustomConfig, "Warning");
-        separate_logger = new BaseLogger(separate_logger.CustomConfig, new LogFileConfig
+            enable_Disk_Operations: !DEBUG_NO_DISK_OP
+            )
+#if !DEBUG_NO_DISK_OP
+            ,new LogFileConfig
             {
                 AutoFlushWriter = true,
                 FileIdentifier = "Warning",
                 MinimumLogLevel = LogLevel.Warning,
                 MaximumLogLevel = LogLevel.Error,
                 IsPipeSeparatedFile = true,
-                AllowAutoFallback = true,
-            });
+            }
+#endif // !DEBUG_NO_DISK_OP
+        );
+#if !DEBUG_NO_DISK_OP
+        separate_logger = new BaseLogger(separate_logger.CustomConfig, "Warning");
+        separate_logger = new BaseLogger(separate_logger.CustomConfig, new LogFileConfig
+        {
+            AutoFlushWriter = true,
+            FileIdentifier = "Warning",
+            MinimumLogLevel = LogLevel.Warning,
+            MaximumLogLevel = LogLevel.Error,
+            IsPipeSeparatedFile = true,
+            AllowAutoFallback = true,
+        });
+#endif // !DEBUG_NO_DISK_OP
 
         // 2. Ctrl+C closing test
         ConsoleWrapper.ShutDownRequest += (_, _) => Environment.Exit(0);
@@ -62,13 +75,16 @@ internal class Program
         int attempt_reading_wait_seconds = 1;
 
         // 2.5. Error Trace test
-        try
+        if (!DEBUG_NO_DISK_OP) // ErroTrace is not allowed under no disk-op mode
         {
-            throw new NotImplementedException("This is a test error in Logger-test.");
-        }
-        catch (Exception ex)
-        {
-            LogTrace.ErroTrace(ex, "ErrorTraceTest", "Error trace test raised an exception.");
+            try
+            {
+                throw new NotImplementedException("This is a test error in Logger-test.");
+            }
+            catch (Exception ex)
+            {
+                LogTrace.ErroTrace(ex, "ErrorTraceTest", "Error trace test raised an exception.");
+            }
         }
 
         // 3. Dbug test
