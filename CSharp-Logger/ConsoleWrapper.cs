@@ -1,7 +1,6 @@
 ﻿using Internal.ReadLine;
 using Internal.ReadLine.Abstractions;
 using System.Collections.Concurrent;
-using System.Reflection;
 using YYHEggEgg.Logger.readline.Abstractions;
 using YYHEggEgg.Logger.Utils;
 
@@ -32,8 +31,7 @@ namespace YYHEggEgg.Logger
 
         private static void InitAbsConsole()
         {
-            // shared_absconsole = new DelayConsole();
-            shared_absconsole = new Console2();
+             shared_absconsole = new DelayConsole();
         }
 
         /// <summary>
@@ -347,10 +345,25 @@ namespace YYHEggEgg.Logger
         private static KeyHandler keyHandler = null!;
         private static async Task BackgroundReadkey()
         {
-            try
+            while (true)
             {
-                while (true)
+                try
                 {
+                    // This is a Linux-exclusive fix. For Windows, Console.ReadKey's
+                    // blocking won't affect other properties; however, Console
+                    // may be not thread-safe on Linux: if it doesn't return,
+                    // then all operations (like Console.CursorTop) will be stuck
+                    // as well - this is the 'output stucking' bug persisted for
+                    // 2+ years. The only fix is to avoid ReadKey's blocking.
+                    // Official docs has claimed OK for combining usage of
+                    // Console.KeyAvailable and Console.ReadKey, so this is an
+                    // acceptable solution.
+                    if (!Console.KeyAvailable)
+                    {
+                        await Task.Delay(15);
+                        continue;
+                    }
+
                     ConsoleKeyInfo keyInfo = Console.ReadKey(true);
                     if (keyInfo.Modifiers == ConsoleModifiers.Control && keyInfo.Key == ConsoleKey.C)
                     {
@@ -359,10 +372,7 @@ namespace YYHEggEgg.Logger
                     }
                     qhandle_consolekeys.Enqueue(keyInfo);
                 }
-            }
-            finally
-            {
-                await Task.Run(BackgroundReadkey);
+                catch { }
             }
         }
 

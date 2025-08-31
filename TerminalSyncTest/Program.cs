@@ -1,6 +1,8 @@
 ﻿// See https://aka.ms/new-console-template for more information
 using YYHEggEgg.Logger;
 
+Console.WriteLine("Press Enter to start debugging");
+Console.ReadLine();
 Console.WriteLine("Application starting. A log will be generated once a second.");
 
 Log.Initialize(new()
@@ -17,7 +19,7 @@ _ = Task.Factory.StartNew(async () =>
     }
 });
 var echo = await ConsoleWrapper.ReadLineAsync();
-Log.Warn($"You input {echo}");
+Log.Warn($"😀 You input {echo}");
 while (true)
 {
     await Task.Delay(1000);

@@ -11,6 +11,7 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
 ## Contents
 
 - [Update](#update)
+  - [v5.0.1](#v501)
   - [v5.0.0](#v500)
   - [v4.0.2](#v402)
   - [v4.0.1](#v401)
@@ -19,6 +20,17 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
 - [Best Practices](#best-practices)
 
 ## Update
+
+### v5.0.1
+
+- Fixed an issue on Linux where, when `ConsoleWrapper.ReadLine(Async)` is awaiting input, log messages would only appear in the console after pressing any key.
+- Fixed a bug on Linux where, entering Chinese characters while using `ConsoleWrapper` caused the console to freeze abnormally, requiring multiple key presses to slowly resume execution.
+- Fixed a problem whereby if the input area of `ConsoleWrapper` contained emojis, using combinations of Home, End, or Left/Right arrow keys could frequently trigger a Debug.Assert failure and terminate the program.
+
+#### Known Issues
+
+- When running the program in Windows Terminal, emojis are not displayed correctly (shown as `??`), both in the input area and the log area. No other anomalies have been observed; cursor movement behaves correctly and file logging works as expected.  
+  *Similar behavior occurs in Windows Command Prompt (cmd), and emojis cannot be entered when using the integrated terminal in VSCode. These are not considered program bugs and are not planned for resolution.*
 
 ### v5.0.0
 

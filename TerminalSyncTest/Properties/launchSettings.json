@@ -1,7 +1,8 @@
 {
   "profiles": {
     "TerminalSyncTest": {
-      "commandName": "Project"
+      "commandName": "Project",
+      "remoteDebugEnabled": false
     },
     "WSL": {
       "commandName": "WSL2",

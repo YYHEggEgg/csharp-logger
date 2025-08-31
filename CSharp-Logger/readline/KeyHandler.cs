@@ -709,7 +709,7 @@ namespace Internal.ReadLine
 
             IConsole abstract_console = previous_stat.Console2;
             keyHandler.WriteNewString(previous_stat.Text);
-            for (int i = previous_stat._cursorLimit; i > previous_stat._cursorPos; i--)
+            while (keyHandler._cursorPos > previous_stat._cursorPos)
                 keyHandler.MoveCursorLeft();
             abstract_console.Flush();
             Debug.Assert(keyHandler._cursorPos == previous_stat._cursorPos);
