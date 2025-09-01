@@ -11,7 +11,7 @@
 ## 目录
 
 - [更新](#更新)
-  - [v5.0.1](#v501)
+  - [v6.0.0](#v600)
   - [v5.0.0](#v500)
   - [v4.0.2](#v402)
   - [v4.0.1](#v401)
@@ -21,13 +21,21 @@
 
 ## 更新
 
-### v5.0.1
+### v6.0.0
 
 #### 修复 (主要在 Linux 平台上出现的) 控制台内容同步问题
 
 - 修复了在 Linux 平台上使用 `ConsoleWrapper` 时，在有 `ConsoleWrapper.ReadLine(Async)` 调用等待时，日志必须在按下任意键后才会更新到控制台中的问题。
 - 修复了在 Linux 平台上使用 `ConsoleWrapper` 时，输入中文字会导致控制台异常卡死，必须多次在控制台中继续按下任意按键才能缓慢继续的问题。
 - 修复了在 `ConsoleWrapper` 的输入区域存在 Emoji 时，组合使用 Home, End, 方向左/右键有大概率触发 Debug.Assert 失败并终止程序的问题。
+
+#### 添加「进度条」支持
+
+如果启用了 `ConsoleWrapper` 特性，你可以通过设置 `ConsoleWrapper.PersistAreaRenderer` 来实现类似进度条的功能。
+
+通过实现 `PersistAreaRenderHandlerBase`，`ConsoleWrapper` 开放一个接口，允许您固定控制台日志下方、用户输入区上方的一片区域显示定时变化的内容。支持多行内容。
+
+如果需要显示进度条，可以直接继承并实现 `ProgressBarRenderHandlerBase`，其也支持返回多个进度条同步显示。
 
 #### 添加可以控制文件日志和磁盘操作的字段
 

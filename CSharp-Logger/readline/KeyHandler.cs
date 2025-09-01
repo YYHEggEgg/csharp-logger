@@ -666,7 +666,7 @@ namespace Internal.ReadLine
 
         /// <summary>
         /// 清理当前书写的区域，但保留实例数据。在必要的操作完成后，需调用
-        /// <see cref="RecoverWrittingStatus(KeyHandler)"/> 来恢复状态。
+        /// <see cref="RecoverWrittingStatus(string, KeyHandler, IAutoCompleteHandler?)"/> 来恢复状态。
         /// </summary>
         internal void ClearWrittingStatus()
         {

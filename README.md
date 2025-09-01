@@ -11,7 +11,7 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
 ## Contents
 
 - [Update](#update)
-  - [v5.0.1](#v501)
+  - [v6.0.0](#v600)
   - [v5.0.0](#v500)
   - [v4.0.2](#v402)
   - [v4.0.1](#v401)
@@ -21,13 +21,21 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
 
 ## Update
 
-### v5.0.1
+### v6.0.0
 
 #### Fixes of Terminal Sync issues (mainly on Linux)
 
 - Fixed an issue on Linux where, when `ConsoleWrapper.ReadLine(Async)` is awaiting input, log messages would only appear in the console after pressing any key.
 - Fixed a bug on Linux where, entering Chinese characters while using `ConsoleWrapper` caused the console to freeze abnormally, requiring multiple key presses to slowly resume execution.
 - Fixed a problem whereby if the input area of `ConsoleWrapper` contained emojis, using combinations of Home, End, or Left/Right arrow keys could frequently trigger a Debug.Assert failure and terminate the program.
+
+#### Adding Progress Bar Support
+
+If the `ConsoleWrapper` feature is enabled, you can implement progress bar-like functionality by configuring `ConsoleWrapper.PersistAreaRenderer`.
+
+By implementing `PersistAreaRenderHandlerBase`, `ConsoleWrapper` exposes an interface that allows you to reserve a section between the console log output and the user input area to display periodically updating content. Multi-line output is supported.
+
+To display progress bars, you can directly inherit and implement `ProgressBarRenderHandlerBase`, which also supports rendering multiple progress bars simultaneously.
 
 #### Added fields that can control file logging and disk operations
 

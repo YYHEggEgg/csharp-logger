@@ -16,7 +16,7 @@ namespace YYHEggEgg.Logger
     /// <summary>
     /// A wrapper for Console to provide a stable command line.
     /// </summary>
-    public class ConsoleWrapper
+    public static class ConsoleWrapper
     {
         private static List<string> lines = null!; // 记录每行输入的列表
         private static ConcurrentQueue<string> readqueue = new();
@@ -408,12 +408,20 @@ namespace YYHEggEgg.Logger
                 try
                 {
                     bool cur_handle_writelines = Writelines_waiting_handle;
+                    // 此值是唯一控制是否重写进度条的开关。朴素地说，我们认为
+                    // 控制台中从上到下显然是日志、进度条和输入区域。因此，如
+                    // 果增加了日志显示，进度条必须要重渲；但如果只是输入区域
+                    // 内容发生改变，实际上就不一定需要。
+                    bool cur_need_rerender_progress_bar = NeedReRenderProgressBar || cur_handle_writelines;
                     if (qhandle_consolekeys.IsEmpty && !_inputprefix_changed
                         && !(!pre_reading && isReading) // not starting reading nearly
-                        && !cur_handle_writelines && !_autoCompleteHandler_updated)
+                        && !cur_handle_writelines
+                        && !_autoCompleteHandler_updated
+                        && !cur_need_rerender_progress_bar)
                     {
                         if (ending)
                         {
+                            ClearProgressBar();
                             _clearup_completed = true;
                             return;
                         }
@@ -422,7 +430,9 @@ namespace YYHEggEgg.Logger
                     }
                     _inputprefix_changed = false;
 
-                    if (isReading && (cur_handle_writelines || _autoCompleteHandler_updated))
+                    if (isReading && (cur_handle_writelines ||
+                        _autoCompleteHandler_updated ||
+                        cur_need_rerender_progress_bar))
                     {
                         _autoCompleteHandler_updated = false;
                         // Keep the KeyHandler status
@@ -440,19 +450,27 @@ namespace YYHEggEgg.Logger
                     {
                         _autoCompleteHandler_updated = false;
                     }
-
+                    
+                    if (cur_need_rerender_progress_bar)
+                        ClearProgressBar();
                     if (cur_handle_writelines)
                     {
                         while (writelines.TryDequeue(out var line))
                             InnerWriteLine(line);
                         while (writelines_handlelist.TryDequeue(out var line))
                             InnerWriteLine(line);
-                        shared_absconsole.Resync();
                     }
+                    if (cur_need_rerender_progress_bar)
+                        RenderProgressBar();
+                    shared_absconsole.Resync();
+
                     if (isReading)
                     {
                         string cur_prefix = isReading ? InputPrefix : string.Empty;
-                        if (cur_handle_writelines || _autoCompleteHandler_updated || !pre_reading)
+                        if (cur_handle_writelines ||
+                            _autoCompleteHandler_updated ||
+                            !pre_reading ||
+                            cur_need_rerender_progress_bar)
                         {
                             while (true)
                             {
@@ -496,6 +514,63 @@ namespace YYHEggEgg.Logger
                     LogTrace.DbugTrace(ex, nameof(ConsoleWrapper), $"Internal handler meet unexpected error. Please report to EggEgg.CSharp-Logger.");
                 }
             }
+        }
+        #endregion
+
+        #region Progress Bar
+        /// <summary>
+        /// Set the handler to render a persisted area at the bottom of Console. Usually pass an implementation of <see cref="ProgressBarRenderHandlerBase"/>.
+        /// </summary>
+        public static PersistAreaRenderHandlerBase? PersistAreaRenderer { get; set; }
+
+        private static ColorLineResult _cachedProgressInfo;
+        private static int _progressBarTakenLines;
+        private static DateTimeOffset _renderedTime;
+
+        private static bool NeedReRenderProgressBar =>
+            PersistAreaRenderer != null &&
+            _renderedTime + PersistAreaRenderer.CallbackInterval < DateTimeOffset.UtcNow;
+
+        private static void ClearProgressBar()
+        {
+            if (_progressBarTakenLines <= 0) return;
+            for (int i = 0; i < _progressBarTakenLines; i++)
+            {
+                if (i > 0) Console.CursorTop--;
+                Console.CursorLeft = 0;
+                Console.Write(new string(' ', Console.BufferWidth));
+                Console.CursorLeft = 0;
+            }
+            _progressBarTakenLines = 0;
+        }
+
+        private static void RenderProgressBar()
+        {
+            if (PersistAreaRenderer == null) return;
+            if (NeedReRenderProgressBar)
+            {
+                string text;
+                try
+                {
+                    text = PersistAreaRenderer.Render();
+                }
+                catch (Exception ex)
+                {
+                    text = $"<color=Red><PROGRESS BAR> ??.??%[ERROR {ex.GetType().Name} {ex.Message}]</color>";
+                    LogTrace.WarnTrace(ex, PersistAreaRenderer.GetType().Name, $"Persist Area content render failed.");
+                }
+                // 复习经典理论：\r（回车）将光标移动到行的开头，\n（换行）
+                // 将光标移动到下一行但不回到行首。但在实践中，我们观察到仅
+                // 使用 Console.Write('\n') 进行换行也会同时达成回车的效果
+                // （而不是不回到行首），故这里为了与 ColorLineUtil 计算行
+                // 数的方式兼容，不使用当前系统下标准的换行实现。
+                // 理论上更合适的方式是开个洞然后使用标准的
+                // Console.WriteLine，但是为了兼容性考虑使用后期处理的方式。
+                text = text.ReplaceLineEndings("\n");
+                _cachedProgressInfo = ColorLineUtil.AnalyzeColorText(text);
+                _renderedTime = DateTimeOffset.UtcNow;
+            }
+            _progressBarTakenLines = _cachedProgressInfo.WriteAndCountLines();
         }
         #endregion
     }
