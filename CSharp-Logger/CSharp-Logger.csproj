@@ -14,7 +14,7 @@
     <Authors>YYHEggEgg</Authors>
     <Company>YYHEggEgg</Company>
     <Description>A convenient C# Logger implementation, with reliable console interaction encapsulation support available.</Description>
-    <Copyright>Copyright (c) 2023 EggEgg</Copyright>
+    <Copyright>Copyright (c) 2024 EggEgg</Copyright>
     <PackageProjectUrl>https://github.com/YYHEggEgg/csharp-logger</PackageProjectUrl>
     <RepositoryUrl>https://github.com/YYHEggEgg/csharp-logger</RepositoryUrl>
     <PackageTags>Log;CLI</PackageTags>
