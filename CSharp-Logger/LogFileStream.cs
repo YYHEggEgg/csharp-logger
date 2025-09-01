@@ -173,15 +173,8 @@ namespace YYHEggEgg.Logger
         public const string GlobalLog_Reserved = "global";
 
         /// <summary>
-        /// 创建一个 <see cref="LogFileStream"/>，对其的操作唯一对应一个文件。
+        /// Create a <see cref="LogFileStream"/>, to which operations are corresponding to a single file.
         /// </summary>
-        /// <param name="fileStreamName">要创建的日志的文件标识符。<para/>
-        /// <remarks>
-        /// 创建的日志命名为 latest.<paramref name="fileStreamName"/>.log。不区分大小写。
-        /// 特别地，对于 <paramref name="fileStreamName"/> == "global"，其被留用作
-        /// latest.log 的标识符。用户代码尝试创建其示例应引发异常。
-        /// </remarks>
-        /// </param>
         public LogFileStream(string dir, LogFileConfig fileconf)
         {
             if (fileconf.FileIdentifier == null)
@@ -202,12 +195,17 @@ namespace YYHEggEgg.Logger
                 throw new ArgumentException("You cannot create multiple log files with a name (i.e., FileIdentifier) that only have different cases.");
             }
 
+            MinimumLogLevel = fileconf.MinimumLogLevel.Value;
+            MaximumLogLevel = fileconf.MaximumLogLevel.Value;
+            if (MinimumLogLevel > MaximumLogLevel)
+            {
+                throw new ArgumentException("The log file expect MinimumLogLevel to be no greater than MaximumLogLevel.");
+            }
+
             if (FileStreamName == GlobalLog_Reserved) LogPath = $"{dir}/logs/latest.log";
             else LogPath = $"{dir}/logs/latest.{FileStreamName}.log";
             logwriter = new(LogPath, true);
             logwriter.AutoFlush = fileconf.AutoFlushWriter;
-            MinimumLogLevel = (LogLevel)fileconf.MinimumLogLevel;
-            MaximumLogLevel = (LogLevel)fileconf.MaximumLogLevel;
             IsPipeSeparatedFormat = fileconf.IsPipeSeparatedFile;
             AutoFlushWriter = fileconf.AutoFlushWriter;
         }
