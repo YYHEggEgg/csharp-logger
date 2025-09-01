@@ -64,9 +64,12 @@ public abstract class ProgressBarRenderHandlerBase : PersistAreaRenderHandlerBas
         {
             var progress = rendered.Progress * 100;
             var blocks = (int)progress / (100 / ProgressBarBlocks);
-            var bar = string.Format($"{{0,-{ProgressBarBlocks}}}", new string('=', Math.Max(0, blocks - 1)) + '>');
+            if (blocks < 0) blocks = 0;
+            else if (blocks > ProgressBarBlocks) blocks = ProgressBarBlocks;
+                var bar = string.Format($"{{0,-{ProgressBarBlocks}}}", new string('=', blocks - 1) + '>');
             result.AppendLine($"{rendered.Topic} {progress:F2}%[{bar}]");
         }
+        if (result.Length == 0) return string.Empty;
         var color = Color;
         if (color != null)
         {

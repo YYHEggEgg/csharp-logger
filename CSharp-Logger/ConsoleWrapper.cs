@@ -523,7 +523,7 @@ namespace YYHEggEgg.Logger
         /// </summary>
         public static PersistAreaRenderHandlerBase? PersistAreaRenderer { get; set; }
 
-        private static ColorLineResult _cachedProgressInfo;
+        private static ColorLineResult? _cachedProgressInfo;
         private static int _progressBarTakenLines;
         private static DateTimeOffset _renderedTime;
 
@@ -549,7 +549,7 @@ namespace YYHEggEgg.Logger
             if (PersistAreaRenderer == null) return;
             if (NeedReRenderProgressBar)
             {
-                string text;
+                string? text;
                 try
                 {
                     text = PersistAreaRenderer.Render();
@@ -559,18 +559,24 @@ namespace YYHEggEgg.Logger
                     text = $"<color=Red><PROGRESS BAR> ??.??%[ERROR {ex.GetType().Name} {ex.Message}]</color>";
                     LogTrace.WarnTrace(ex, PersistAreaRenderer.GetType().Name, $"Persist Area content render failed.");
                 }
-                // 复习经典理论：\r（回车）将光标移动到行的开头，\n（换行）
-                // 将光标移动到下一行但不回到行首。但在实践中，我们观察到仅
-                // 使用 Console.Write('\n') 进行换行也会同时达成回车的效果
-                // （而不是不回到行首），故这里为了与 ColorLineUtil 计算行
-                // 数的方式兼容，不使用当前系统下标准的换行实现。
-                // 理论上更合适的方式是开个洞然后使用标准的
-                // Console.WriteLine，但是为了兼容性考虑使用后期处理的方式。
-                text = text.ReplaceLineEndings("\n");
-                _cachedProgressInfo = ColorLineUtil.AnalyzeColorText(text);
-                _renderedTime = DateTimeOffset.UtcNow;
+                if (!string.IsNullOrEmpty(text))
+                {
+                    // 复习经典理论：\r（回车）将光标移动到行的开头，\n（换行）
+                    // 将光标移动到下一行但不回到行首。但在实践中，我们观察到仅
+                    // 使用 Console.Write('\n') 进行换行也会同时达成回车的效果
+                    // （而不是不回到行首），故这里为了与 ColorLineUtil 计算行
+                    // 数的方式兼容，不使用当前系统下标准的换行实现。
+                    // 理论上更合适的方式是开个洞然后使用标准的
+                    // Console.WriteLine，但是为了兼容性考虑使用后期处理的方式。
+                    text = text.ReplaceLineEndings("\n");
+                    _cachedProgressInfo = ColorLineUtil.AnalyzeColorText(text);
+                }
+                else _cachedProgressInfo = null;
+                    _renderedTime = DateTimeOffset.UtcNow;
             }
-            _progressBarTakenLines = _cachedProgressInfo.WriteAndCountLines();
+            if (_cachedProgressInfo != null)
+                _progressBarTakenLines = _cachedProgressInfo.Value.WriteAndCountLines();
+            else _progressBarTakenLines = 0;
         }
         #endregion
     }
