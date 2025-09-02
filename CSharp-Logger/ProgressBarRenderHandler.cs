@@ -60,14 +60,17 @@ public abstract class ProgressBarRenderHandlerBase : PersistAreaRenderHandlerBas
     public override string Render()
     {
         StringBuilder result = new();
+        bool first = true;
         foreach (var rendered in RenderProgressBar())
         {
+            if (first) first = false;
+            else result.AppendLine();
             var progress = rendered.Progress * 100;
             var blocks = (int)progress / (100 / ProgressBarBlocks);
-            if (blocks < 0) blocks = 0;
+            if (blocks < 1) blocks = 1;
             else if (blocks > ProgressBarBlocks) blocks = ProgressBarBlocks;
-                var bar = string.Format($"{{0,-{ProgressBarBlocks}}}", new string('=', blocks - 1) + '>');
-            result.AppendLine($"{rendered.Topic} {progress:F2}%[{bar}]");
+            var bar = string.Format($"{{0,-{ProgressBarBlocks}}}", new string('=', blocks - 1) + '>');
+            result.Append($"{rendered.Topic} {progress:F2}%[{bar}]");
         }
         if (result.Length == 0) return string.Empty;
         var color = Color;
