@@ -53,6 +53,44 @@ namespace YYHEggEgg.Logger.Utils
             Console.ForegroundColor = ColorLineUtil.DefaultColor;
             Console.WriteLine();
         }
+
+        /// <summary>
+        /// 输出文字到控制台的同时，估计其文本占用了多少行。此“占用”指整个区域的大小，包括最后的换行符也会被计入一行。
+        /// </summary>
+        /// <returns></returns>
+        public int WriteAndCountLines()
+        {
+            int result = 1;
+            // CursorTop 不是可靠的值，原因在于它只取决于用户看到的控制台
+            // 窗口大小（而与旁边的滚动条无关，那是终端自己推断的扩展）；
+            // 例如一直在控制台最下方写入导致窗口保持滚动，但 CursorTop
+            // 不会变。因此，我们一个一个字符进行写入，如果 CursorLeft
+            // 发生了非正向变化，则我们认为控制台触发了一次换行。此种方法
+            // 并不保证准确性，目前仅在进度条渲染时使用。
+            int preCursorLeft = Console.CursorLeft;
+            foreach (var strpart in _color_parts)
+            {
+                Console.ForegroundColor = strpart.color;
+                foreach (var ch in strpart.text)
+                {
+                    Console.Write(ch);
+                    var currentCursorLeft = Console.CursorLeft;
+                    if (currentCursorLeft <= preCursorLeft &&
+                        // 豁免：当前 CursorLeft 处于控制台的最右端是
+                        // 不计入的。原因在于，如果在一行仅剩一个字的空位
+                        // 写入一个字符，则会填充该空位，但控制台不会立刻
+                        // 切换到下一行的开头，而是保持光标位置不变；如果
+                        // 还有下一次写入，才会发生自动换行，完成后控制台
+                        // 的光标直接跳到下一行的第二个字符位置。
+                        currentCursorLeft != Console.BufferWidth - 1)
+                        result++;
+                    preCursorLeft = currentCursorLeft;
+                }
+            }
+            Console.ForegroundColor = ColorLineUtil.DefaultColor;
+            Console.WriteLine();
+            return result + 1;
+        }
     }
 
     internal static class ColorLineUtil

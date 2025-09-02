@@ -10,7 +10,7 @@
     <GenerateDocumentationFile>False</GenerateDocumentationFile>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Title>EggEgg.CSharp-Logger</Title>
-    <Version>5.0.1-rc51</Version>
+    <Version>6.0.0-rc52</Version>
     <Authors>YYHEggEgg</Authors>
     <Company>YYHEggEgg</Company>
     <Description>A convenient C# Logger implementation, with reliable console interaction encapsulation support available.</Description>
@@ -26,6 +26,7 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <NeutralLanguage>en-US</NeutralLanguage>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
   </PropertyGroup>
 
   <ItemGroup>
@@ -37,6 +38,7 @@
 
   <ItemGroup>
     <PackageReference Include="TextCopy" Version="6.2.1" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
   </ItemGroup>
 
   <ItemGroup>

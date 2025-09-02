@@ -46,7 +46,7 @@ internal class Program
             enable_Disk_Operations: !DEBUG_NO_DISK_OP
             )
 #if !DEBUG_NO_DISK_OP
-            ,new LogFileConfig
+            , new LogFileConfig
             {
                 AutoFlushWriter = true,
                 FileIdentifier = "Warning",
@@ -98,6 +98,9 @@ internal class Program
 
         Log.PushLog("Push a warning log!", LogLevel.Warning, "TSETSender");
         Log.PushLog("Push a verbose log!", LogLevel.Verbose, "TSESTender");
+
+        // 3.5. Progress bar test
+        ConsoleWrapper.PersistAreaRenderer = new SimpleProgressBar();
 
         // 4. Global default color set test
         Log.Info($"Waiting for 1s...");
@@ -203,6 +206,34 @@ internal class Program
                 StartIndex = startIndex,
                 EndIndex = endIndex,
                 Suggestions = new List<string> { "autocmp1_01", "autocmp1_02", "autocmpl_03", "测试中文autocompl01", "测试中文autocmpl02" }
+            };
+        }
+    }
+
+    class SimpleProgressBar : ProgressBarRenderHandlerBase
+    {
+        public override TimeSpan CallbackInterval => TimeSpan.FromSeconds(1);
+
+        private int n = 0;
+        protected override List<ProgressBarRenderResult> RenderProgressBar()
+        {
+            return new()
+            {
+                new()
+                {
+                    Topic = $"-----Testing Progress Bar1-----",
+                    Progress = (double)(n++ % 100) / 100,
+                },
+                new()
+                {
+                    Topic = $"-----Testing Progress Bar2-----",
+                    Progress = (double)(n++ % 100) / 100,
+                },
+                new()
+                {
+                    Topic = $"-----Testing Progress Bar----- -----Testing Progress Bar----------Testing Progress Bar----------Testing Progress Bar----------Testing Progress Bar-----",
+                    Progress = (double)(n++ % 100) / 100,
+                },
             };
         }
     }
