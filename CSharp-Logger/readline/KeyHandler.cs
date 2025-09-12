@@ -688,7 +688,7 @@ namespace Internal.ReadLine
                     break;
             }
             Console2.Flush();
-            if (!IsStartOfBuffer()) Console.WriteLine();
+            if (!IsStartOfBuffer()) Console2.WriteLineNonSync(string.Empty);
         }
 
         internal static KeyHandler RecoverWrittingStatus(string prompt, KeyHandler previous_stat,

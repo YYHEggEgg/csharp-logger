@@ -169,7 +169,7 @@ namespace YYHEggEgg.Logger
         }
 
         private static void InnerWriteLine(ColorLineResult input)
-            => input.WriteToConsole();
+            => input.WriteToConsole(shared_absconsole);
 
         #region Outer WriteLine
         /// <summary>
@@ -358,7 +358,7 @@ namespace YYHEggEgg.Logger
                     // Official docs has claimed OK for combining usage of
                     // Console.KeyAvailable and Console.ReadKey, so this is an
                     // acceptable solution.
-                    if (!Console.KeyAvailable)
+                    if (!shared_absconsole.KeyAvailable)
                     {
                         await Task.Delay(15);
                         continue;
@@ -443,7 +443,7 @@ namespace YYHEggEgg.Logger
                         // Catch console suddenly smallen
                         catch (ArgumentOutOfRangeException)
                         {
-                            Console.WriteLine();
+                            shared_absconsole.WriteLine(string.Empty);
                         }
                     }
                     else if (!isReading && _autoCompleteHandler_updated)
@@ -460,9 +460,9 @@ namespace YYHEggEgg.Logger
                         while (writelines_handlelist.TryDequeue(out var line))
                             InnerWriteLine(line);
                     }
+                    shared_absconsole.Resync();
                     if (cur_need_rerender_progress_bar)
                         RenderProgressBar();
-                    shared_absconsole.Resync();
 
                     if (isReading)
                     {
@@ -498,7 +498,7 @@ namespace YYHEggEgg.Logger
                                 continue;
                             }
 
-                            Console.WriteLine();
+                            shared_absconsole.WriteLine(string.Empty);
                             readqueue.Enqueue(keyHandler.Text);
                             // if ((lines.Count == 0 || lines[lines.Count - 1] != keyHandler.Text)
                             //     && !string.IsNullOrEmpty(keyHandler.Text))
@@ -538,10 +538,11 @@ namespace YYHEggEgg.Logger
             {
                 if (i > 0) Console.CursorTop--;
                 Console.CursorLeft = 0;
-                Console.Write(new string(' ', Console.BufferWidth));
+                shared_absconsole.WriteNonSync(new string(' ', shared_absconsole.BufferWidth));
                 Console.CursorLeft = 0;
             }
             _progressBarTakenLines = 0;
+            shared_absconsole.Resync();
         }
 
         private static void RenderProgressBar()
@@ -575,7 +576,7 @@ namespace YYHEggEgg.Logger
                     _renderedTime = DateTimeOffset.UtcNow;
             }
             if (_cachedProgressInfo != null)
-                _progressBarTakenLines = _cachedProgressInfo.Value.WriteAndCountLines();
+                _progressBarTakenLines = _cachedProgressInfo.Value.WriteAndCountLines(shared_absconsole);
             else _progressBarTakenLines = 0;
         }
         #endregion
