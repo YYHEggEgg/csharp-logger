@@ -113,9 +113,16 @@ internal class DelayConsole : IConsole
         Resync();
     }
 
-    public void Clear()
+    public void TryClear()
     {
-        Console.Clear();
+        try
+        {
+            Console.Clear();
+        }
+        catch (Exception ex)
+        {
+            LogTrace.VerbTrace(ex, nameof(DelayConsole), $"Console Abstraction handler met error when cleaning console for emergency.");
+        }
         Resync();
     }
 

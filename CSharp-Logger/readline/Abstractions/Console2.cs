@@ -71,7 +71,7 @@ namespace Internal.ReadLine.Abstractions
 
         public void Flush() { }
         public void Resync() { }
-        public void Clear() => Console.Clear();
+        public void TryClear() => Console.Clear();
         public void WriteNonSync(string value) => Write(value);
         public void WriteLineNonSync(string value) => WriteLine(value);
     }

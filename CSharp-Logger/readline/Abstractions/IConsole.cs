@@ -28,7 +28,7 @@ namespace Internal.ReadLine.Abstractions
         /// 方法均自动调用 <see cref="Resync"/> (除非属于 <c>NonSync</c> 类方法).
         /// </summary>
         void Resync();
-        void Clear();
+        void TryClear();
         void WriteNonSync(string value);
         void WriteLineNonSync(string value);
     }

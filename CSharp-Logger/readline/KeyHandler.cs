@@ -652,7 +652,7 @@ namespace Internal.ReadLine
                 }
                 catch (ArgumentOutOfRangeException)
                 {
-                    Console2.Clear();
+                    Console2.TryClear();
                     var str = Text;
                     _text = new();
                     _cursorPos = 0;

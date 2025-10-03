@@ -483,7 +483,7 @@ namespace YYHEggEgg.Logger
                                 // Catch console suddenly smallen
                                 catch (ArgumentOutOfRangeException)
                                 {
-                                    shared_absconsole.Clear();
+                                    shared_absconsole.TryClear();
                                     continue;
                                 }
                             }
@@ -509,9 +509,15 @@ namespace YYHEggEgg.Logger
 
                     pre_reading = isReading;
                 }
+                catch (IOException ioex)
+                {
+                    LogTrace.VerbTrace(ioex, nameof(ConsoleWrapper), $"Internal handler meet I/O error. ({ioex.HResult})");
+                    shared_absconsole.TryClear();
+                }
                 catch (Exception ex)
                 {
                     LogTrace.DbugTrace(ex, nameof(ConsoleWrapper), $"Internal handler meet unexpected error. Please report to EggEgg.CSharp-Logger.");
+                    await Task.Delay(20);
                 }
             }
         }

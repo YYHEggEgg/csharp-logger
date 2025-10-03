@@ -297,7 +297,7 @@ internal sealed partial class CharSet : SetBase<char>, ICharSet, IEquatable<Char
 		{
 			// start 和 end 位于同一个底层数组项中，将 start ~ end 之间按位置 0
 			ulong mask = (endMask - startMask) + endMask;
-			count += data[startTopIndex].Clear(startBtmIndex, mask);
+			count += data[startTopIndex].TryClear(startBtmIndex, mask);
 			if (count < oldCount)
 			{
 				MarkDirty();
@@ -312,10 +312,10 @@ internal sealed partial class CharSet : SetBase<char>, ICharSet, IEquatable<Char
 		{
 			// 将 start ~ max 之间按位置 0。
 			ulong mask = ~startMask + 1UL;
-			count += data[startTopIndex].Clear(startBtmIndex, mask);
+			count += data[startTopIndex].TryClear(startBtmIndex, mask);
 			// 将 0 ~ end 之间按位置 0。
 			mask = (endMask - 1UL) + endMask;
-			count += data[endTopIndex].Clear(endBtmIndex, mask);
+			count += data[endTopIndex].TryClear(endBtmIndex, mask);
 		}
 		if (startTopIndex == endTopIndex)
 		{
@@ -331,7 +331,7 @@ internal sealed partial class CharSet : SetBase<char>, ICharSet, IEquatable<Char
 			// 将 startTopIndex ~ startTopIndex 之间按位置 0。
 			for (int i = startTopIndex + 1; i < endTopIndex; i++)
 			{
-				count += data[i].Clear();
+				count += data[i].TryClear();
 			}
 		}
 		if (count < oldCount)
@@ -484,7 +484,7 @@ internal sealed partial class CharSet : SetBase<char>, ICharSet, IEquatable<Char
 		}
 		if (ReferenceEquals(this, other))
 		{
-			Clear();
+			TryClear();
 			return;
 		}
 		if (other is ICharSet otherSet)
