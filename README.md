@@ -264,27 +264,29 @@ Main changes:
 2. Be careful to configure the various functions of `LoggerConfig`. If you just want to use it as a regular logger, here is a recommended configuration:
 
    ```cs
-   Log.Initialize(new LoggerConfig(
-       max_Output_Char_Count: -1,
-       use_Console_Wrapper: false,
-       use_Working_Directory: true,
+   Log.Initialize(new LoggerConfig
+   {
+       Max_Output_Char_Count = -1,
+       Use_Console_Wrapper = false,
+       Use_Working_Directory = true,
    #if DEBUG
-       global_Minimum_LogLevel: LogLevel.Verbose,
-       console_Minimum_LogLevel: LogLevel.Information,
+       Global_Minimum_LogLevel = LogLevel.Verbose,
+       Console_Minimum_LogLevel = LogLevel.Information,
    #else
-       global_Minimum_LogLevel: LogLevel.Information,
-       console_Minimum_LogLevel: LogLevel.Information,
+       Global_Minimum_LogLevel = LogLevel.Information,
+       Console_Minimum_LogLevel = LogLevel.Information,
    #endif
-       debug_LogWriter_AutoFlush: true,
-       is_PipeSeparated_Format: false,
-       enable_Detailed_Time: false
-       ));
+       Debug_LogWriter_AutoFlush = true,
+       Is_PipeSeparated_Format = false,
+       Enable_Detailed_Time = false
+   });
    ```
 
-3. If you want to use the `ConsoleWrapper` function, you need to set the `use_Console_Wrapper` in the above `LoggerConfig` to true, and then start using its function.
+3. If you want to use the `ConsoleWrapper` function, you need to set the `Use_Console_Wrapper` in the above `LoggerConfig` to true, and then start using its function.
 4. When creating a new log file, you can use `LogFileConfig.IsPipeSeparatedFormat` to indicate whether the created log file is a pipe-separated value file (PSV).  
-   Outputting the log as a table is helpful for filtering and analysis when the data volume is extremely large, especially if a large amount of modular code in the program does not change the sender parameter when calling the Log method. You can use `BaseLogger(LoggerConfig, LogFileConfig)` to create a `BaseLogger` and its log file specifically for statistical data, and make `content` also use a similar PSV format for data query.
-5. You can enable the time detail of the log by setting `enable_Detailed_Time` in `LoggerConfig` to true. By default, the time recorded by Logger is only accurate to the second and does not include the date, corresponding to the formatted string `HH:mm:ss`.  
+  Outputting logs as a table helps with filtering and analysis when dealing with large amounts of data, especially if the Log method is called by modularized code that does not change the sender parameter. You can use `BaseLogger(LoggerConfig, LogFileConfig)` to create a `BaseLogger` and its log file specifically for statistical data, and make `content` also use a similar PSV format for data query.  
+  Note that since there is no dedicated interface for submitting structured data, you need to ensure the standardization of `content` in PSV format yourself (if you need to resolve produced logs by automation).
+5. You can enable the time detail of the log by setting `Enable_Detailed_Time` in `LoggerConfig` to true. By default, the time recorded by Logger is only accurate to the second and does not include the date, corresponding to the formatted string `HH:mm:ss`.  
   After enabling time details, it will display the details of the log submission time up to one-seventh of a second, and the corresponding formatted string is `yyyy-MM-dd HH:mm:ss fff ffff`, the two parts `fff` and `ffff` represent the millisecond level and the ten-thousandth of a millisecond (100 nanoseconds, 0.1 microseconds) level, such as `2023-08-22 15:43:36 456 4362`. This configuration requires global unity and is effective for both console and log file output.
 6. If the program uses [CommandLineParser](https://www.nuget.org/packages/CommandLineParser), please redirect its output `TextWriter`. Use code as follows:
 

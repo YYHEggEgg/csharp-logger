@@ -120,6 +120,9 @@ internal class Program
         }
         logwriter.WriteLine();
 
+        // 5.5. Emoji test
+        Log.Info("Emoji test: 🌀 ⚠️ ✷ 😀 😁 😂 🤣 😃 😄 😅 😆 😉 😊 😋 😎 😍 🥰 😘 😗 😙 😚 ☺️ 🙂 🤗 🤩 🥳");
+
         // 6. Color test
         Log.Erro("<color=</color>" +
             "<color=Yellow>yelolow text</color>" +

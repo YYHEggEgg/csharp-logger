@@ -265,27 +265,29 @@ public interface IAutoCompleteHandler
 2. 谨慎配置 `LoggerConfig` 的各项功能。如果只想用作普通的日志记录器，以下是一个推荐配置：
 
    ```cs
-   Log.Initialize(new LoggerConfig(
-       max_Output_Char_Count: -1,
-       use_Console_Wrapper: false,
-       use_Working_Directory: true,
+   Log.Initialize(new LoggerConfig
+   {
+       Max_Output_Char_Count = -1,
+       Use_Console_Wrapper = false,
+       Use_Working_Directory = true,
    #if DEBUG
-       global_Minimum_LogLevel: LogLevel.Verbose,
-       console_Minimum_LogLevel: LogLevel.Information,
+       Global_Minimum_LogLevel = LogLevel.Verbose,
+       Console_Minimum_LogLevel = LogLevel.Information,
    #else
-       global_Minimum_LogLevel: LogLevel.Information,
-       console_Minimum_LogLevel: LogLevel.Information,
+       Global_Minimum_LogLevel = LogLevel.Information,
+       Console_Minimum_LogLevel = LogLevel.Information,
    #endif
-       debug_LogWriter_AutoFlush: true,
-       is_PipeSeparated_Format: false,
-       enable_Detailed_Time: false
-       ));
+       Debug_LogWriter_AutoFlush = true,
+       Is_PipeSeparated_Format = false,
+       Enable_Detailed_Time = false
+   });
    ```
 
-3. 如果想要使用 `ConsoleWrapper` 的功能，需要将上示 `LoggerConfig` 中的 `use_Console_Wrapper` 设为 true，然后开始使用其功能。
+3. 如果想要使用 `ConsoleWrapper` 的功能，需要将上示 `LoggerConfig` 中的 `Use_Console_Wrapper` 设为 true，然后开始使用其功能。
 4. 在创建新日志文件时，可使用 `LogFileConfig.IsPipeSeparatedFormat` 指示创建的日志文件是否为竖线分隔值文件（Pipe-separated values file，PSV）。  
-   将日志输出为表格有助于在数据量极大时进行筛选与分析，尤其是如果程序中大量模块化代码调用 Log 方法时不会改变 sender 参数的情况下。可使用 `BaseLogger(LoggerConfig, LogFileConfig)` 为统计类数据专门创建一个 `BaseLogger` 与其日志文件，并令 `content` 同样使用类似 PSV 的格式，以便于数据的查询。
-5. 可以通过将 `LoggerConfig` 中的 `enable_Detailed_Time` 设为 true，启用日志的时间细节。默认情况下，Logger 记录的时间仅精确到秒，且不包含日期，对应格式化字符串 `HH:mm:ss`。  
+   将日志输出为表格有助于在数据量极大时进行筛选与分析，尤其是如果程序中大量模块化代码调用 Log 方法时不会改变 sender 参数的情况下。可使用 `BaseLogger(LoggerConfig, LogFileConfig)` 为统计类数据专门创建一个 `BaseLogger` 与其日志文件，并令 `content` 同样使用类似 PSV 的格式，以便于数据的查询。  
+   需要注意的是，由于没有专门提交结构化数据的接口，您需要自行保证 `content` 在 PSV 格式下的标准化（如果您需要自动化解析日志产物）。
+5. 可以通过将 `LoggerConfig` 中的 `Enable_Detailed_Time` 设为 true，启用日志的时间细节。默认情况下，Logger 记录的时间仅精确到秒，且不包含日期，对应格式化字符串 `HH:mm:ss`。  
   开启时间细节后，将会展现日志提交时间直至七分之一秒的细节，与之相对应的格式化字符串为 `yyyy-MM-dd HH:mm:ss fff ffff`，两部分 `fff` 和 `ffff` 分别表示毫秒级别与万分之一毫秒（100 纳秒，0.1 微秒）级别，如 `2023-08-22 15:43:36 456 4362`. 此配置要求全局统一，对控制台与日志文件的输出内容均生效。
 6. 如果程序使用 [CommandLineParser](https://www.nuget.org/packages/CommandLineParser)，请重定向它的输出 `TextWriter`。使用如下代码：
 
