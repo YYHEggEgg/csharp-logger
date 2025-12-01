@@ -2,15 +2,46 @@ namespace Internal.ReadLine.Abstractions
 {
     internal class Console2 : IConsole
     {
-        public int CursorLeft => Console.CursorLeft;
+        private object _consoleOpLock = new object();
 
-        public int CursorTop => Console.CursorTop;
+        public int CursorLeft
+        {
+            get
+            {
+                lock (_consoleOpLock)
+                {
+                    return Console.CursorLeft;
+                }
+            }
+        }
+
+        public int CursorTop
+        {
+            get
+            {
+                lock (_consoleOpLock)
+                {
+                    return Console.CursorTop;
+                }
+            }
+        }
 
         public int BufferWidth => Console.BufferWidth;
 
         public int BufferHeight => Console.BufferHeight;
 
         public bool PasswordMode { get; set; }
+
+        public bool KeyAvailable
+        {
+            get
+            {
+                lock (_consoleOpLock)
+                {
+                    return Console.KeyAvailable;
+                }
+            }
+        }
 
         // public void SetBufferSize(int width, int height) => Console.SetBufferSize(width, height);
 
@@ -40,6 +71,8 @@ namespace Internal.ReadLine.Abstractions
 
         public void Flush() { }
         public void Resync() { }
-        public void Clear() => Console.Clear();
+        public void TryClear() => Console.Clear();
+        public void WriteNonSync(string value) => Write(value);
+        public void WriteLineNonSync(string value) => WriteLine(value);
     }
 }

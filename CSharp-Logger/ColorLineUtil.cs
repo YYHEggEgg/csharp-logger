@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using Internal.ReadLine.Abstractions;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
@@ -43,15 +44,54 @@ namespace YYHEggEgg.Logger.Utils
         /// &lt;color=Red&gt;红色文字&lt;&#47;color&gt;。颜色代码必须为
         /// <see cref="ConsoleColor"/> 中的有效值，如"Red"、"Green"等。
         /// </summary>
-        public void WriteToConsole()
+        /// <remarks>此方法会解除 <paramref name="console2"/> 的同步状态。</remarks>
+        public void WriteToConsole(IConsole console2)
         {
             foreach (var strpart in _color_parts)
             {
                 Console.ForegroundColor = strpart.color;
-                Console.Write(strpart.text);
+                console2.WriteNonSync(strpart.text);
             }
             Console.ForegroundColor = ColorLineUtil.DefaultColor;
-            Console.WriteLine();
+            console2.WriteLineNonSync(string.Empty);
+        }
+
+        /// <summary>
+        /// 输出文字到控制台的同时，估计其文本占用了多少行。此“占用”指整个区域的大小，包括最后的换行符也会被计入一行。
+        /// </summary>
+        /// <returns></returns>
+        public int WriteAndCountLines(IConsole console2)
+        {
+            int result = 1;
+            // CursorTop 不是可靠的值，原因在于它只取决于用户看到的控制台
+            // 窗口大小（而与旁边的滚动条无关，那是终端自己推断的扩展）；
+            // 例如一直在控制台最下方写入导致窗口保持滚动，但 CursorTop
+            // 不会变。因此，我们一个一个字符进行写入，如果 CursorLeft
+            // 发生了非正向变化，则我们认为控制台触发了一次换行。此种方法
+            // 并不保证准确性，目前仅在进度条渲染时使用。
+            int preCursorLeft = console2.CursorLeft;
+            foreach (var strpart in _color_parts)
+            {
+                Console.ForegroundColor = strpart.color;
+                foreach (var ch in strpart.text)
+                {
+                    console2.Write(ch);
+                    var currentCursorLeft = console2.CursorLeft;
+                    if (currentCursorLeft <= preCursorLeft &&
+                        // 豁免：当前 CursorLeft 处于控制台的最右端是
+                        // 不计入的。原因在于，如果在一行仅剩一个字的空位
+                        // 写入一个字符，则会填充该空位，但控制台不会立刻
+                        // 切换到下一行的开头，而是保持光标位置不变；如果
+                        // 还有下一次写入，才会发生自动换行，完成后控制台
+                        // 的光标直接跳到下一行的第二个字符位置。
+                        currentCursorLeft != console2.BufferWidth - 1)
+                        result++;
+                    preCursorLeft = currentCursorLeft;
+                }
+            }
+            Console.ForegroundColor = ColorLineUtil.DefaultColor;
+            console2.WriteLine(string.Empty);
+            return result + 1;
         }
     }
 

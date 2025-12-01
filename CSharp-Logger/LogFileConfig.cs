@@ -70,8 +70,10 @@ namespace YYHEggEgg.Logger
             AutoFlushWriter = true;
             FileIdentifier = null;
             IsPipeSeparatedFile = false;
-            AllowAutoFallback = false;
+            AllowAutoFallback = true;
         }
+
+        public readonly LogFileConfig DeepClone() => this;
 
         public bool Equals(LogFileConfig other)
         {
@@ -101,11 +103,14 @@ namespace YYHEggEgg.Logger
 
         public override int GetHashCode()
         {
-            return (FileIdentifier?.GetHashCode() ?? 0) ^
-                (MinimumLogLevel?.GetHashCode() ?? 0) ^
-                (MaximumLogLevel?.GetHashCode() ?? 0) ^
-                (AutoFlushWriter.GetHashCode()) ^
-                IsPipeSeparatedFile.GetHashCode();
+            return HashCode.Combine(
+                FileIdentifier,
+                MinimumLogLevel,
+                MaximumLogLevel,
+                AutoFlushWriter,
+                IsPipeSeparatedFile,
+                AllowAutoFallback
+            );
         }
     }
 }

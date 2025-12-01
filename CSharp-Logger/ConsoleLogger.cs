@@ -102,14 +102,18 @@ namespace YYHEggEgg.Logger
             {
                 if (conf.Customized_Global_LogFile_Config != null &&
                     conf.Customized_Global_LogFile_Config?.MinimumLogLevel != LogLevel.None)
-                    throw new InvalidOperationException("If disabled disk operations for logger " +
+                    throw new ArgumentException("If disabled disk operations for logger " +
                         "under the prorgam scope, either provide conf.Customized_Global_LogFile_Config " +
                         "with null, or a customized config with MinimumLogLevel set to LogLevel.None.");
                 if (conf.Customized_Debug_LogFile_Config != null &&
                     conf.Customized_Debug_LogFile_Config?.MinimumLogLevel != LogLevel.None)
-                    throw new InvalidOperationException("If disabled disk operations for logger " +
+                    throw new ArgumentException("If disabled disk operations for logger " +
                         "under the prorgam scope, either provide conf.Customized_Debug_LogFile_Config " +
                         "with null, or a customized config with MinimumLogLevel set to LogLevel.None.");
+            }
+            if (conf.Console_Minimum_LogLevel < conf.Global_Minimum_LogLevel)
+            {
+                throw new ArgumentException("The LogLevel output to console cannot be smaller than the global minimum LogLevel.");
             }
         }
 

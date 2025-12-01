@@ -125,10 +125,6 @@ namespace YYHEggEgg.Logger
             Max_Output_Char_Count = max_Output_Char_Count;
             Use_Console_Wrapper = use_Console_Wrapper;
             Use_Working_Directory = use_Working_Directory;
-            if (console_Minimum_LogLevel < global_Minimum_LogLevel)
-            {
-                throw new ArgumentException("The LogLevel output to console cannot be smaller than the global minimum LogLevel.", nameof(console_Minimum_LogLevel));
-            }
             Global_Minimum_LogLevel = global_Minimum_LogLevel;
             Console_Minimum_LogLevel = console_Minimum_LogLevel;
             Debug_LogWriter_AutoFlush = debug_LogWriter_AutoFlush;
@@ -151,5 +147,7 @@ namespace YYHEggEgg.Logger
             Enable_Detailed_Time = false;
             Enable_Disk_Operations = true;
         }
+
+        public readonly LoggerConfig DeepClone() => this;
     }
 }

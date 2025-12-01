@@ -11,7 +11,7 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
 ## Contents
 
 - [Update](#update)
-  - [v5.0.1](#v501)
+  - [v6.0.0](#v600)
   - [v5.0.0](#v500)
   - [v4.0.2](#v402)
   - [v4.0.1](#v401)
@@ -21,7 +21,21 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
 
 ## Update
 
-### v5.0.1
+### v6.0.0
+
+#### Fixes of Terminal Sync issues (mainly on Linux)
+
+- Fixed an issue on Linux where, when `ConsoleWrapper.ReadLine(Async)` is awaiting input, log messages would only appear in the console after pressing any key.
+- Fixed a bug on Linux where, entering Chinese characters while using `ConsoleWrapper` caused the console to freeze abnormally, requiring multiple key presses to slowly resume execution.
+- Fixed a problem whereby if the input area of `ConsoleWrapper` contained emojis, using combinations of Home, End, or Left/Right arrow keys could frequently trigger a Debug.Assert failure and terminate the program.
+
+#### Adding Progress Bar Support
+
+If the `ConsoleWrapper` feature is enabled, you can implement progress bar-like functionality by configuring `ConsoleWrapper.PersistAreaRenderer`.
+
+By implementing `PersistAreaRenderHandlerBase`, `ConsoleWrapper` exposes an interface that allows you to reserve a section between the console log output and the user input area to display periodically updating content. Multi-line output is supported.
+
+To display progress bars, you can directly inherit and implement `ProgressBarRenderHandlerBase`, which also supports rendering multiple progress bars simultaneously.
 
 #### Added fields that can control file logging and disk operations
 
@@ -36,6 +50,11 @@ Their combined behaviour summarizes:
 - If `Enable_Disk_Operations` is true (default), everything will go as common. You can also sets `Customized_Global_LogFile_Config.MinimumLogLevel` to `LogLevel.None` to prevent the creation of `latest.log`.
 - Only when `Enable_Disk_Operations` is false can the log compression be disabled. `Customized_Global_LogFile_Config` should be either null, or a value with `MinimumLogLevel` of `LogLevel.None`; usage of `LogTrace.*Trace`, `BaseLogger.*Trace`, `LoggerChannel.Log*Trace` cause an exception.
 - When `Enable_Disk_Operations` is false, usage of any `BaseLogger` constructors results in an exception; use `Log.GlobalLogger` if you need an instance of it.
+
+#### Known Issues
+
+- When running the program in Windows Terminal, emojis are not displayed correctly (shown as `??`), both in the input area and the log area. No other anomalies have been observed; cursor movement behaves correctly and file logging works as expected.  
+  *Similar behavior occurs in Windows Command Prompt (cmd), and emojis cannot be entered when using the integrated terminal in VSCode. These are not considered program bugs and are not planned for resolution.*
 
 ### v5.0.0
 
@@ -245,27 +264,29 @@ Main changes:
 2. Be careful to configure the various functions of `LoggerConfig`. If you just want to use it as a regular logger, here is a recommended configuration:
 
    ```cs
-   Log.Initialize(new LoggerConfig(
-       max_Output_Char_Count: -1,
-       use_Console_Wrapper: false,
-       use_Working_Directory: true,
+   Log.Initialize(new LoggerConfig
+   {
+       Max_Output_Char_Count = -1,
+       Use_Console_Wrapper = false,
+       Use_Working_Directory = true,
    #if DEBUG
-       global_Minimum_LogLevel: LogLevel.Verbose,
-       console_Minimum_LogLevel: LogLevel.Information,
+       Global_Minimum_LogLevel = LogLevel.Verbose,
+       Console_Minimum_LogLevel = LogLevel.Information,
    #else
-       global_Minimum_LogLevel: LogLevel.Information,
-       console_Minimum_LogLevel: LogLevel.Information,
+       Global_Minimum_LogLevel = LogLevel.Information,
+       Console_Minimum_LogLevel = LogLevel.Information,
    #endif
-       debug_LogWriter_AutoFlush: true,
-       is_PipeSeparated_Format: false,
-       enable_Detailed_Time: false
-       ));
+       Debug_LogWriter_AutoFlush = true,
+       Is_PipeSeparated_Format = false,
+       Enable_Detailed_Time = false
+   });
    ```
 
-3. If you want to use the `ConsoleWrapper` function, you need to set the `use_Console_Wrapper` in the above `LoggerConfig` to true, and then start using its function.
+3. If you want to use the `ConsoleWrapper` function, you need to set the `Use_Console_Wrapper` in the above `LoggerConfig` to true, and then start using its function.
 4. When creating a new log file, you can use `LogFileConfig.IsPipeSeparatedFormat` to indicate whether the created log file is a pipe-separated value file (PSV).  
-   Outputting the log as a table is helpful for filtering and analysis when the data volume is extremely large, especially if a large amount of modular code in the program does not change the sender parameter when calling the Log method. You can use `BaseLogger(LoggerConfig, LogFileConfig)` to create a `BaseLogger` and its log file specifically for statistical data, and make `content` also use a similar PSV format for data query.
-5. You can enable the time detail of the log by setting `enable_Detailed_Time` in `LoggerConfig` to true. By default, the time recorded by Logger is only accurate to the second and does not include the date, corresponding to the formatted string `HH:mm:ss`.  
+  Outputting logs as a table helps with filtering and analysis when dealing with large amounts of data, especially if the Log method is called by modularized code that does not change the sender parameter. You can use `BaseLogger(LoggerConfig, LogFileConfig)` to create a `BaseLogger` and its log file specifically for statistical data, and make `content` also use a similar PSV format for data query.  
+  Note that since there is no dedicated interface for submitting structured data, you need to ensure the standardization of `content` in PSV format yourself (if you need to resolve produced logs by automation).
+5. You can enable the time detail of the log by setting `Enable_Detailed_Time` in `LoggerConfig` to true. By default, the time recorded by Logger is only accurate to the second and does not include the date, corresponding to the formatted string `HH:mm:ss`.  
   After enabling time details, it will display the details of the log submission time up to one-seventh of a second, and the corresponding formatted string is `yyyy-MM-dd HH:mm:ss fff ffff`, the two parts `fff` and `ffff` represent the millisecond level and the ten-thousandth of a millisecond (100 nanoseconds, 0.1 microseconds) level, such as `2023-08-22 15:43:36 456 4362`. This configuration requires global unity and is effective for both console and log file output.
 6. If the program uses [CommandLineParser](https://www.nuget.org/packages/CommandLineParser), please redirect its output `TextWriter`. Use code as follows:
 

@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+﻿using Internal.ReadLine.Abstractions;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using YYHEggEgg.Logger.Utils;
 
@@ -18,6 +19,7 @@ namespace YYHEggEgg.Logger
         private static bool _global_loggers_ending = false;
         private static bool _console_ending = false;
         private static bool _console_cleared_up = false;
+        private static IConsole _absConsole = new Console2();
         /// <summary>
         /// Console.Write will pend as the user selected content in the console. But the file I/O shouldn't be pended.
         /// </summary>
@@ -42,7 +44,7 @@ namespace YYHEggEgg.Logger
                 while (qconsole_strings.TryDequeue(out var color_str))
                 {
                     if (UseConsoleWrapper) ConsoleWrapper.WriteLine(color_str);
-                    else color_str.WriteToConsole();
+                    else color_str.WriteToConsole(_absConsole);
                 }
             }
         }

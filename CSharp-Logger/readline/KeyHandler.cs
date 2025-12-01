@@ -652,7 +652,7 @@ namespace Internal.ReadLine
                 }
                 catch (ArgumentOutOfRangeException)
                 {
-                    Console2.Clear();
+                    Console2.TryClear();
                     var str = Text;
                     _text = new();
                     _cursorPos = 0;
@@ -666,7 +666,7 @@ namespace Internal.ReadLine
 
         /// <summary>
         /// 清理当前书写的区域，但保留实例数据。在必要的操作完成后，需调用
-        /// <see cref="RecoverWrittingStatus(KeyHandler)"/> 来恢复状态。
+        /// <see cref="RecoverWrittingStatus(string, KeyHandler, IAutoCompleteHandler?)"/> 来恢复状态。
         /// </summary>
         internal void ClearWrittingStatus()
         {
@@ -688,7 +688,7 @@ namespace Internal.ReadLine
                     break;
             }
             Console2.Flush();
-            if (!IsStartOfBuffer()) Console.WriteLine();
+            if (!IsStartOfBuffer()) Console2.WriteLineNonSync(string.Empty);
         }
 
         internal static KeyHandler RecoverWrittingStatus(string prompt, KeyHandler previous_stat,
@@ -709,7 +709,7 @@ namespace Internal.ReadLine
 
             IConsole abstract_console = previous_stat.Console2;
             keyHandler.WriteNewString(previous_stat.Text);
-            for (int i = previous_stat._cursorLimit; i > previous_stat._cursorPos; i--)
+            while (keyHandler._cursorPos > previous_stat._cursorPos)
                 keyHandler.MoveCursorLeft();
             abstract_console.Flush();
             Debug.Assert(keyHandler._cursorPos == previous_stat._cursorPos);

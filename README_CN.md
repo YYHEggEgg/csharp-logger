@@ -11,7 +11,7 @@
 ## 目录
 
 - [更新](#更新)
-  - [v5.0.1](#v501)
+  - [v6.0.0](#v600)
   - [v5.0.0](#v500)
   - [v4.0.2](#v402)
   - [v4.0.1](#v401)
@@ -21,7 +21,21 @@
 
 ## 更新
 
-### v5.0.1
+### v6.0.0
+
+#### 修复 (主要在 Linux 平台上出现的) 控制台内容同步问题
+
+- 修复了在 Linux 平台上使用 `ConsoleWrapper` 时，在有 `ConsoleWrapper.ReadLine(Async)` 调用等待时，日志必须在按下任意键后才会更新到控制台中的问题。
+- 修复了在 Linux 平台上使用 `ConsoleWrapper` 时，输入中文字会导致控制台异常卡死，必须多次在控制台中继续按下任意按键才能缓慢继续的问题。
+- 修复了在 `ConsoleWrapper` 的输入区域存在 Emoji 时，组合使用 Home, End, 方向左/右键有大概率触发 Debug.Assert 失败并终止程序的问题。
+
+#### 添加「进度条」支持
+
+如果启用了 `ConsoleWrapper` 特性，你可以通过设置 `ConsoleWrapper.PersistAreaRenderer` 来实现类似进度条的功能。
+
+通过实现 `PersistAreaRenderHandlerBase`，`ConsoleWrapper` 开放一个接口，允许您固定控制台日志下方、用户输入区上方的一片区域显示定时变化的内容。支持多行内容。
+
+如果需要显示进度条，可以直接继承并实现 `ProgressBarRenderHandlerBase`，其也支持返回多个进度条同步显示。
 
 #### 添加可以控制文件日志和磁盘操作的字段
 
@@ -36,6 +50,11 @@
  - 如果 `Enable_Disk_Operations` 为 true（默认值），一切将照常进行。您仍可以将 `Customized_Global_LogFile_Config.MinimumLogLevel` 设置为 `LogLevel.None` 以防止创建 `latest.log`。
  - 只有当 `Enable_Disk_Operations` 为 false 时，日志压缩才可以禁用。`Customized_Global_LogFile_Config` 应为 null 或者具有 `MinimumLogLevel` 为 `LogLevel.None` 的值；使用 `LogTrace.*Trace`、`BaseLogger.*Trace`、`LoggerChannel.Log*Trace` 会导致异常。
  - 当 `Enable_Disk_Operations` 为 false 时，使用任何 `BaseLogger` 构造函数都会导致异常；如果您需要它的实例，请使用 `Log.GlobalLogger`。
+
+#### 已知问题
+
+- 在 Windows Terminal 中运行程序时，Emoji 无法被正常显示 (变为 `??`)，无论是在输入区还是日志区。暂未发现其他方面异常，光标移动逻辑正确且文件日志写入内容正确。  
+  *Windows 下 Command Prompt (cmd) 出现类似情况，以及与 VSCode 集成终端配合使用时无法输入 Emoji 的问题，不认为是程序异常，不在修复计划中。*
 
 ### v5.0.0
 
@@ -246,27 +265,29 @@ public interface IAutoCompleteHandler
 2. 谨慎配置 `LoggerConfig` 的各项功能。如果只想用作普通的日志记录器，以下是一个推荐配置：
 
    ```cs
-   Log.Initialize(new LoggerConfig(
-       max_Output_Char_Count: -1,
-       use_Console_Wrapper: false,
-       use_Working_Directory: true,
+   Log.Initialize(new LoggerConfig
+   {
+       Max_Output_Char_Count = -1,
+       Use_Console_Wrapper = false,
+       Use_Working_Directory = true,
    #if DEBUG
-       global_Minimum_LogLevel: LogLevel.Verbose,
-       console_Minimum_LogLevel: LogLevel.Information,
+       Global_Minimum_LogLevel = LogLevel.Verbose,
+       Console_Minimum_LogLevel = LogLevel.Information,
    #else
-       global_Minimum_LogLevel: LogLevel.Information,
-       console_Minimum_LogLevel: LogLevel.Information,
+       Global_Minimum_LogLevel = LogLevel.Information,
+       Console_Minimum_LogLevel = LogLevel.Information,
    #endif
-       debug_LogWriter_AutoFlush: true,
-       is_PipeSeparated_Format: false,
-       enable_Detailed_Time: false
-       ));
+       Debug_LogWriter_AutoFlush = true,
+       Is_PipeSeparated_Format = false,
+       Enable_Detailed_Time = false
+   });
    ```
 
-3. 如果想要使用 `ConsoleWrapper` 的功能，需要将上示 `LoggerConfig` 中的 `use_Console_Wrapper` 设为 true，然后开始使用其功能。
+3. 如果想要使用 `ConsoleWrapper` 的功能，需要将上示 `LoggerConfig` 中的 `Use_Console_Wrapper` 设为 true，然后开始使用其功能。
 4. 在创建新日志文件时，可使用 `LogFileConfig.IsPipeSeparatedFormat` 指示创建的日志文件是否为竖线分隔值文件（Pipe-separated values file，PSV）。  
-   将日志输出为表格有助于在数据量极大时进行筛选与分析，尤其是如果程序中大量模块化代码调用 Log 方法时不会改变 sender 参数的情况下。可使用 `BaseLogger(LoggerConfig, LogFileConfig)` 为统计类数据专门创建一个 `BaseLogger` 与其日志文件，并令 `content` 同样使用类似 PSV 的格式，以便于数据的查询。
-5. 可以通过将 `LoggerConfig` 中的 `enable_Detailed_Time` 设为 true，启用日志的时间细节。默认情况下，Logger 记录的时间仅精确到秒，且不包含日期，对应格式化字符串 `HH:mm:ss`。  
+   将日志输出为表格有助于在数据量极大时进行筛选与分析，尤其是如果程序中大量模块化代码调用 Log 方法时不会改变 sender 参数的情况下。可使用 `BaseLogger(LoggerConfig, LogFileConfig)` 为统计类数据专门创建一个 `BaseLogger` 与其日志文件，并令 `content` 同样使用类似 PSV 的格式，以便于数据的查询。  
+   需要注意的是，由于没有专门提交结构化数据的接口，您需要自行保证 `content` 在 PSV 格式下的标准化（如果您需要自动化解析日志产物）。
+5. 可以通过将 `LoggerConfig` 中的 `Enable_Detailed_Time` 设为 true，启用日志的时间细节。默认情况下，Logger 记录的时间仅精确到秒，且不包含日期，对应格式化字符串 `HH:mm:ss`。  
   开启时间细节后，将会展现日志提交时间直至七分之一秒的细节，与之相对应的格式化字符串为 `yyyy-MM-dd HH:mm:ss fff ffff`，两部分 `fff` 和 `ffff` 分别表示毫秒级别与万分之一毫秒（100 纳秒，0.1 微秒）级别，如 `2023-08-22 15:43:36 456 4362`. 此配置要求全局统一，对控制台与日志文件的输出内容均生效。
 6. 如果程序使用 [CommandLineParser](https://www.nuget.org/packages/CommandLineParser)，请重定向它的输出 `TextWriter`。使用如下代码：
 
