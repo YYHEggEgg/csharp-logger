@@ -12,7 +12,7 @@ namespace YYHEggEgg.Logger
         private static ConcurrentBag<BaseLogger> working_loggers = new ConcurrentBag<BaseLogger>();
         static BaseLogger()
         {
-            AppDomain.CurrentDomain.ProcessExit += GlobalClearup;
+            AppDomain.CurrentDomain.ProcessExit += GlobalCleanup;
             Task.Run(BackgroundWriteConsole);
         }
 
@@ -51,23 +51,22 @@ namespace YYHEggEgg.Logger
         #endregion
 
         #region Global Clear Up
-        private static int clearup_finished_count = 0;
-        private static object clearup_finished_count_lck = "4.0 coming!";
-        internal static bool _clearup_completed => clearup_finished_count >= working_loggers.Count;
+        private static int cleanup_finished_count = 0;
+        internal static bool _cleanup_completed => cleanup_finished_count >= working_loggers.Count;
 
-        private static void GlobalClearup(object? o, EventArgs e)
+        private static void GlobalCleanup(object? o, EventArgs e)
         {
             _global_loggers_ending = true;
             int total = 0;
-            while ((!_clearup_completed) && total <= 1000)
+            while (!_cleanup_completed)
             {
                 Thread.Sleep(50);
                 total += 50;
             }
             while ((Log.GlobalConfig.Use_Console_Wrapper &&
-                !ConsoleWrapper._clearup_completed && (total <= 1500))
+                !ConsoleWrapper._clearup_completed)
                 || (!Log.GlobalConfig.Use_Console_Wrapper &&
-                    !_console_cleared_up && (total <= 1500)))
+                    !_console_cleared_up))
             {
                 Thread.Sleep(50);
                 total += 50;
@@ -596,7 +595,7 @@ namespace YYHEggEgg.Logger
                 {
                     if (_global_loggers_ending)
                     {
-                        lock (clearup_finished_count_lck) clearup_finished_count++;
+                        Interlocked.Increment(ref cleanup_finished_count);
                         return;
                     }
                     await Task.Delay(RefreshLogMilliseconds);

@@ -11,6 +11,7 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
 ## Contents
 
 - [Update](#update)
+  - [v6.0.1](#v601)
   - [v6.0.0](#v600)
   - [v5.0.0](#v500)
   - [v4.0.2](#v402)
@@ -20,6 +21,10 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
 - [Best Practices](#best-practices)
 
 ## Update
+
+### v6.0.1
+
+- Removed the 1-second timeout limit for exit cleanup to avoid potential data loss when writing a large amount of data in utility programs.
 
 ### v6.0.0
 
