@@ -28,7 +28,7 @@ internal class Program
             enable_Detailed_Time: false,
             enable_Disk_Operations: !DEBUG_NO_DISK_OP
             ));
-        
+
         ConsoleWrapper.ShutDownRequest += (_, _) => Environment.Exit(0);
 
         // 0. ConsoleWrapper input prompt test

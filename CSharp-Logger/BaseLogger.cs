@@ -8,8 +8,8 @@ namespace YYHEggEgg.Logger
     public class BaseLogger
     {
         #region Background Console
-        private static ConcurrentQueue<ColorLineResult> qconsole_strings = new();
-        private static ConcurrentBag<BaseLogger> working_loggers = new ConcurrentBag<BaseLogger>();
+        private static readonly ConcurrentQueue<ColorLineResult> qconsole_strings = new();
+        private static readonly ConcurrentBag<BaseLogger> working_loggers = new ConcurrentBag<BaseLogger>();
         static BaseLogger()
         {
             AppDomain.CurrentDomain.ProcessExit += GlobalCleanup;
@@ -589,6 +589,7 @@ namespace YYHEggEgg.Logger
 
         private async Task BackgroundUpdate()
         {
+            working_loggers.Add(this);
             while (true)
             {
                 if (qlog.IsEmpty)
