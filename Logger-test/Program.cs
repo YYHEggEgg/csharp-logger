@@ -28,6 +28,8 @@ internal class Program
             enable_Detailed_Time: false,
             enable_Disk_Operations: !DEBUG_NO_DISK_OP
             ));
+        
+        ConsoleWrapper.ShutDownRequest += (_, _) => Environment.Exit(0);
 
         // 0. ConsoleWrapper input prompt test
         Console.WriteLine($"Waiting for 3s. It's a bug if input prompt don't show up now.");
@@ -70,7 +72,6 @@ internal class Program
 #endif // !DEBUG_NO_DISK_OP
 
         // 2. Ctrl+C closing test
-        ConsoleWrapper.ShutDownRequest += (_, _) => Environment.Exit(0);
         // int attempt_reading_wait_seconds = 100; // set to 100 when testing Ctrl+C
         int attempt_reading_wait_seconds = 1;
 

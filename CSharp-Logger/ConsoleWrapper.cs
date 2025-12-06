@@ -31,7 +31,7 @@ namespace YYHEggEgg.Logger
 
         private static void InitAbsConsole()
         {
-             shared_absconsole = new DelayConsole();
+            shared_absconsole = new DelayConsole();
         }
 
         /// <summary>
@@ -56,6 +56,7 @@ namespace YYHEggEgg.Logger
             lines ??= new List<string>();
             InitAbsConsole();
             keyHandler = new(shared_absconsole, lines, null, string.Empty);
+            Console.TreatControlCAsInput = false;
             Console.CancelKeyPress += Console_CancelKeyPress;
             InputPrefix = "";
             RefreshTicks = 2;
@@ -71,7 +72,9 @@ namespace YYHEggEgg.Logger
 
         private static void Console_CancelKeyPress(object? sender, ConsoleCancelEventArgs e)
         {
-            ShutDownRequest?.Invoke(sender, e);
+            var callback = ShutDownRequest;
+            if (callback == null) return;
+            callback(sender, e);
             if (!e.Cancel) InputPrefix = string.Empty;
         }
 
@@ -379,7 +382,6 @@ namespace YYHEggEgg.Logger
         private static ConcurrentQueue<ColorLineResult> writelines = new();
         private static ConcurrentQueue<string> writelines_handlelist = new();
 
-        private static bool ending = false;
         internal static bool _clearup_completed = false;
 
         private static bool isReading = false;
@@ -403,7 +405,7 @@ namespace YYHEggEgg.Logger
         private static async Task BackgroundUpdate()
         {
             bool pre_reading = false;
-            while (!ending)
+            while (!BaseLogger._global_loggers_ending)
             {
                 try
                 {
@@ -419,7 +421,7 @@ namespace YYHEggEgg.Logger
                         && !_autoCompleteHandler_updated
                         && !cur_need_rerender_progress_bar)
                     {
-                        if (ending)
+                        if (BaseLogger._global_loggers_ending)
                         {
                             ClearProgressBar();
                             _clearup_completed = true;
@@ -520,6 +522,8 @@ namespace YYHEggEgg.Logger
                     await Task.Delay(20);
                 }
             }
+
+            _clearup_completed = true;
         }
         #endregion
 

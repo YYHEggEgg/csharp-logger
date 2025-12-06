@@ -16,8 +16,7 @@ namespace YYHEggEgg.Logger
             Task.Run(BackgroundWriteConsole);
         }
 
-        private static bool _global_loggers_ending = false;
-        private static bool _console_ending = false;
+        internal static bool _global_loggers_ending = false;
         private static bool _console_cleared_up = false;
         private static IConsole _absConsole = new Console2();
         /// <summary>
@@ -30,7 +29,7 @@ namespace YYHEggEgg.Logger
             {
                 if (qconsole_strings.IsEmpty)
                 {
-                    if (_console_ending)
+                    if (_global_loggers_ending)
                     {
                         _console_cleared_up = true;
                         return;
@@ -56,6 +55,7 @@ namespace YYHEggEgg.Logger
 
         private static void GlobalCleanup(object? o, EventArgs e)
         {
+            // Log.Verb("We are cleaning up...");
             _global_loggers_ending = true;
             int total = 0;
             while (!_cleanup_completed)

@@ -26,6 +26,11 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
 
 - Removed the 1-second timeout limit for exit cleanup to avoid potential data loss when writing a large amount of data in utility programs.
 
+#### Known Issues
+
+- **When a debugger is attached**, if the handler registered for the `ConsoleWrapper.ShutDownRequest` event does not manually call `Environment.Exit` to terminate the program, or does not set `e.Cancel` to `true`, the program will remain unresponsive after the event handler returns, instead of terminating as expected.  
+  Since this issue does not occur when no debugger is attached, it is suspected to be caused by the debugger's handling of the Ctrl+C signal not matching expectations, and there are no special plans to address this issue. Consistent with the recommendations mentioned in [Best Practices](#best-practices), it is recommended to manually call `Environment.Exit` in the event handler to ensure the program terminates correctly, which also ensures the Logger cleanup task can run.
+
 ### v6.0.0
 
 #### Fixes of Terminal Sync issues (mainly on Linux)
