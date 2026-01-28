@@ -61,7 +61,8 @@ internal class DelayConsole : IConsole
         ThrowIfDesync();
         if (_tmpCursor_dirty)
         {
-            Console.SetCursorPosition(_tmpCursorLeft, _tmpCursorTop);
+            Console.SetCursorPosition(_tmpCursorLeft,
+                Math.Min(_tmpCursorTop, BufferHeight));
             _tmpCursor_dirty = false;
         }
     }
