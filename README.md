@@ -25,6 +25,7 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
 ### v6.0.1
 
 - Removed the 1-second timeout limit for exit cleanup to avoid potential data loss when writing a large amount of data in utility programs.
+- Fixed an issue where using `ConsoleWrapper` and significantly changing the console height (e.g., expanding/shrinking integrated terminal in VSCode) caused the console wrapper to become unresponsive and generate numerous errors.
 
 #### Known Issues
 
