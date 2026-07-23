@@ -87,7 +87,13 @@ namespace YYHEggEgg.Logger.Utils
         /// </summary>
         /// <param name="conf"></param>
         /// <returns></returns>
-        public static string GetLoggerWorkingDir(LoggerConfig conf)
+        public static string GetLoggerWorkingDir(LoggerConfig conf) =>
+            GetLoggerWorkingDirCore(conf, verifyWithGlobal: true);
+
+        internal static string GetLoggerWorkingDirForGlobalInitialization(LoggerConfig conf) =>
+            GetLoggerWorkingDirCore(conf, verifyWithGlobal: false);
+
+        private static string GetLoggerWorkingDirCore(LoggerConfig conf, bool verifyWithGlobal)
         {
             string? rtndir;
             if (conf.Use_Working_Directory)
@@ -105,12 +111,24 @@ namespace YYHEggEgg.Logger.Utils
                 }
                 #endregion
             }
-            if (conf.Use_Working_Directory != Log.GlobalConfig.Use_Working_Directory)
+            if (verifyWithGlobal &&
+                conf.Use_Working_Directory != Log.GlobalConfig.Use_Working_Directory)
                 throw new InvalidOperationException("To ensure the consistency of log filestream," +
                     "the whole program may only use the same log directory.");
-            _logworkdir ??= rtndir;
-            return _logworkdir;
+            lock (LogWorkingDirectoryLock)
+            {
+                _logworkdir ??= rtndir;
+                return _logworkdir;
+            }
         }
+        internal static void ResetLoggerWorkingDirAfterFailedInitialization()
+        {
+            lock (LogWorkingDirectoryLock)
+            {
+                _logworkdir = null;
+            }
+        }
+        private static readonly object LogWorkingDirectoryLock = new();
         private static string? _logworkdir = null;
 
         /// <summary>

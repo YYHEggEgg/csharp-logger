@@ -63,7 +63,8 @@ namespace YYHEggEgg.Logger
         }
 
         #region Initialize
-        private static bool _initialized = false;
+        private static readonly object InitializationLock = new();
+        private static volatile bool _initialized = false;
         private static BaseLogger? _baseLogger = null;
         public static BaseLogger GlobalBasedLogger
         {
@@ -91,9 +92,14 @@ namespace YYHEggEgg.Logger
         /// </exception>
         public static void Initialize(LoggerConfig conf)
         {
-            CheckGlobalLoggerConfig(conf);
             if (_initialized) return;
-            InitializeCore(conf);
+            CheckGlobalLoggerConfig(conf);
+
+            lock (InitializationLock)
+            {
+                if (_initialized) return;
+                InitializeCore(conf);
+            }
         }
 
         private static void CheckGlobalLoggerConfig(LoggerConfig conf)
@@ -129,36 +135,31 @@ namespace YYHEggEgg.Logger
                     "to LogLevel.None.");
             }
 
-            if (conf.Use_Console_Wrapper) ConsoleWrapper.Initialize();
-
-            _global_customConfig = conf;
-            _initialized = true;
-
-            BaseLogger.LogDetail.DetailedTimeFormat = conf.Enable_Detailed_Time;
-            _baseLogger = new BaseLogger(conf);
-
-            if (conf.Enable_Disk_Operations)
+            var baseLogger = new BaseLogger(conf, verifyWithGlobal: false);
+            try
             {
-                LogFileStream.HandlePastLogs(Tools.GetLoggerWorkingDir(conf));
+                if (conf.Enable_Disk_Operations)
+                {
+                    LogFileStream.HandlePastLogs(
+                        Tools.GetLoggerWorkingDirForGlobalInitialization(conf));
 
-                var glbfileconf = conf.Customized_Global_LogFile_Config;
-                if (glbfileconf?.MinimumLogLevel != LogLevel.None)
-                {
-                    _baseLogger.AddNewLogFileCore(new LogFileConfig
+                    var glbfileconf = conf.Customized_Global_LogFile_Config;
+                    if (glbfileconf?.MinimumLogLevel != LogLevel.None)
                     {
-                        FileIdentifier = LogFileStream.GlobalLog_Reserved,
-                        AutoFlushWriter = glbfileconf?.AutoFlushWriter ?? true,
-                        MinimumLogLevel = glbfileconf?.MinimumLogLevel ?? LogLevel.Information,
-                        MaximumLogLevel = glbfileconf?.MaximumLogLevel ?? LogLevel.Error,
-                        IsPipeSeparatedFile = glbfileconf?.IsPipeSeparatedFile ?? conf.Is_PipeSeparated_Format,
-                    });
-                }
-                var dbgfileconf = conf.Customized_Debug_LogFile_Config;
-                if (dbgfileconf?.MinimumLogLevel != LogLevel.None)
-                {
-                    if (conf.Global_Minimum_LogLevel <= LogLevel.Debug)
+                        baseLogger.AddNewLogFileCore(new LogFileConfig
+                        {
+                            FileIdentifier = LogFileStream.GlobalLog_Reserved,
+                            AutoFlushWriter = glbfileconf?.AutoFlushWriter ?? true,
+                            MinimumLogLevel = glbfileconf?.MinimumLogLevel ?? LogLevel.Information,
+                            MaximumLogLevel = glbfileconf?.MaximumLogLevel ?? LogLevel.Error,
+                            IsPipeSeparatedFile = glbfileconf?.IsPipeSeparatedFile ?? conf.Is_PipeSeparated_Format,
+                        });
+                    }
+                    var dbgfileconf = conf.Customized_Debug_LogFile_Config;
+                    if (dbgfileconf?.MinimumLogLevel != LogLevel.None &&
+                        conf.Global_Minimum_LogLevel <= LogLevel.Debug)
                     {
-                        _baseLogger.AddNewLogFileCore(new LogFileConfig
+                        baseLogger.AddNewLogFileCore(new LogFileConfig
                         {
                             FileIdentifier = "debug",
                             AutoFlushWriter = dbgfileconf?.AutoFlushWriter ?? conf.Debug_LogWriter_AutoFlush,
@@ -168,7 +169,25 @@ namespace YYHEggEgg.Logger
                         });
                     }
                 }
+
+                // Delay taking ownership of the console until every file target
+                // has been installed. ConsoleWrapper initialization is itself
+                // rollback-safe, so there are no remaining fallible steps after it.
+                if (conf.Use_Console_Wrapper) ConsoleWrapper.Initialize();
             }
+            catch
+            {
+                baseLogger.AbortInitialization();
+                Tools.ResetLoggerWorkingDirAfterFailedInitialization();
+                throw;
+            }
+
+            // Publish the fully configured logger last. The volatile flag is
+            // the release barrier observed by all logging entry points.
+            BaseLogger.LogDetail.DetailedTimeFormat = conf.Enable_Detailed_Time;
+            _global_customConfig = conf;
+            _baseLogger = baseLogger;
+            _initialized = true;
         }
 
         /// <summary>

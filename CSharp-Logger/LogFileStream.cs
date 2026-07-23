@@ -162,7 +162,8 @@ namespace YYHEggEgg.Logger
         public readonly string LogPath;
         public readonly string FileStreamName;
         private readonly StreamWriter logwriter;
-        private readonly object write_lck = "3.8.50";
+        private readonly object write_lck = new();
+        private int referenceCount = 1;
         public readonly LogLevel MinimumLogLevel, MaximumLogLevel;
         public readonly bool IsPipeSeparatedFormat;
         public readonly bool AutoFlushWriter;
@@ -190,11 +191,6 @@ namespace YYHEggEgg.Logger
             }
             
             FileStreamName = fileconf.FileIdentifier;
-            if (!fileStreams.TryAdd(FileStreamName.ToLower(), this))
-            {
-                throw new ArgumentException("You cannot create multiple log files with a name (i.e., FileIdentifier) that only have different cases.");
-            }
-
             MinimumLogLevel = fileconf.MinimumLogLevel.Value;
             MaximumLogLevel = fileconf.MaximumLogLevel.Value;
             if (MinimumLogLevel > MaximumLogLevel)
@@ -204,10 +200,30 @@ namespace YYHEggEgg.Logger
 
             if (FileStreamName == GlobalLog_Reserved) LogPath = $"{dir}/logs/latest.log";
             else LogPath = $"{dir}/logs/latest.{FileStreamName}.log";
-            logwriter = new(LogPath, true);
-            logwriter.AutoFlush = fileconf.AutoFlushWriter;
             IsPipeSeparatedFormat = fileconf.IsPipeSeparatedFile;
             AutoFlushWriter = fileconf.AutoFlushWriter;
+
+            StreamWriter? createdWriter = null;
+            lock (FileStreamsLock)
+            {
+                if (fileStreams.ContainsKey(FileStreamName))
+                {
+                    throw new ArgumentException("You cannot create multiple log files with a name (i.e., FileIdentifier) that only have different cases.");
+                }
+
+                try
+                {
+                    logwriter = createdWriter = new StreamWriter(LogPath, true);
+                    logwriter.AutoFlush = fileconf.AutoFlushWriter;
+                    if (!fileStreams.TryAdd(FileStreamName, this))
+                        throw new InvalidOperationException("The log file registry changed unexpectedly during creation.");
+                }
+                catch
+                {
+                    createdWriter?.Dispose();
+                    throw;
+                }
+            }
         }
 
         public void WriteLine(string content, LogLevel level)
@@ -228,17 +244,123 @@ namespace YYHEggEgg.Logger
             }
         }
 
-        private static ConcurrentDictionary<string, LogFileStream> fileStreams = new();
+        private void FlushPendingWrites()
+        {
+            if (AutoFlushWriter) return;
+            lock (write_lck)
+            {
+                logwriter.Flush();
+            }
+        }
 
-        public static bool LogFileExists(string fileStreamName) => fileStreams.TryGetValue(fileStreamName.ToLower(), out _);
+        internal static void FlushAllPendingWrites(Action<Exception>? onError = null)
+        {
+            Parallel.ForEach(
+                fileStreams.Values.Where(fileStream => !fileStream.AutoFlushWriter),
+                fileStream =>
+            {
+                try
+                {
+                    fileStream.FlushPendingWrites();
+                }
+                catch (Exception ex)
+                {
+                    onError?.Invoke(ex);
+                }
+            });
+        }
+
+        internal void DisposeAndUnregister()
+        {
+            bool dispose = false;
+            lock (FileStreamsLock)
+            {
+                if (referenceCount <= 0)
+                    return;
+
+                referenceCount--;
+                if (referenceCount == 0)
+                {
+                    if (fileStreams.TryGetValue(FileStreamName, out var registered) &&
+                        ReferenceEquals(registered, this))
+                    {
+                        fileStreams.TryRemove(FileStreamName, out _);
+                    }
+                    dispose = true;
+                }
+            }
+
+            if (dispose)
+            {
+                lock (write_lck)
+                {
+                    logwriter.Dispose();
+                }
+            }
+        }
+
+        private static readonly object FileStreamsLock = new();
+        private static readonly ConcurrentDictionary<string, LogFileStream> fileStreams =
+            new(StringComparer.OrdinalIgnoreCase);
+
+        public static bool LogFileExists(string fileStreamName) =>
+            fileStreams.TryGetValue(fileStreamName, out _);
 
         public static LogFileStream GetInitedInstance(string fileStreamName)
         {
-            if (!fileStreams.TryGetValue(fileStreamName.ToLower(), out var fileStream))
-                throw new ArgumentException("Please provide an existing log file identifier, or use reloads of LogFileConfig to create one.", nameof(fileStreamName));
-            if (fileStreamName != fileStream.FileStreamName)
-                throw new ArgumentException("The log file for the provided FileIdentifier has been created, but its case is inconsistent with the existing one.", nameof(fileStreamName));
-            return fileStream;
+            lock (FileStreamsLock)
+            {
+                if (!fileStreams.TryGetValue(fileStreamName, out var fileStream))
+                    throw new ArgumentException("Please provide an existing log file identifier, or use reloads of LogFileConfig to create one.", nameof(fileStreamName));
+                if (fileStreamName != fileStream.FileStreamName)
+                    throw new ArgumentException("The log file for the provided FileIdentifier has been created, but its case is inconsistent with the existing one.", nameof(fileStreamName));
+                checked
+                {
+                    fileStream.referenceCount++;
+                }
+                return fileStream;
+            }
+        }
+
+        internal static LogFileStream CreateOrAcquire(string directory,
+            LogFileConfig config, out bool created)
+        {
+            string fileStreamName = config.FileIdentifier ??
+                throw new ArgumentException("Please give a valid file identifier for the created log file.",
+                    nameof(config));
+
+            lock (FileStreamsLock)
+            {
+                if (fileStreams.TryGetValue(fileStreamName, out var existing))
+                {
+                    if (fileStreamName != existing.FileStreamName)
+                        throw new ArgumentException("The log file for the provided FileIdentifier has been created, but its case is inconsistent with the existing one.", nameof(config));
+
+                    var existingConfig = new LogFileConfig
+                    {
+                        FileIdentifier = existing.FileStreamName,
+                        MinimumLogLevel = existing.MinimumLogLevel,
+                        MaximumLogLevel = existing.MaximumLogLevel,
+                        IsPipeSeparatedFile = existing.IsPipeSeparatedFormat,
+                        AutoFlushWriter = existing.AutoFlushWriter,
+                    };
+                    if (!config.Equals(existingConfig))
+                        throw new ArgumentException("The fallback of creating a log file requires the LogFileConfig to be the same.", nameof(config));
+
+                    checked
+                    {
+                        existing.referenceCount++;
+                    }
+                    created = false;
+                    return existing;
+                }
+
+                // The monitor is re-entrant; keeping it held across creation
+                // makes the fallback decision and publication one transaction.
+                var fileStream = new LogFileStream(directory, config);
+                created = true;
+                return fileStream;
+            }
         }
     }
 }

@@ -382,6 +382,8 @@ internal static class CharUtil
 		if (char.IsSurrogatePair(str, index))
 		{
 			UnicodeCategory category = CharUnicodeInfo.GetUnicodeCategory(str, index);
+			int ch = char.ConvertToUtf32(str, index);
+			index += 2;
 			switch (category)
 			{
 				case UnicodeCategory.Control:
@@ -390,8 +392,6 @@ internal static class CharUtil
 				case UnicodeCategory.Format:
 					return 0;
 			}
-			int ch = char.ConvertToUtf32(str, index);
-			index += 2;
 			// 其它宽字符范围
 			if (ch < 0x20000)
 			{
@@ -413,6 +413,134 @@ internal static class CharUtil
 		{
 			return Width(str[index++]);
 		}
+	}
+
+	/// <summary>
+	/// Returns the display width of a Unicode text element.  A text element is
+	/// used as the editing unit by the console reader, so surrogate pairs,
+	/// combining marks and emoji ZWJ sequences are never split while moving or
+	/// redrawing the cursor.
+	/// </summary>
+	public static int TextElementWidth(string str, int startIndex, int length)
+	{
+		ArgumentNullException.ThrowIfNull(str);
+		if (startIndex < 0 || length < 0 || startIndex > str.Length - length)
+		{
+			throw new ArgumentOutOfRangeException(nameof(startIndex));
+		}
+
+		int endIndex = startIndex + length;
+		int width = 0;
+		bool emojiPresentation = false;
+		for (int index = startIndex; index < endIndex;)
+		{
+			int scalar;
+			int scalarStart = index;
+			if (char.IsHighSurrogate(str[index]) && index + 1 < endIndex &&
+				char.IsLowSurrogate(str[index + 1]))
+			{
+				scalar = char.ConvertToUtf32(str[index], str[index + 1]);
+			}
+			else
+			{
+				scalar = str[index];
+			}
+
+			int scalarWidth = Width(str, ref index);
+			width = Math.Max(width, scalarWidth);
+
+			// VS16, keycap sequences, regional indicators and most emoji are
+			// rendered as a two-column glyph even when their base code point has
+			// EastAsianWidth=Neutral in the table above.
+			if (scalar == 0xFE0F || scalar == 0x20E3 ||
+				(scalar >= 0x1F1E6 && scalar <= 0x1F1FF) ||
+				(scalar >= 0x1F000 && scalar <= 0x1FAFF))
+			{
+				emojiPresentation = true;
+			}
+
+			// Width advances for a valid pair.  This guard only documents the
+			// expected invariant and prevents a future implementation from
+			// accidentally getting stuck on malformed input.
+			if (index <= scalarStart)
+			{
+				index = scalarStart + 1;
+			}
+		}
+
+		return emojiPresentation ? Math.Max(2, width) : width;
+	}
+
+	/// <summary>
+	/// Returns whether <paramref name="index"/> is a Unicode text-element
+	/// boundary in <paramref name="str"/>.
+	/// </summary>
+	public static bool IsTextElementBoundary(string str, int index)
+	{
+		ArgumentNullException.ThrowIfNull(str);
+		if (index < 0 || index > str.Length)
+		{
+			return false;
+		}
+		if (index == 0 || index == str.Length)
+		{
+			return true;
+		}
+
+		return Array.BinarySearch(StringInfo.ParseCombiningCharacters(str), index) >= 0;
+	}
+
+	/// <summary>
+	/// Returns the start of the text element immediately before
+	/// <paramref name="index"/>.  The input index must already be a boundary.
+	/// </summary>
+	public static int PreviousTextElementIndex(string str, int index)
+	{
+		ArgumentNullException.ThrowIfNull(str);
+		if (index <= 0)
+		{
+			return 0;
+		}
+		if (index > str.Length)
+		{
+			throw new ArgumentOutOfRangeException(nameof(index));
+		}
+
+		int[] starts = StringInfo.ParseCombiningCharacters(str);
+		int position = Array.BinarySearch(starts, index);
+		if (position >= 0)
+		{
+			return position == 0 ? 0 : starts[position - 1];
+		}
+
+		position = ~position;
+		return position == 0 ? 0 : starts[position - 1];
+	}
+
+	/// <summary>
+	/// Returns the boundary immediately after the text element beginning at or
+	/// containing <paramref name="index"/>.
+	/// </summary>
+	public static int NextTextElementIndex(string str, int index)
+	{
+		ArgumentNullException.ThrowIfNull(str);
+		if (index < 0 || index > str.Length)
+		{
+			throw new ArgumentOutOfRangeException(nameof(index));
+		}
+		if (index == str.Length)
+		{
+			return str.Length;
+		}
+
+		int[] starts = StringInfo.ParseCombiningCharacters(str);
+		int position = Array.BinarySearch(starts, index);
+		if (position < 0)
+		{
+			position = ~position - 1;
+		}
+
+		return position + 1 < starts.Length ? starts[position + 1] : str.Length;
 	}
 
 	#endregion // Width

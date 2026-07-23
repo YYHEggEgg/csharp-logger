@@ -1,6 +1,7 @@
 using Cyjb;
 using Internal.ReadLine.Abstractions;
 using System.Diagnostics;
+using System.Globalization;
 using System.Text;
 using TextCopy;
 using YYHEggEgg.Logger;
@@ -12,488 +13,757 @@ namespace Internal.ReadLine
         private int _cursorPos;
         private int _cursorLimit;
         private StringBuilder _text;
-        private List<string> _history;
+        private readonly List<string> _history;
         internal int _historyIndex;
+        private string? _historyDraft;
+        private int _historyDraftCursor;
         private ConsoleKeyInfo _keyInfo;
-        private Dictionary<string, Action> _keyActions;
+        private readonly Dictionary<string, Action> _keyActions;
         private SuggestionResult? _completions;
         private int _completionStart;
+        private int _completionLength;
         private int _completionsIndex;
-        private IConsole Console2;
-        private string _prompt;
-        private IAutoCompleteHandler? _autoCompleteHandler;
+        private readonly IConsole Console2;
+        private readonly string _prompt;
+        private readonly IAutoCompleteHandler? _autoCompleteHandler;
+        private char? _pendingHighSurrogate;
+        private int _renderOriginLeft;
+        private int _renderOriginTop;
+        private int _renderedUsableWidth;
 
         /// <summary>
-        /// 用户敲击 Control+C (^C) 时发生。
+        /// Raised when the user presses Control+C (^C).
         /// </summary>
         public event Action? EOFSent;
 
-        #region Writting Area length calculate
-        private int _display_len = 0;
-        private int _target_consolewidth;
-        private void AddChar(char ch)
+        private readonly struct DisplayPosition
         {
-            var actual_ch_len = ch.Width();
-            if (_target_consolewidth - (_display_len % _target_consolewidth) >= 2)
-                _display_len += actual_ch_len;
-            else _display_len = (int)Math.Ceiling((double)_display_len / _target_consolewidth)
-                    * _target_consolewidth + actual_ch_len;
+            public DisplayPosition(int line, int column)
+            {
+                Line = line;
+                Column = column;
+            }
+
+            public int Line { get; }
+            public int Column { get; }
         }
 
-        /// <summary>
-        /// 模拟控制台计算输入区的字符占用长度。
-        /// </summary>
-        /// <param name="_text_index_limit">从 0 开始，计算截止到的字符数。左闭右开区间（for 循环的常见规则）。</param>
-        /// <returns></returns>
-        private int CalcWritingAreaLen(int _text_index_limit = -1)
-        {
-            if (_text_index_limit == -1) _text_index_limit = _text.Length;
-            _display_len = 0;
-            _target_consolewidth = Console2.BufferWidth;
-            foreach (var ch in _prompt) AddChar(ch);
-            for (int i = 0; i < _text_index_limit; i++) AddChar(_text[i]);
-            return _display_len;
-        }
-        #endregion
+        private int UsableWidth => Math.Max(1, Console2.BufferWidth - 1);
 
-        /// <summary>
-        /// 是否为整个输入内容的开头。
-        /// </summary>
-        /// <returns></returns>
         private bool IsStartOfLine() => _cursorPos == 0;
 
-        /// <summary>
-        /// 是否为整个输入内容的结尾。
-        /// </summary>
-        /// <returns></returns>
         private bool IsEndOfLine() => _cursorPos == _cursorLimit;
 
-        /// <summary>
-        /// 控制台光标是否在当前行的开头。
-        /// </summary>
-        /// <returns></returns>
-        private bool IsStartOfBuffer() => Console2.CursorLeft == 0;
-
-        /// <summary>
-        /// 控制台光标是否在当前行的结尾。
-        /// </summary>
-        /// <returns></returns>
-        private bool IsEndOfBuffer() => Console2.CursorLeft == Console2.BufferWidth - 1;
-        private bool IsInAutoCompleteMode() => _completions != null && _completions.Suggestions != null;
-
-        /// <summary>
-        /// 如果没有到达输入内容的最左端，将光标后退一格。
-        /// </summary>
-        private void MoveCursorLeftCore()
+        private bool IsInAutoCompleteMode()
         {
-            if (IsStartOfLine())
-                return;
+            return _completions?.Suggestions is { Count: > 0 } &&
+                _completionStart >= 0 &&
+                _completionLength >= 0 &&
+                _completionStart <= _text.Length - _completionLength;
+        }
 
-            if (IsStartOfBuffer())
+        private static void AdvanceDisplayPosition(ref int line, ref int column,
+            int elementWidth, int usableWidth)
+        {
+            if (elementWidth <= 0)
             {
-                var prelen = CalcWritingAreaLen(_cursorPos);
-                if (prelen % Console2.BufferWidth == Console2.BufferWidth - 1
-                    && _text[_cursorPos - 1].Width() == 2)
-                    Console2.SetCursorPosition(
-                        Console2.BufferWidth - 3, Console2.CursorTop - 1);
-                else Console2.SetCursorPosition(
-                        Console2.BufferWidth - 2, Console2.CursorTop - 1);
+                return;
             }
-            else
-                Console2.SetCursorPosition(
-                    Console2.CursorLeft - _text[_cursorPos - 1].Width(), Console2.CursorTop);
 
-            _cursorPos--;
+            elementWidth = Math.Min(elementWidth, usableWidth);
+            if (column + elementWidth > usableWidth)
+            {
+                line++;
+                column = 0;
+            }
+
+            column += elementWidth;
+            if (column >= usableWidth)
+            {
+                line++;
+                column = 0;
+            }
+        }
+
+        private static void AdvanceText(ref int line, ref int column, string value,
+            int length, int usableWidth)
+        {
+            if (length == 0)
+            {
+                return;
+            }
+            if (length < 0 || length > value.Length ||
+                !CharUtil.IsTextElementBoundary(value, length))
+            {
+                throw new ArgumentOutOfRangeException(nameof(length));
+            }
+
+            int[] starts = StringInfo.ParseCombiningCharacters(value);
+            for (int i = 0; i < starts.Length && starts[i] < length; i++)
+            {
+                int end = i + 1 < starts.Length ? starts[i + 1] : value.Length;
+                int width = CharUtil.TextElementWidth(value, starts[i], end - starts[i]);
+                AdvanceDisplayPosition(ref line, ref column, width, usableWidth);
+            }
+        }
+
+        private DisplayPosition CalculateDisplayPosition(string text, int textIndex,
+            int usableWidth)
+        {
+            if (textIndex < 0 || textIndex > text.Length ||
+                !CharUtil.IsTextElementBoundary(text, textIndex))
+            {
+                throw new ArgumentOutOfRangeException(nameof(textIndex));
+            }
+
+            int line = 0;
+            // The origin may be exactly at the reserved rightmost column. In
+            // that case the first visible text element deliberately starts on
+            // the next row instead of pretending the cursor was one cell left.
+            int column = Math.Clamp(_renderOriginLeft, 0, usableWidth);
+            AdvanceText(ref line, ref column, _prompt, _prompt.Length, usableWidth);
+            AdvanceText(ref line, ref column, text, textIndex, usableWidth);
+            return new DisplayPosition(line, column);
+        }
+
+        /// <summary>
+        /// Writes complete text elements and batches all elements that fit on
+        /// the same row into one console write.  This avoids both splitting a
+        /// grapheme and the old per-character O(n²) paste path.
+        /// </summary>
+        private void WriteRenderedText(string value, int usableWidth)
+        {
+            if (value.Length == 0)
+            {
+                return;
+            }
+
+            int column = Math.Clamp(Console2.CursorLeft, 0, usableWidth);
+            int[] starts = StringInfo.ParseCombiningCharacters(value);
+            int chunkStart = 0;
+
+            for (int i = 0; i < starts.Length; i++)
+            {
+                int start = starts[i];
+                int end = i + 1 < starts.Length ? starts[i + 1] : value.Length;
+                int width = Math.Min(
+                    CharUtil.TextElementWidth(value, start, end - start), usableWidth);
+
+                if (width > 0 && column + width > usableWidth)
+                {
+                    if (start > chunkStart)
+                    {
+                        Console2.Write(value.Substring(chunkStart, start - chunkStart));
+                    }
+                    Console2.WriteLine(string.Empty);
+                    column = 0;
+                    chunkStart = start;
+                }
+
+                column += width;
+                if (width > 0 && column >= usableWidth)
+                {
+                    Console2.Write(value.Substring(chunkStart, end - chunkStart));
+                    Console2.WriteLine(string.Empty);
+                    column = 0;
+                    chunkStart = end;
+                }
+            }
+
+            if (chunkStart < value.Length)
+            {
+                Console2.Write(value.Substring(chunkStart));
+            }
+        }
+
+        private int GetOriginTop(string oldText, int oldCursor, int currentCursorTop,
+            int usableWidth)
+        {
+            DisplayPosition cursor = CalculateDisplayPosition(oldText, oldCursor, usableWidth);
+            int originTop = currentCursorTop - cursor.Line;
+            if (originTop < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(currentCursorTop));
+            }
+            return originTop;
+        }
+
+        private void ClearRenderedRows(string oldText, int originTop, int renderedUsableWidth)
+        {
+            DisplayPosition renderedEnd = CalculateDisplayPosition(
+                oldText, oldText.Length, renderedUsableWidth);
+            int usableWidth = UsableWidth;
+            DisplayPosition currentEnd = CalculateDisplayPosition(
+                oldText, oldText.Length, usableWidth);
+            int lastLine = Math.Max(renderedEnd.Line, currentEnd.Line);
+            lastLine = Math.Min(lastLine,
+                Math.Max(0, Console2.BufferHeight - 1 - originTop));
+
+            // Include the cursor row.  In particular, an input whose display
+            // width is exactly BufferWidth-1 has advanced to the next row.
+            // When the buffer width changed, clear both the old layout and the
+            // potentially reflowed new layout so neither widening nor shrinking
+            // can leave ghost rows behind.
+            for (int line = 0; line <= lastLine; line++)
+            {
+                int startColumn = line == 0 ? _renderOriginLeft : 0;
+                startColumn = Math.Clamp(startColumn, 0, usableWidth);
+                Console2.SetCursorPosition(startColumn, originTop + line);
+                int clearLength = usableWidth - startColumn;
+                if (clearLength > 0)
+                {
+                    Console2.Write(new string(' ', clearLength));
+                }
+            }
+        }
+
+        private void SetCursorForText(string text, int cursor, int originTop,
+            int usableWidth)
+        {
+            DisplayPosition target = CalculateDisplayPosition(text, cursor, usableWidth);
+            Console2.SetCursorPosition(target.Column, originTop + target.Line);
+            Console2.Flush();
+            _renderOriginTop = originTop;
+        }
+
+        private void RedrawInput(string oldText, int oldCursor, int oldConsoleTop)
+        {
+            bool widthChanged = UsableWidth != _renderedUsableWidth;
+            int originTop = widthChanged
+                ? _renderOriginTop
+                : GetOriginTop(oldText, oldCursor, oldConsoleTop, _renderedUsableWidth);
+            ClearRenderedRows(oldText, originTop, _renderedUsableWidth);
+            int usableWidth = UsableWidth;
+            Console2.SetCursorPosition(_renderOriginLeft, originTop);
+            Console2.Flush();
+
+            WriteRenderedText(_prompt, usableWidth);
+            WriteRenderedText(_text.ToString(), usableWidth);
+
+            DisplayPosition newEnd = CalculateDisplayPosition(
+                _text.ToString(), _text.Length, usableWidth);
+            int observedEndTop = Console2.CursorTop;
+            int expectedEndTop = originTop + newEnd.Line;
+            if (observedEndTop != expectedEndTop)
+            {
+                // Account for a terminal scroll while rendering at the bottom.
+                originTop += observedEndTop - expectedEndTop;
+            }
+            if (originTop < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(originTop));
+            }
+
+            _renderedUsableWidth = usableWidth;
+            SetCursorForText(_text.ToString(), _cursorPos, originTop, usableWidth);
+        }
+
+        private void AppendRenderedInput(string oldText, int oldCursor,
+            string currentText, int oldConsoleTop)
+        {
+            int usableWidth = UsableWidth;
+            if (usableWidth != _renderedUsableWidth)
+            {
+                RedrawInput(oldText, oldCursor, oldConsoleTop);
+                return;
+            }
+
+            int originTop = GetOriginTop(
+                oldText, oldCursor, oldConsoleTop, _renderedUsableWidth);
+            WriteRenderedText(currentText.Substring(oldText.Length), usableWidth);
+
+            DisplayPosition end = CalculateDisplayPosition(
+                currentText, currentText.Length, usableWidth);
+            int expectedEndTop = originTop + end.Line;
+            if (Console2.CursorTop != expectedEndTop)
+            {
+                originTop += Console2.CursorTop - expectedEndTop;
+            }
+            if (originTop < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(originTop));
+            }
+            _renderedUsableWidth = usableWidth;
+            SetCursorForText(currentText, _cursorPos, originTop, usableWidth);
+        }
+
+        private void EmergencyRedraw()
+        {
+            try
+            {
+                Console2.TryClear();
+                _renderOriginLeft = Math.Clamp(Console2.CursorLeft, 0, UsableWidth);
+                _renderOriginTop = Console2.CursorTop;
+                int usableWidth = UsableWidth;
+                WriteRenderedText(_prompt, usableWidth);
+                WriteRenderedText(_text.ToString(), usableWidth);
+
+                DisplayPosition end = CalculateDisplayPosition(
+                    _text.ToString(), _text.Length, usableWidth);
+                int originTop = Console2.CursorTop - end.Line;
+                if (originTop < 0)
+                {
+                    originTop = 0;
+                }
+                _renderedUsableWidth = usableWidth;
+                SetCursorForText(_text.ToString(), _cursorPos, originTop, usableWidth);
+            }
+            catch
+            {
+                // There is no further safe cursor operation when even the
+                // emergency rebuild fails (for example after terminal close).
+            }
+        }
+
+        private static void TryLogWarning(Exception ex, string prompt)
+        {
+            try
+            {
+                LogTrace.WarnTrace(ex, nameof(KeyHandler), prompt);
+            }
+            catch
+            {
+                // Error tracing is optional here.  Input recovery must not
+                // fault merely because disk logging is disabled or shutting down.
+            }
+        }
+
+        private static int SkipCsi(string value, int index)
+        {
+            while (index < value.Length)
+            {
+                char ch = value[index++];
+                if (ch >= '\x40' && ch <= '\x7E')
+                {
+                    break;
+                }
+            }
+            return index;
+        }
+
+        private static int SkipControlString(string value, int index)
+        {
+            while (index < value.Length)
+            {
+                if (value[index] == '\a')
+                {
+                    return index + 1;
+                }
+                if (value[index] == '\x1B' && index + 1 < value.Length &&
+                    value[index + 1] == '\\')
+                {
+                    return index + 2;
+                }
+                if (value[index] == '\x9C')
+                {
+                    return index + 1;
+                }
+                index++;
+            }
+            return index;
+        }
+
+        private static int SkipEscapeSequence(string value, int index)
+        {
+            if (index >= value.Length)
+            {
+                return index;
+            }
+
+            char introducer = value[index++];
+            if (introducer == '[')
+            {
+                return SkipCsi(value, index);
+            }
+            if (introducer is ']' or 'P' or '^' or '_')
+            {
+                return SkipControlString(value, index);
+            }
+
+            // A two-character escape sequence, optionally with intermediate
+            // bytes.  Consume through its final byte.
+            while (index < value.Length && value[index] >= '\x20' && value[index] <= '\x2F')
+            {
+                index++;
+            }
+            return index < value.Length ? index + 1 : index;
+        }
+
+        private static string SanitizeInput(string? value)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                return string.Empty;
+            }
+
+            StringBuilder result = new(value.Length);
+            for (int index = 0; index < value.Length;)
+            {
+                char ch = value[index++];
+                if (ch == '\x1B')
+                {
+                    index = SkipEscapeSequence(value, index);
+                    continue;
+                }
+                if (ch == '\x9B')
+                {
+                    index = SkipCsi(value, index);
+                    continue;
+                }
+                if (ch is '\x90' or '\x9D' or '\x9E' or '\x9F')
+                {
+                    index = SkipControlString(value, index);
+                    continue;
+                }
+
+                if (ch == '\r')
+                {
+                    if (index < value.Length && value[index] == '\n')
+                    {
+                        index++;
+                    }
+                    result.Append("  ");
+                    continue;
+                }
+                if (ch is '\n' or '\f' or '\u0085' or '\u2028' or '\u2029')
+                {
+                    result.Append("  ");
+                    continue;
+                }
+                if (char.IsControl(ch))
+                {
+                    continue;
+                }
+
+                if (char.IsHighSurrogate(ch))
+                {
+                    if (index < value.Length && char.IsLowSurrogate(value[index]))
+                    {
+                        result.Append(ch);
+                        result.Append(value[index++]);
+                    }
+                    continue;
+                }
+                if (char.IsLowSurrogate(ch))
+                {
+                    continue;
+                }
+
+                result.Append(ch);
+            }
+            return result.ToString();
+        }
+
+        private static bool IsPotentialTextUnit(char value)
+        {
+            return value != '\0' && !char.IsControl(value) &&
+                value is not '\u007F' and not '\u0085' and not '\u2028' and not '\u2029';
+        }
+
+        private static bool IsAltGrText(ConsoleKeyInfo keyInfo)
+        {
+            const ConsoleModifiers altGr = ConsoleModifiers.Alt | ConsoleModifiers.Control;
+            return (keyInfo.Modifiers & altGr) == altGr &&
+                IsPotentialTextUnit(keyInfo.KeyChar);
         }
 
         private void MoveCursorLeft()
         {
-            int _console_cursorLeft_tmp = Console2.CursorLeft;
-            int _console_cursorTop_tmp = Console2.CursorTop;
-            int _cursorPos_tmp = _cursorPos;
-            try
+            if (!IsStartOfLine())
             {
-                MoveCursorLeftCore();
-            }
-            catch (ArgumentOutOfRangeException)
-            {
-                Console2.SetCursorPosition(_console_cursorLeft_tmp, _console_cursorTop_tmp);
-                _cursorPos = _cursorPos_tmp;
-            }
-
-            var pos = 0;
-            if (_cursorPos > 0 && _cursorPos - 1 < _text.Length - 1 && _text[_cursorPos - 1].Width() == 1 && CharUtil.Width(_text.ToString(_cursorPos - 1, 2), ref pos) == 2)
-            {
-                MoveCursorLeft();
+                _cursorPos = CharUtil.PreviousTextElementIndex(_text.ToString(), _cursorPos);
             }
         }
 
-        private void MoveCursorHome()
-        {
-            int _console_cursorLeft_tmp = Console2.CursorLeft;
-            int _console_cursorTop_tmp = Console2.CursorTop;
-            int _cursorPos_tmp = _cursorPos;
-            try
-            {
-                while (!IsStartOfLine())
-                    MoveCursorLeftCore();
-            }
-            catch (ArgumentOutOfRangeException)
-            {
-                Console2.SetCursorPosition(_console_cursorLeft_tmp, _console_cursorTop_tmp);
-                _cursorPos = _cursorPos_tmp;
-            }
-        }
+        private void MoveCursorHome() => _cursorPos = 0;
 
-        /// <summary>
-        /// 以 <c>{modifier:Control/Shift}{key}</c> 的格式将输入转换为 <see cref="_keyActions"/>
-        /// 使用的专有格式。
-        /// </summary>
-        /// <returns></returns>
         private string BuildKeyInput()
         {
-            return (_keyInfo.Modifiers == 0) ?
-                _keyInfo.Key.ToString() : _keyInfo.Modifiers.ToString() + _keyInfo.Key.ToString();
+            return _keyInfo.Modifiers == 0
+                ? _keyInfo.Key.ToString()
+                : _keyInfo.Modifiers + _keyInfo.Key.ToString();
         }
 
-        /// <summary>
-        /// 如果没有到达输入内容的最右端，将光标前进一格。
-        /// </summary>
         private void MoveCursorRight()
         {
-            if (IsEndOfLine())
-                return;
-
-            if (IsEndOfBuffer())
-                Console2.SetCursorPosition(0, Console2.CursorTop + 1);
-            else
+            if (!IsEndOfLine())
             {
-                if (Console2.CursorLeft + _text[_cursorPos].Width() >= Console2.BufferWidth - 1)
-                    Console2.SetCursorPosition(0, Console2.CursorTop + 1);
-                else Console2.SetCursorPosition(
-                    Console2.CursorLeft + _text[_cursorPos].Width(), Console2.CursorTop);
+                _cursorPos = CharUtil.NextTextElementIndex(_text.ToString(), _cursorPos);
             }
-
-            _cursorPos++;
-
-            var pos = 0;
-            if (_cursorPos - 1 < _text.Length - 1 && _text[_cursorPos - 1].Width() == 1 && CharUtil.Width(_text.ToString(_cursorPos - 1, 2), ref pos) == 2)
-                MoveCursorRight();
         }
 
-        private void MoveCursorEnd()
-        {
-            while (!IsEndOfLine())
-                MoveCursorRight();
-        }
+        private void MoveCursorEnd() => _cursorPos = _cursorLimit;
 
-        /// <summary>
-        /// 同时在控制台与 <see cref="_text"/> 清除用户输入的内容。
-        /// </summary>
         private void ClearLine()
         {
-            MoveCursorEnd();
-            while (!IsStartOfLine())
-                Backspace();
+            _text.Clear();
+            _cursorPos = 0;
+            _cursorLimit = 0;
+            _pendingHighSurrogate = null;
         }
 
-        /// <summary>
-        /// 将目前的用户输入内容以 <paramref name="str"/> 取代。
-        /// </summary>
-        /// <param name="str"></param>
-        private void WriteNewString(string str)
+        private void WriteNewString(string str, int cursor = -1)
         {
-            ClearLine();
-            foreach (char character in str)
-                WriteChar(character);
+            string sanitized = SanitizeInput(str);
+            _text = new StringBuilder(sanitized);
+            _cursorLimit = sanitized.Length;
+            int requestedCursor = cursor < 0 ? _cursorLimit : Math.Clamp(cursor, 0, _cursorLimit);
+            _cursorPos = CharUtil.IsTextElementBoundary(sanitized, requestedCursor)
+                ? requestedCursor
+                : CharUtil.PreviousTextElementIndex(sanitized, requestedCursor);
+            _pendingHighSurrogate = null;
         }
 
-        /// <summary>
-        /// 在用户输入后追加 <paramref name="str"/> 的内容。
-        /// </summary>
-        /// <param name="str"></param>
         private void WriteString(string str)
         {
-#if false
-            Log.Verb("WriteString started", "readline");
-#endif
-            foreach (char character in str)
+            string sanitized = SanitizeInput(str);
+            if (sanitized.Length == 0)
             {
-#if false
-                Log.Verb($"Writestring enumerate nxt: {character}", "readline");
-#endif
-
-                WriteChar(character);
-#if false
-                Log.Verb($"Writestring enumerate FIN", "readline");
-#endif
+                return;
             }
-#if false
-            Log.Verb("WriteString ended", "readline");
-#endif
 
+            _text.Insert(_cursorPos, sanitized);
+            _cursorPos += sanitized.Length;
+            _cursorLimit = _text.Length;
+            string currentText = _text.ToString();
+            if (!CharUtil.IsTextElementBoundary(currentText, _cursorPos))
+            {
+                // Inserting a joiner/modifier between existing elements can
+                // merge them.  Never leave the cursor inside the merged cluster.
+                _cursorPos = CharUtil.NextTextElementIndex(currentText, _cursorPos);
+            }
         }
 
-        /// <summary>
-        /// 将该实例创建时提供的 <see cref="ConsoleKeyInfo.KeyChar"/> 写入控制台。
-        /// </summary>
         private void WriteChar() => WriteChar(_keyInfo.KeyChar);
 
-        /// <summary>
-        /// 利用特殊的规则（强制控制台每行最后留出一格供以全角字符操作），将字符写入控制台。
-        /// </summary>
-        private void ConsoleWriteChar(char ch)
+        private void WriteChar(char value)
         {
-            Console2.Write(ch);
-            if (Console2.CursorLeft == Console2.BufferWidth - 1)
+            if (char.IsHighSurrogate(value))
             {
-                Console2.WriteLine("");
-                Console2.SetCursorPosition(0, Console2.CursorTop);
+                _pendingHighSurrogate = value;
+                return;
             }
-        }
 
-        /// <summary>
-        /// 利用特殊的规则（强制控制台每行最后留出一格供以全角字符操作），将字符写入控制台。
-        /// </summary>
-        /// <param name="startindex">从 0 开始，计算截止到的字符数。左闭右开区间（for 循环的常见规则）。</param>
-        private void ConsoleWriteString(string str, int startindex = 0)
-        {
-            int _tmpcursorleft = Console2.CursorLeft;
-            int _cutsb_start = startindex;
-            for (int i = startindex; i < str.Length; i++)
+            if (char.IsLowSurrogate(value))
             {
-                _tmpcursorleft += str[i].Width();
-                if (_tmpcursorleft >= Console2.BufferWidth - 1)
+                if (_pendingHighSurrogate is char high)
                 {
-                    Console2.Write($"{str.Substring(_cutsb_start, i - _cutsb_start + 1)}  ");
-                    Console2.SetCursorPosition(0, Console2.CursorTop);
-                    _tmpcursorleft = Console2.CursorLeft;
-                    _cutsb_start = i + 1;
+                    _pendingHighSurrogate = null;
+                    WriteString(new string(new[] { high, value }));
                 }
+                return;
             }
-            Console2.Write(str.Substring(_cutsb_start, str.Length - _cutsb_start));
+
+            _pendingHighSurrogate = null;
+            if (IsPotentialTextUnit(value))
+            {
+                WriteString(value.ToString());
+            }
         }
 
-        /// <summary>
-        /// 利用特殊的规则（强制控制台每行最后留出一格供以全角字符操作），将字符写入控制台。
-        /// </summary>
-        /// <param name="startindex">从 0 开始，计算截止到的字符数。左闭右开区间（for 循环的常见规则）。</param>
-        private void ConsoleWriteStringBuilder(StringBuilder sb, int startindex = 0)
-        {
-            int _tmpcursorleft = Console2.CursorLeft;
-            int _cutsb_start = startindex;
-            for (int i = startindex; i < sb.Length; i++)
-            {
-                _tmpcursorleft += sb[i].Width();
-                if (_tmpcursorleft >= Console2.BufferWidth - 1)
-                {
-                    Console2.Write($"{sb.ToString(_cutsb_start, i - _cutsb_start + 1)}  ");
-                    Console2.SetCursorPosition(0, Console2.CursorTop);
-                    _tmpcursorleft = Console2.CursorLeft;
-                    _cutsb_start = i + 1;
-                }
-            }
-            Console2.Write(sb.ToString(_cutsb_start, sb.Length - _cutsb_start));
-        }
-
-        private void WriteChar(char c)
-        {
-            if (IsEndOfLine())
-            {
-                _text.Append(c);
-#if false
-                Log.Verb($"WriteChar: Abstract console invoke", "readline");
-#endif
-                Console2.Write(c);
-#if false
-                Log.Verb($"WriteChar: Abstract console FIN", "readline");
-#endif
-                _cursorPos++;
-#if false
-                Log.Verb($"WriteChar: EOF; Char='{c}'; Pos(Added)={_cursorPos}", "readline");
-#endif
-                if (Console2.CursorLeft == Console2.BufferWidth - 1)
-                {
-                    Console2.WriteLine("");
-                    Console2.SetCursorPosition(0, Console2.CursorTop);
-                }
-            }
-            else
-            {
-                int left = Console2.CursorLeft;
-                int top = Console2.CursorTop;
-                string str = _text.ToString().Substring(_cursorPos);
-                _text.Insert(_cursorPos, c);
-#if false
-                Log.Verb($"WriteChar: Insert; Char='{c}'; Pos(Added)={_cursorPos}", "readline");
-#endif
-                ConsoleWriteChar(c);
-                ConsoleWriteString(str);
-                Console2.SetCursorPosition(left, top);
-                MoveCursorRight();
-            }
-
-            _cursorLimit++;
-        }
-
-        /// <summary>
-        /// 同时在控制台与 <see cref="_text"/> 删去用户输入在光标位置前的一个字符。
-        /// </summary>
         private void Backspace()
         {
             if (IsStartOfLine())
-                return;
-
-            MoveCursorLeft();
-            int index = _cursorPos;
-#if false
-            Log.Verb($"Backspace rmed char: {_text[index]}", "readline");
-#endif
-            int rmcount = 1;
-            if (index < _text.Length - 1)
             {
-                var tmppos = 0;
-                if (_text[index].Width() == 1 && CharUtil.Width(_text.ToString(index, 2), ref tmppos) == 2)
-                    rmcount = 2;
+                return;
             }
-            _text.Remove(index, rmcount);
 
-            int left = Console2.CursorLeft;
-            int top = Console2.CursorTop;
-            ConsoleWriteStringBuilder(_text, index);
-            ConsoleWriteString("  ");
-            Console2.SetCursorPosition(left, top);
-            _cursorLimit -= rmcount;
+            string text = _text.ToString();
+            int start = CharUtil.PreviousTextElementIndex(text, _cursorPos);
+            _text.Remove(start, _cursorPos - start);
+            _cursorPos = start;
+            _cursorLimit = _text.Length;
+            string currentText = _text.ToString();
+            if (!CharUtil.IsTextElementBoundary(currentText, _cursorPos))
+            {
+                _cursorPos = CharUtil.PreviousTextElementIndex(currentText, _cursorPos);
+            }
         }
 
-        /// <summary>
-        /// 同时在控制台与 <see cref="_text"/> 从用户输入在光标位置删去一个字符。
-        /// </summary>
         private void Delete()
         {
             if (IsEndOfLine())
-                return;
-
-            int index = _cursorPos;
-            int rmcount = 1;
-            if (index < _text.Length - 1)
             {
-                var tmppos = 0;
-                if (_text[index].Width() == 1 && CharUtil.Width(_text.ToString(index, 2), ref tmppos) == 2)
-                {
-                    rmcount = 2;
-                }
+                return;
             }
-            _text.Remove(index, rmcount);
 
-            int left = Console2.CursorLeft;
-            int top = Console2.CursorTop;
-            ConsoleWriteStringBuilder(_text, index);
-            ConsoleWriteString("  ");
-            Console2.SetCursorPosition(left, top);
-            _cursorLimit -= rmcount;
+            string text = _text.ToString();
+            int end = CharUtil.NextTextElementIndex(text, _cursorPos);
+            _text.Remove(_cursorPos, end - _cursorPos);
+            _cursorLimit = _text.Length;
+            string currentText = _text.ToString();
+            if (!CharUtil.IsTextElementBoundary(currentText, _cursorPos))
+            {
+                _cursorPos = CharUtil.PreviousTextElementIndex(currentText, _cursorPos);
+            }
         }
 
-        /// <summary>
-        /// 转置（即反转）当前光标位置的前一个字符与后一个字符，并使光标随后前进一位（这里的前进应指向右）。
-        /// </summary>
         private void TransposeChars()
         {
-            // local helper functions
-            bool almostEndOfLine() => (_cursorLimit - _cursorPos) == 1;
-            int incrementIf(Func<bool> expression, int index) => expression() ? index + 1 : index;
-            int decrementIf(Func<bool> expression, int index) => expression() ? index - 1 : index;
+            string text = _text.ToString();
+            if (text.Length == 0 || _cursorPos == 0)
+            {
+                return;
+            }
 
-            if (IsStartOfLine()) { return; }
+            int rightEnd = _cursorPos == text.Length
+                ? text.Length
+                : CharUtil.NextTextElementIndex(text, _cursorPos);
+            int rightStart = _cursorPos == text.Length
+                ? CharUtil.PreviousTextElementIndex(text, text.Length)
+                : _cursorPos;
+            int leftStart = CharUtil.PreviousTextElementIndex(text, rightStart);
+            if (leftStart == rightStart)
+            {
+                return;
+            }
 
-            var firstIdx = decrementIf(IsEndOfLine, _cursorPos - 1);
-            var secondIdx = decrementIf(IsEndOfLine, _cursorPos);
-
-            var secondChar = _text[secondIdx];
-            _text[secondIdx] = _text[firstIdx];
-            _text[firstIdx] = secondChar;
-
-            var left = incrementIf(almostEndOfLine, Console2.CursorLeft);
-            var cursorPosition = incrementIf(almostEndOfLine, _cursorPos);
-
-            WriteNewString(_text.ToString());
-
-            Console2.SetCursorPosition(left, Console2.CursorTop);
-            _cursorPos = cursorPosition;
-
-            MoveCursorRight();
+            string left = text.Substring(leftStart, rightStart - leftStart);
+            string right = text.Substring(rightStart, rightEnd - rightStart);
+            _text.Remove(leftStart, rightEnd - leftStart);
+            _text.Insert(leftStart, right + left);
+            _cursorPos = rightEnd;
+            _cursorLimit = _text.Length;
+            string currentText = _text.ToString();
+            if (!CharUtil.IsTextElementBoundary(currentText, _cursorPos))
+            {
+                _cursorPos = CharUtil.NextTextElementIndex(currentText, _cursorPos);
+            }
         }
 
-#pragma warning disable CS8602 // 解引用可能出现空引用。
+        private static SuggestionResult ValidateAndSanitizeCompletions(
+            SuggestionResult result, string text)
+        {
+            ArgumentNullException.ThrowIfNull(result);
+            if (result.StartIndex < 0 || result.StartIndex > text.Length)
+            {
+                throw new ArgumentOutOfRangeException(nameof(result.StartIndex));
+            }
+
+            int endIndex;
+            if (result.EndIndex == -1)
+            {
+                endIndex = text.Length;
+            }
+            else
+            {
+                if (result.EndIndex < 0 || result.EndIndex > text.Length)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(result.EndIndex));
+                }
+                endIndex = result.EndIndex;
+            }
+
+            if (endIndex < result.StartIndex)
+            {
+                throw new ArgumentOutOfRangeException(nameof(result.EndIndex));
+            }
+            if (!CharUtil.IsTextElementBoundary(text, result.StartIndex) ||
+                !CharUtil.IsTextElementBoundary(text, endIndex))
+            {
+                throw new ArgumentException(
+                    "Completion indices must be Unicode text-element boundaries.");
+            }
+
+            List<string> suggestions = new();
+            if (result.Suggestions != null)
+            {
+                foreach (string? suggestion in result.Suggestions)
+                {
+                    if (suggestion != null)
+                    {
+                        suggestions.Add(SanitizeInput(suggestion));
+                    }
+                }
+            }
+
+            return new SuggestionResult
+            {
+                StartIndex = result.StartIndex,
+                EndIndex = endIndex,
+                Suggestions = suggestions,
+            };
+        }
+
         private void StartAutoComplete()
         {
-            if (!IsInAutoCompleteMode()) return;
-#if NET8_0_OR_GREATER
-            ArgumentOutOfRangeException.ThrowIfNegative(_completions.StartIndex);
-#else
-            if (_completions.StartIndex < 0)
-                throw new ArgumentOutOfRangeException(nameof(_completions.StartIndex));
-#endif
-            if (_completions.EndIndex >= 0)
+            if (!IsInAutoCompleteMode())
             {
-#if NET8_0_OR_GREATER
-                ArgumentOutOfRangeException.ThrowIfLessThan(_completions.EndIndex, _completions.StartIndex, nameof(_completions.EndIndex));
-#else
-                if (_completions.StartIndex < _completions.EndIndex)
-                    throw new ArgumentOutOfRangeException(nameof(_completions.EndIndex));
-#endif
+                return;
             }
 
-            if (_completions.EndIndex > 0)
-            {
-                while (_cursorPos > _completions.EndIndex)
-                    MoveCursorLeft();
-                while (_cursorPos < _completions.EndIndex)
-                    MoveCursorRight();
-            }
-            else MoveCursorEnd();
-            while (_cursorPos > _completions.StartIndex)
-                Backspace();
-
+            IList<string> suggestions = _completions!.Suggestions!;
+            string suggestion = suggestions[0];
+            int replaceLength = _completions.EndIndex - _completions.StartIndex;
+            _text.Remove(_completions.StartIndex, replaceLength);
+            _text.Insert(_completions.StartIndex, suggestion);
+            _completionStart = _completions.StartIndex;
+            _completionLength = suggestion.Length;
             _completionsIndex = 0;
-            _completionStart = _cursorPos;
+            _cursorPos = _completionStart + _completionLength;
+            _cursorLimit = _text.Length;
+            string currentText = _text.ToString();
+            if (!CharUtil.IsTextElementBoundary(currentText, _cursorPos))
+            {
+                _cursorPos = CharUtil.NextTextElementIndex(currentText, _cursorPos);
+            }
+        }
 
-            WriteString(_completions.Suggestions[_completionsIndex]);
+        private void ApplyAutoComplete(int index)
+        {
+            if (!IsInAutoCompleteMode())
+            {
+                return;
+            }
+
+            IList<string> suggestions = _completions!.Suggestions!;
+            _text.Remove(_completionStart, _completionLength);
+            string suggestion = suggestions[index];
+            _text.Insert(_completionStart, suggestion);
+            _completionLength = suggestion.Length;
+            _completionsIndex = index;
+            _cursorPos = _completionStart + _completionLength;
+            _cursorLimit = _text.Length;
+            string currentText = _text.ToString();
+            if (!CharUtil.IsTextElementBoundary(currentText, _cursorPos))
+            {
+                _cursorPos = CharUtil.NextTextElementIndex(currentText, _cursorPos);
+            }
         }
 
         private void NextAutoComplete()
         {
-            if (!IsInAutoCompleteMode()) return;
-            while (_cursorPos > _completionStart)
-                Backspace();
+            if (!IsInAutoCompleteMode())
+            {
+                return;
+            }
 
-            _completionsIndex++;
-
-            if (_completionsIndex == _completions.Suggestions.Count)
-                _completionsIndex = 0;
-
-            WriteString(_completions.Suggestions[_completionsIndex]);
+            int count = _completions!.Suggestions!.Count;
+            ApplyAutoComplete((_completionsIndex + 1) % count);
         }
 
         private void PreviousAutoComplete()
         {
-            if (!IsInAutoCompleteMode()) return;
-            while (_cursorPos > _completionStart)
-                Backspace();
+            if (!IsInAutoCompleteMode())
+            {
+                return;
+            }
 
-            _completionsIndex--;
-
-            if (_completionsIndex == -1)
-                _completionsIndex = _completions.Suggestions.Count - 1;
-
-            WriteString(_completions.Suggestions[_completionsIndex]);
+            int count = _completions!.Suggestions!.Count;
+            ApplyAutoComplete((_completionsIndex + count - 1) % count);
         }
-#pragma warning restore CS8602 // 解引用可能出现空引用。
 
         private void PrevHistory()
         {
             lock (_history)
             {
+                _historyIndex = Math.Clamp(_historyIndex, 0, _history.Count);
+                if (_historyIndex == _history.Count)
+                {
+                    _historyDraft = _text.ToString();
+                    _historyDraftCursor = _cursorPos;
+                }
+
                 if (_historyIndex > 0)
                 {
                     _historyIndex--;
@@ -506,13 +776,20 @@ namespace Internal.ReadLine
         {
             lock (_history)
             {
-                if (_historyIndex < _history.Count)
+                _historyIndex = Math.Clamp(_historyIndex, 0, _history.Count);
+                if (_historyIndex >= _history.Count)
                 {
-                    _historyIndex++;
-                    if (_historyIndex == _history.Count)
-                        ClearLine();
-                    else
-                        WriteNewString(_history[_historyIndex]);
+                    return;
+                }
+
+                _historyIndex++;
+                if (_historyIndex == _history.Count)
+                {
+                    WriteNewString(_historyDraft ?? string.Empty, _historyDraftCursor);
+                }
+                else
+                {
+                    WriteNewString(_history[_historyIndex]);
                 }
             }
         }
@@ -520,29 +797,37 @@ namespace Internal.ReadLine
         private void ResetAutoComplete()
         {
             _completions = null;
+            _completionStart = 0;
+            _completionLength = 0;
             _completionsIndex = 0;
         }
 
-        public string Text
-        {
-            get
-            {
-                return _text.ToString();
-            }
-        }
+        public string Text => _text.ToString();
 
-        public KeyHandler(IConsole console, List<string>? history, IAutoCompleteHandler? autoCompleteHandler,
-            string prompt)
+        public KeyHandler(IConsole console, List<string>? history,
+            IAutoCompleteHandler? autoCompleteHandler, string prompt)
         {
             Console2 = console;
-            _prompt = prompt;
-            Console2.Write(prompt);
-
+            _prompt = SanitizeInput(prompt);
             _history = history ?? new List<string>();
-            _historyIndex = _history.Count;
-
+            lock (_history)
+            {
+                _historyIndex = _history.Count;
+            }
+            _historyDraftCursor = 0;
             _text = new StringBuilder();
             _keyActions = new Dictionary<string, Action>();
+            _autoCompleteHandler = autoCompleteHandler;
+
+            _renderOriginLeft = Math.Clamp(Console2.CursorLeft, 0, UsableWidth);
+            _renderOriginTop = Console2.CursorTop;
+            _renderedUsableWidth = UsableWidth;
+            WriteRenderedText(_prompt, _renderedUsableWidth);
+            Console2.Flush();
+
+            DisplayPosition promptEnd = CalculateDisplayPosition(
+                string.Empty, 0, _renderedUsableWidth);
+            _renderOriginTop = Math.Max(0, Console2.CursorTop - promptEnd.Line);
 
             _keyActions["LeftArrow"] = MoveCursorLeft;
             _keyActions["Home"] = MoveCursorHome;
@@ -564,156 +849,361 @@ namespace Internal.ReadLine
             _keyActions["ControlN"] = NextHistory;
             _keyActions["ControlU"] = () =>
             {
-                while (!IsStartOfLine())
-                    Backspace();
+                if (_cursorPos > 0)
+                {
+                    _text.Remove(0, _cursorPos);
+                    _cursorPos = 0;
+                    _cursorLimit = _text.Length;
+                }
             };
             _keyActions["ControlK"] = () =>
             {
-                int pos = _cursorPos;
-                MoveCursorEnd();
-                while (_cursorPos > pos)
-                    Backspace();
+                if (_cursorPos < _text.Length)
+                {
+                    _text.Remove(_cursorPos, _text.Length - _cursorPos);
+                    _cursorLimit = _text.Length;
+                }
             };
             _keyActions["ControlW"] = () =>
             {
-                while (!IsStartOfLine() && _text[_cursorPos - 1] != ' ')
-                    Backspace();
-            };
-            // _keyActions["ControlT"] = TransposeChars; // FORBIDDEN
-            _autoCompleteHandler = autoCompleteHandler;
-            _keyActions["Tab"] = () =>
-            {
-                if (IsInAutoCompleteMode())
+                while (!IsStartOfLine())
                 {
-                    NextAutoComplete();
-                }
-                else
-                {
-                    if (autoCompleteHandler == null)
-                        return;
-
                     string text = _text.ToString();
-
-                    try
+                    int previous = CharUtil.PreviousTextElementIndex(text, _cursorPos);
+                    string element = text.Substring(previous, _cursorPos - previous);
+                    if (string.IsNullOrWhiteSpace(element))
                     {
-                        _completions = autoCompleteHandler.GetSuggestions(text, _cursorPos);
+                        break;
                     }
-                    catch (Exception ex)
-                    {
-                        LogTrace.WarnTrace(ex, nameof(KeyHandler), $"Auto Complete Handler ({autoCompleteHandler.GetType().FullName}) threw an exception.");
-                    }
-                    _completions = _completions?.Suggestions?.Count == 0 ? null : _completions;
-
-                    if (_completions == null)
-                        return;
-
-                    StartAutoComplete();
+                    Backspace();
                 }
             };
-
-            _keyActions["ShiftTab"] = () =>
-            {
-                if (IsInAutoCompleteMode())
-                {
-                    PreviousAutoComplete();
-                }
-            };
-
+            // ControlT/TransposeChars remains intentionally unbound.
+            _keyActions["Tab"] = HandleAutoComplete;
+            _keyActions["ShiftTab"] = PreviousAutoComplete;
             _keyActions["ShiftBackspace"] = Backspace;
-
-            _keyActions["ControlV"] = () =>
-            {
-                string? res = ClipboardService.GetText();
-                if (string.IsNullOrEmpty(res)) return;
-                res = res.ReplaceLineEndings("  ");
-                WriteString(res);
-            };
-            _keyActions["Shift, ControlV"] = _keyActions["ControlV"];
-            _keyActions["Alt, ControlV"] = _keyActions["ControlV"];
+            _keyActions["ControlV"] = PasteClipboard;
+            _keyActions["Shift, ControlV"] = PasteClipboard;
+            _keyActions["Alt, ControlV"] = PasteClipboard;
             _keyActions["ControlC"] = () => EOFSent?.Invoke();
+        }
+
+        private void HandleAutoComplete()
+        {
+            if (IsInAutoCompleteMode())
+            {
+                NextAutoComplete();
+                return;
+            }
+            if (_autoCompleteHandler == null)
+            {
+                return;
+            }
+
+            string oldText = _text.ToString();
+            int oldCursor = _cursorPos;
+            try
+            {
+                string text = oldText;
+                SuggestionResult result = _autoCompleteHandler.GetSuggestions(text, _cursorPos);
+                _completions = ValidateAndSanitizeCompletions(result, text);
+                if (_completions.Suggestions is not { Count: > 0 })
+                {
+                    ResetAutoComplete();
+                    return;
+                }
+                StartAutoComplete();
+            }
+            catch (Exception ex)
+            {
+                _text = new StringBuilder(oldText);
+                _cursorPos = oldCursor;
+                _cursorLimit = oldText.Length;
+                ResetAutoComplete();
+                TryLogWarning(ex,
+                    $"Auto Complete Handler ({_autoCompleteHandler.GetType().FullName}) returned an invalid result or threw an exception.");
+            }
+        }
+
+        private void PasteClipboard()
+        {
+            string? clipboardText;
+            try
+            {
+                clipboardText = ClipboardService.GetText();
+            }
+            catch (Exception ex)
+            {
+                TryLogWarning(ex, "Reading text from the clipboard failed.");
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(clipboardText))
+            {
+                // One sanitized insertion and one redraw, independent of the
+                // clipboard length.  Mutation errors are handled transactionally
+                // by Handle rather than being mistaken for clipboard failures.
+                WriteString(clipboardText);
+            }
+        }
+
+        private void RestoreState(string text, int cursor, int historyIndex,
+            string? historyDraft, int historyDraftCursor, char? pendingHighSurrogate)
+        {
+            _text = new StringBuilder(text);
+            _cursorLimit = text.Length;
+            _cursorPos = cursor;
+            _historyIndex = historyIndex;
+            _historyDraft = historyDraft;
+            _historyDraftCursor = historyDraftCursor;
+            _pendingHighSurrogate = pendingHighSurrogate;
+            ResetAutoComplete();
         }
 
         public void Handle(ConsoleKeyInfo keyInfo)
         {
             _keyInfo = keyInfo;
+            string keyInput = BuildKeyInput();
 
-            // If in auto complete mode and Tab wasn't pressed
-            if (IsInAutoCompleteMode() && _keyInfo.Key != ConsoleKey.Tab)
-                ResetAutoComplete();
-
-            _keyActions.TryGetValue(BuildKeyInput(), out Action? action);
-            if (action != null || !BlockKey(keyInfo))
+            Action? action = null;
+            // Printable Ctrl+Alt input is AltGr text, not a shortcut.  A real
+            // Ctrl+Alt+V still reaches the paste action because its KeyChar is
+            // a control/NUL value on supported consoles.
+            if (!IsAltGrText(keyInfo))
             {
-                action ??= WriteChar;
-                action.Invoke();
+                _keyActions.TryGetValue(keyInput, out action);
+            }
+
+            bool writeCharacter = action == null && !BlockKey(keyInfo);
+            if (action == null && !writeCharacter)
+            {
+                _pendingHighSurrogate = null;
+                return;
+            }
+
+            bool completionKey = keyInput is "Tab" or "ShiftTab";
+            if (IsInAutoCompleteMode() && !completionKey)
+            {
+                ResetAutoComplete();
+            }
+
+            string oldText = _text.ToString();
+            int oldCursor = _cursorPos;
+            int oldHistoryIndex = _historyIndex;
+            string? oldHistoryDraft = _historyDraft;
+            int oldHistoryDraftCursor = _historyDraftCursor;
+            char? oldPendingHighSurrogate = _pendingHighSurrogate;
+            int oldConsoleLeft = Console2.CursorLeft;
+            int oldConsoleTop = Console2.CursorTop;
+
+            try
+            {
+                if (!writeCharacter)
+                {
+                    _pendingHighSurrogate = null;
+                }
+                (action ?? WriteChar).Invoke();
+
+                _cursorLimit = _text.Length;
+                string currentText = _text.ToString();
+                if (_cursorPos < 0 || _cursorPos > _cursorLimit ||
+                    !CharUtil.IsTextElementBoundary(currentText, _cursorPos))
+                {
+                    throw new InvalidOperationException(
+                        "A key action produced an invalid text cursor state.");
+                }
+            }
+            catch (Exception ex)
+            {
+                RestoreState(oldText, oldCursor, oldHistoryIndex, oldHistoryDraft,
+                    oldHistoryDraftCursor, oldPendingHighSurrogate);
+                TryLogWarning(ex, $"The key action for {keyInput} failed and was rolled back.");
+
+                if (Console2.CursorLeft != oldConsoleLeft || Console2.CursorTop != oldConsoleTop)
+                {
+                    EmergencyRedraw();
+                }
+                return;
+            }
+
+            string newText = _text.ToString();
+            bool renderWidthChanged = UsableWidth != _renderedUsableWidth;
+            if (oldText == newText && oldCursor == _cursorPos && !renderWidthChanged)
+            {
                 try
                 {
                     Console2.Flush();
                 }
-                catch (ArgumentOutOfRangeException)
+                catch (Exception ex)
                 {
-                    Console2.TryClear();
-                    var str = Text;
-                    _text = new();
-                    _cursorPos = 0;
-                    _cursorLimit = 0;
-                    Console2.Write(_prompt);
-                    foreach (var ch in str)
-                        WriteChar(ch);
+                    TryLogWarning(ex, "Flushing the console after a key action failed.");
+                    EmergencyRedraw();
                 }
+                return;
+            }
+
+            try
+            {
+                if (renderWidthChanged)
+                {
+                    RedrawInput(oldText, oldCursor, oldConsoleTop);
+                }
+                else if (oldText == newText)
+                {
+                    int originTop = GetOriginTop(
+                        oldText, oldCursor, oldConsoleTop, _renderedUsableWidth);
+                    SetCursorForText(
+                        newText, _cursorPos, originTop, _renderedUsableWidth);
+                }
+                else if (oldCursor == oldText.Length &&
+                    _cursorPos == newText.Length &&
+                    newText.StartsWith(oldText, StringComparison.Ordinal) &&
+                    CharUtil.IsTextElementBoundary(newText, oldText.Length))
+                {
+                    AppendRenderedInput(oldText, oldCursor, newText, oldConsoleTop);
+                }
+                else
+                {
+                    RedrawInput(oldText, oldCursor, oldConsoleTop);
+                }
+            }
+            catch (Exception ex)
+            {
+                ResetAutoComplete();
+                TryLogWarning(ex, "Redrawing the console input area failed; rebuilding it.");
+                EmergencyRedraw();
             }
         }
 
         /// <summary>
-        /// 清理当前书写的区域，但保留实例数据。在必要的操作完成后，需调用
-        /// <see cref="RecoverWrittingStatus(string, KeyHandler, IAutoCompleteHandler?)"/> 来恢复状态。
+        /// Clears the current input area while retaining this instance's state.
         /// </summary>
         internal void ClearWrittingStatus()
         {
-            var tmp_cursor = _cursorPos;
-            MoveCursorEnd();
-            int calcCursor = CalcWritingAreaLen();
-            _cursorPos = tmp_cursor;
-
-            int operate_line_count = calcCursor / Console2.BufferWidth + 1;
-            int current_line = Console2.CursorTop;
-            for (int i = 0; i < operate_line_count; i++)
-            {
-                Console2.SetCursorPosition(0, current_line);
-                Console2.Write(new string(' ', Console2.BufferWidth));
-                if (i == operate_line_count - 1)
-                    Console2.SetCursorPosition(0, current_line);
-                current_line--;
-                if (current_line < 0)
-                    break;
-            }
+            string text = _text.ToString();
+            int originTop = UsableWidth != _renderedUsableWidth
+                ? _renderOriginTop
+                : GetOriginTop(text, _cursorPos, Console2.CursorTop,
+                    _renderedUsableWidth);
+            ClearRenderedRows(text, originTop, _renderedUsableWidth);
+            Console2.SetCursorPosition(0, originTop);
             Console2.Flush();
-            if (!IsStartOfBuffer()) Console2.WriteLineNonSync(string.Empty);
         }
 
-        internal static KeyHandler RecoverWrittingStatus(string prompt, KeyHandler previous_stat,
-            IAutoCompleteHandler? autoCompleteHandler)
+        /// <summary>
+        /// Moves the physical cursor past the complete input before the caller
+        /// writes the terminating newline. Submission must not happen at an
+        /// arbitrary editing cursor (for example after Home).
+        /// </summary>
+        internal void MoveCursorToEndForSubmit()
         {
-            KeyHandler keyHandler = new(previous_stat.Console2, previous_stat._history, autoCompleteHandler, prompt);
-            keyHandler._historyIndex = previous_stat._historyIndex;
+            string text = _text.ToString();
+            int oldCursor = _cursorPos;
+            int oldConsoleTop = Console2.CursorTop;
+            _cursorPos = _cursorLimit = text.Length;
 
-            #region Auto Completion
+            try
+            {
+                if (UsableWidth != _renderedUsableWidth)
+                {
+                    RedrawInput(text, oldCursor, oldConsoleTop);
+                }
+                else
+                {
+                    int originTop = GetOriginTop(
+                        text, oldCursor, oldConsoleTop, _renderedUsableWidth);
+                    SetCursorForText(
+                        text, _cursorPos, originTop, _renderedUsableWidth);
+                }
+            }
+            catch (Exception ex)
+            {
+                TryLogWarning(ex, "Moving the console cursor for input submission failed.");
+                EmergencyRedraw();
+            }
+        }
+
+        /// <summary>
+        /// Erases and forgets an abandoned interactive read so that its draft,
+        /// completion state and pending surrogate cannot leak into the next one.
+        /// </summary>
+        internal void CancelInput()
+        {
+            try
+            {
+                ClearWrittingStatus();
+            }
+            finally
+            {
+                _text.Clear();
+                _cursorPos = 0;
+                _cursorLimit = 0;
+                lock (_history)
+                {
+                    _historyIndex = _history.Count;
+                }
+                _historyDraft = null;
+                _historyDraftCursor = 0;
+                _pendingHighSurrogate = null;
+                ResetAutoComplete();
+                _renderOriginLeft = Math.Clamp(Console2.CursorLeft, 0, UsableWidth);
+                _renderOriginTop = Console2.CursorTop;
+                _renderedUsableWidth = UsableWidth;
+            }
+        }
+
+        internal static KeyHandler RecoverWrittingStatus(string prompt,
+            KeyHandler previous_stat, IAutoCompleteHandler? autoCompleteHandler)
+        {
+            KeyHandler keyHandler = new(previous_stat.Console2,
+                previous_stat._history, autoCompleteHandler, prompt);
+
+            string restoredText = SanitizeInput(previous_stat.Text);
+            keyHandler._text = new StringBuilder(restoredText);
+            keyHandler._cursorLimit = restoredText.Length;
+            keyHandler._cursorPos = Math.Clamp(previous_stat._cursorPos, 0, restoredText.Length);
+            if (!CharUtil.IsTextElementBoundary(restoredText, keyHandler._cursorPos))
+            {
+                keyHandler._cursorPos = CharUtil.PreviousTextElementIndex(
+                    restoredText, keyHandler._cursorPos);
+            }
+
+            keyHandler._historyIndex = Math.Clamp(previous_stat._historyIndex,
+                0, previous_stat._history.Count);
+            keyHandler._historyDraft = previous_stat._historyDraft == null
+                ? null
+                : SanitizeInput(previous_stat._historyDraft);
+            keyHandler._historyDraftCursor = Math.Clamp(
+                previous_stat._historyDraftCursor, 0,
+                keyHandler._historyDraft?.Length ?? 0);
+            keyHandler._pendingHighSurrogate = previous_stat._pendingHighSurrogate;
+
             if (autoCompleteHandler != null &&
-                ReferenceEquals(previous_stat._autoCompleteHandler, autoCompleteHandler))
+                ReferenceEquals(previous_stat._autoCompleteHandler, autoCompleteHandler) &&
+                previous_stat.IsInAutoCompleteMode())
             {
                 keyHandler._completions = previous_stat._completions;
                 keyHandler._completionsIndex = previous_stat._completionsIndex;
                 keyHandler._completionStart = previous_stat._completionStart;
+                keyHandler._completionLength = previous_stat._completionLength;
             }
-            #endregion
 
-            IConsole abstract_console = previous_stat.Console2;
-            keyHandler.WriteNewString(previous_stat.Text);
-            while (keyHandler._cursorPos > previous_stat._cursorPos)
-                keyHandler.MoveCursorLeft();
-            abstract_console.Flush();
-            Debug.Assert(keyHandler._cursorPos == previous_stat._cursorPos);
-            Debug.Assert(keyHandler._cursorLimit == previous_stat._cursorLimit);
+            int usableWidth = keyHandler.UsableWidth;
+            keyHandler._renderedUsableWidth = usableWidth;
+            keyHandler.WriteRenderedText(restoredText, usableWidth);
+            DisplayPosition end = keyHandler.CalculateDisplayPosition(
+                restoredText, restoredText.Length, usableWidth);
+            int originTop = keyHandler.Console2.CursorTop - end.Line;
+            if (originTop < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(originTop));
+            }
+            keyHandler.SetCursorForText(
+                restoredText, keyHandler._cursorPos, originTop, usableWidth);
+
+            Debug.Assert(keyHandler._cursorPos >= 0 &&
+                keyHandler._cursorPos <= keyHandler._cursorLimit);
+            Debug.Assert(keyHandler._cursorLimit == keyHandler._text.Length);
             return keyHandler;
         }
     }

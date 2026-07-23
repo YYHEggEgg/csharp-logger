@@ -86,8 +86,6 @@ namespace YYHEggEgg.Logger
 
         public override bool Equals([NotNullWhen(true)] object? obj)
         {
-            Debug.Assert(obj is LogFileConfig);
-            Debug.Assert(obj is LogFileConfig && Equals((LogFileConfig)obj));
             return obj is LogFileConfig && Equals((LogFileConfig)obj);
         }
 
@@ -108,8 +106,7 @@ namespace YYHEggEgg.Logger
                 MinimumLogLevel,
                 MaximumLogLevel,
                 AutoFlushWriter,
-                IsPipeSeparatedFile,
-                AllowAutoFallback
+                IsPipeSeparatedFile
             );
         }
     }

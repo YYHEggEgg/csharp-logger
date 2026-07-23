@@ -11,6 +11,7 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
 ## Contents
 
 - [Update](#update)
+  - [v7.0.0](#v700)
   - [v6.0.1](#v601)
   - [v6.0.0](#v600)
   - [v5.0.0](#v500)
@@ -21,6 +22,24 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
 - [Best Practices](#best-practices)
 
 ## Update
+
+### v7.0.0
+
+- Fixed the issue where, after log-file initialization failed, a retry could leave the console or logger in a stale state; redirected standard streams could still enter interactive mode; a console background failure could stop later input/output; or the final log lines could be missing when the process exited.
+- Fixed the issue where continuous log output made the input area unresponsive, caused the prompt to disappear or move to the wrong position, displayed messages out of order, or allowed cancellation of an old read to clear a newly started input.
+- Fixed the issue where cancelling `ReadLineAsync` could consume the next redirected line, input could be read before a caller requested it, pressing Enter after moving the cursor could submit the wrong text, or a pasted following line could be lost.
+- Fixed the issue where entering emoji, Chinese, full-width, or combining characters could split a character, misplace the cursor, or leave stale text after moving, deleting, pasting, recalling history, or wrapping at the terminal edge. Pasted control/ANSI sequences no longer corrupt the display, and AltGr/ISO 102-key input works correctly.
+- Fixed the issue where an auto-complete handler returning an invalid range could delete unrelated input, freeze the input area, or make later keys stop responding. The completion list now also recovers after a handler exception.
+- Fixed the issue where shrinking or resizing the terminal could freeze input, produce a stream of errors, or leave old lines in the persistent/progress area. Several Unix terminals no longer delay input updates or fail when a persistent-area interval is invalid.
+- Fixed incorrect progress percentages and boundary rendering, invalid color tags affecting later output, wrong line counts for zero-width or combining text, incorrect insertion positions in the auto-complete sample, and duplicate or empty entries produced by `LogTextWriter` around newlines and disposal. `LogTextWriter.Flush()`/`FlushAsync()` submit unterminated content, buffered files are flushed on a best-effort basis at exit, and writes after disposal fail explicitly.
+- Fixed the issue where ordinary and pipe-separated log files could receive the wrong header format, a slow write to one file could unnecessarily block other files, or—under rare concurrent construction failures—a file already used by another logger could be closed and silently lose subsequent entries.
+
+#### Behavioral changes
+
+- `BaseLogger.RefreshLogMilliseconds` and `ConsoleWrapper.RefreshTicks` must be positive. Persistent renderer callback intervals shorter than 15 ms (including non-positive values) are normalized to 15 ms.
+- Concurrent `ReadLine`/`ReadLineAsync` calls are serialized. When standard input or output is redirected, `ConsoleWrapper` uses ordinary stream input/output without interactive editing or a persistent area.
+- `ProgressBarBlocks` must be greater than zero; progress values are clamped to the range from 0 to 1.
+- `LogTextWriter.Flush()` and `FlushAsync()` submit the current buffer as one log entry; writing after disposal throws `ObjectDisposedException`.
 
 ### v6.0.1
 

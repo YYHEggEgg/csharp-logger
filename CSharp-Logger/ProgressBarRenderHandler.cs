@@ -32,6 +32,7 @@ public class ProgressBarRenderResult
     /// <summary>
     /// The progress of the operation, between <c>0</c> and <c>1</c>.
     /// This will be used to render a percentage value and the virtual progress bar.
+    /// Values outside this range are clamped; <see cref="double.NaN"/> is treated as zero.
     /// </summary>
     public double Progress { get; set; }
 }
@@ -46,7 +47,7 @@ public abstract class ProgressBarRenderHandlerBase : PersistAreaRenderHandlerBas
     /// </summary>
     public virtual ConsoleColor? Color => ConsoleColor.Green;
     /// <summary>
-    /// The characters count of the virtual progress bar. Default is 50.
+    /// The characters count of the virtual progress bar. Default is 50. Must be greater than zero.
     /// </summary>
     public virtual int ProgressBarBlocks => 50;
     /// <summary>
@@ -59,24 +60,47 @@ public abstract class ProgressBarRenderHandlerBase : PersistAreaRenderHandlerBas
 
     public override string Render()
     {
+        var progressBarBlocks = ProgressBarBlocks;
+        if (progressBarBlocks <= 0)
+        {
+            throw new InvalidOperationException($"{nameof(ProgressBarBlocks)} must be greater than zero.");
+        }
+
         StringBuilder result = new();
         bool first = true;
         foreach (var rendered in RenderProgressBar())
         {
             if (first) first = false;
             else result.AppendLine();
-            var progress = rendered.Progress * 100;
-            var blocks = (int)progress / (100 / ProgressBarBlocks);
-            if (blocks < 1) blocks = 1;
-            else if (blocks > ProgressBarBlocks) blocks = ProgressBarBlocks;
-            var bar = string.Format($"{{0,-{ProgressBarBlocks}}}", new string('=', blocks - 1) + '>');
+
+            var normalizedProgress = double.IsNaN(rendered.Progress)
+                ? 0d
+                : Math.Clamp(rendered.Progress, 0d, 1d);
+            var progress = normalizedProgress * 100d;
+            var blocks = (int)Math.Ceiling(normalizedProgress * progressBarBlocks);
+
+            string completedPart;
+            if (blocks <= 0)
+            {
+                completedPart = string.Empty;
+            }
+            else if (blocks >= progressBarBlocks)
+            {
+                completedPart = new string('=', progressBarBlocks);
+            }
+            else
+            {
+                completedPart = new string('=', blocks - 1) + '>';
+            }
+
+            var bar = completedPart.PadRight(progressBarBlocks);
             result.Append($"{rendered.Topic} {progress:F2}%[{bar}]");
         }
         if (result.Length == 0) return string.Empty;
         var color = Color;
         if (color != null)
         {
-            result.Insert(0, $"<color={Color}>");
+            result.Insert(0, $"<color={color}>");
             result.Append("</color>");
         }
         return result.ToString();

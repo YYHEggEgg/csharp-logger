@@ -1,6 +1,7 @@
 ﻿using Internal.ReadLine.Abstractions;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Text;
 
 namespace YYHEggEgg.Logger.Utils
@@ -70,23 +71,38 @@ namespace YYHEggEgg.Logger.Utils
             // 发生了非正向变化，则我们认为控制台触发了一次换行。此种方法
             // 并不保证准确性，目前仅在进度条渲染时使用。
             int preCursorLeft = console2.CursorLeft;
+            int preCursorTop = console2.CursorTop;
             foreach (var strpart in _color_parts)
             {
                 Console.ForegroundColor = strpart.color;
-                foreach (var ch in strpart.text)
+                var textElements = StringInfo.GetTextElementEnumerator(strpart.text);
+                while (textElements.MoveNext())
                 {
-                    console2.Write(ch);
+                    var textElement = textElements.GetTextElement();
+                    console2.Write(textElement);
                     var currentCursorLeft = console2.CursorLeft;
-                    if (currentCursorLeft <= preCursorLeft &&
-                        // 豁免：当前 CursorLeft 处于控制台的最右端是
-                        // 不计入的。原因在于，如果在一行仅剩一个字的空位
-                        // 写入一个字符，则会填充该空位，但控制台不会立刻
-                        // 切换到下一行的开头，而是保持光标位置不变；如果
-                        // 还有下一次写入，才会发生自动换行，完成后控制台
-                        // 的光标直接跳到下一行的第二个字符位置。
-                        currentCursorLeft != console2.BufferWidth - 1)
+                    var currentCursorTop = console2.CursorTop;
+
+                    // CursorTop may stay unchanged while the terminal scrolls at
+                    // the bottom of its buffer, so CursorLeft is still needed to
+                    // detect natural wrapping. Equality is deliberately excluded:
+                    // combining marks, variation selectors and other zero-width
+                    // text elements commonly leave CursorLeft unchanged.
+                    if (textElement.IndexOf('\n') >= 0)
+                    {
                         result++;
+                    }
+                    else if (currentCursorTop > preCursorTop)
+                    {
+                        result += currentCursorTop - preCursorTop;
+                    }
+                    else if (textElement != "\r" && currentCursorLeft < preCursorLeft)
+                    {
+                        result++;
+                    }
+
                     preCursorLeft = currentCursorLeft;
+                    preCursorTop = currentCursorTop;
                 }
             }
             Console.ForegroundColor = ColorLineUtil.DefaultColor;
@@ -184,11 +200,23 @@ namespace YYHEggEgg.Logger.Utils
             }
             catch (Exception ex)
             {
-                Log.Erro($"Content has caused exception when resolving color: ex={ex}; content (base64)=" +
-                    Convert.ToBase64String(Encoding.UTF8.GetBytes(input)), nameof(ColorLineUtil));
+                // Color parsing is also used by ConsoleWrapper when the logger is
+                // configured without disk operations (or before Log.Initialize).
+                // Diagnostic logging must not turn a recoverable parse failure into
+                // a failure of the sole console worker.
+                try
+                {
+                    Log.Erro($"Content has caused exception when resolving color: ex={ex}; content (base64)=" +
+                        Convert.ToBase64String(Encoding.UTF8.GetBytes(input)), nameof(ColorLineUtil));
+                }
+                catch
+                {
+                    // Keep ConsoleWrapper operational even when logging diagnostics
+                    // is unavailable.
+                }
                 return new()
                 {
-
+                    ColorParts = new() { (input, DefaultColor) }
                 };
             }
             return new()
@@ -239,7 +267,8 @@ namespace YYHEggEgg.Logger.Utils
                 {
                     int length = i - start_index;
                     string res = input.Substring(start_index, length);
-                    if (Enum.TryParse<ConsoleColor>(res, out var parsed))
+                    if (Enum.TryParse<ConsoleColor>(res, out var parsed) &&
+                        Enum.IsDefined(typeof(ConsoleColor), parsed))
                     {
                         result = parsed;
                         return true;

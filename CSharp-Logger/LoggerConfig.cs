@@ -45,8 +45,9 @@ namespace YYHEggEgg.Logger
         /// Whether the debug.log writer will flush automatically. It decides the value of <see cref="StreamWriter.AutoFlush"/>. <para/>
         /// Some programs has a high amount of Verbose output, so they may not have the writer flush immediately. <para/>
         /// Most programs need a immediate output and don't care about performance loss caused by this. <para/>
-        /// Though it's recommended to set it to true, the default value is false because of compatiable reasons. <para/>
-        /// For now, the unflushed parts of the log will be lost. More optimization will come in further versions. 
+        /// Though it's recommended to set it to true, the default value is false because of compatibility reasons. <para/>
+        /// When it is false, buffered content is flushed during the logger's best-effort process-exit cleanup;
+        /// an abrupt process termination can still lose content that has not reached the operating system.
         /// </summary>
         public bool Debug_LogWriter_AutoFlush = false;
         /// <summary>

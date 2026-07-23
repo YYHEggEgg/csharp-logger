@@ -37,7 +37,13 @@ namespace YYHEggEgg.Logger
 
         public override Encoding Encoding => Encoding.UTF8;
 
-        private StringBuilder writebuf = new();
+        private readonly StringBuilder writebuf = new();
+
+        private void ThrowIfDisposed()
+        {
+            if (_disposed)
+                throw new ObjectDisposedException(nameof(LogTextWriter));
+        }
 
         protected void InternalFlush_OnNewLine()
         {
@@ -47,6 +53,7 @@ namespace YYHEggEgg.Logger
 
         public override void Write(char value)
         {
+            ThrowIfDisposed();
             if (value == '\n')
             {
                 InternalFlush_OnNewLine();
@@ -67,44 +74,75 @@ namespace YYHEggEgg.Logger
         protected override void Dispose(bool disposing)
         {
             if (_disposed) return;
-            if (disposing)
+            try
+            {
+                if (disposing && writebuf.Length > 0)
+                {
+                    InternalFlush_OnNewLine();
+                }
+            }
+            finally
             {
                 _disposed = true;
+                base.Dispose(disposing);
+            }
+        }
+
+        public override void Flush()
+        {
+            ThrowIfDisposed();
+            if (writebuf.Length > 0)
+            {
                 InternalFlush_OnNewLine();
             }
         }
 
+        public override Task FlushAsync()
+        {
+            Flush();
+            return Task.CompletedTask;
+        }
+
+#if NET8_0_OR_GREATER
+        public override Task FlushAsync(CancellationToken cancellationToken)
+        {
+            if (cancellationToken.IsCancellationRequested)
+                return Task.FromCanceled(cancellationToken);
+            return FlushAsync();
+        }
+#endif
+
         public override void Write(string? value)
         {
+            ThrowIfDisposed();
             if (string.IsNullOrEmpty(value)) return;
-            var lines = value.Split('\n');
-            if (value.StartsWith('\n')) InternalFlush_OnNewLine();
-            for (int i = 0; i < lines.Length - 1; i++)
+
+            int unflushedStart = 0;
+            for (int i = 0; i < value.Length; i++)
             {
-                var line = lines[i];
-                if (i == 0)
+                if (value[i] != '\n') continue;
+
+                if (i > unflushedStart)
                 {
-                    writebuf.Append(line);
-                    InternalFlush_OnNewLine();
+                    writebuf.Append(value, unflushedStart, i - unflushedStart);
                 }
-                else
-                {
-                    Debug.Assert(writebuf.Length == 0);
-                    BasedLogger.PushLog(line, _logLevelWrite, LogSender);
-                }
+                InternalFlush_OnNewLine();
+                unflushedStart = i + 1;
             }
-            if (lines.Length > 0)
+
+            if (unflushedStart < value.Length)
             {
-                string last_line = lines[lines.Length - 1];
-                writebuf.Append(last_line);
+                writebuf.Append(value, unflushedStart, value.Length - unflushedStart);
             }
-            if (value.EndsWith('\n') && value.Length > 1) InternalFlush_OnNewLine();
         }
 
         public override void Write(StringBuilder? value)
             => Write(value?.ToString());
 
         public override void WriteLine()
-            => InternalFlush_OnNewLine();
+        {
+            ThrowIfDisposed();
+            InternalFlush_OnNewLine();
+        }
     }
 }

@@ -204,7 +204,8 @@ internal class Program
         public SuggestionResult GetSuggestions(string text, int index)
         {
             var startIndex = text[0..index].LastIndexOf(' ') + 1;
-            var endIndex = text[index..].IndexOf(' ');
+            var relativeEndIndex = text[index..].IndexOf(' ');
+            var endIndex = relativeEndIndex < 0 ? -1 : index + relativeEndIndex;
             return new SuggestionResult
             {
                 StartIndex = startIndex,

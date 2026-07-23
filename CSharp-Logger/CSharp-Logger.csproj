@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net6.0;net8.0</TargetFrameworks>
+    <TargetFrameworks>net6.0;net8.0;net10.0</TargetFrameworks>
     <PublishAot Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">true</PublishAot>
     <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">true</IsAotCompatible>
     <RootNamespace>YYHEggEgg.Logger</RootNamespace>
@@ -10,7 +10,7 @@
     <GenerateDocumentationFile>False</GenerateDocumentationFile>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Title>EggEgg.CSharp-Logger</Title>
-    <Version>6.0.1-beta55</Version>
+    <Version>7.0.0-beta50</Version>
     <Authors>YYHEggEgg</Authors>
     <Company>YYHEggEgg</Company>
     <Description>A convenient C# Logger implementation, with reliable console interaction encapsulation support available.</Description>
@@ -18,7 +18,7 @@
     <PackageProjectUrl>https://github.com/YYHEggEgg/csharp-logger</PackageProjectUrl>
     <RepositoryUrl>https://github.com/YYHEggEgg/csharp-logger</RepositoryUrl>
     <PackageTags>Log;CLI</PackageTags>
-    <PackageReleaseNotes>A convenient C# Logger implementation, with reliable console interaction encapsulation support available.</PackageReleaseNotes>
+    <PackageReleaseNotes>7.0.0-beta50 hardens atomic initialization, demand-driven redirected I/O, bounded transitive shutdown draining and final file flushing, readline/autocomplete Unicode handling, cursor recovery, persistent rendering, progress bars, and LogTextWriter flushing/disposal.</PackageReleaseNotes>
     <IncludeSymbols>True</IncludeSymbols>
     <PackageId>EggEgg.$(AssemblyName)</PackageId>
     <Product>EggEgg.$(AssemblyName)</Product>
