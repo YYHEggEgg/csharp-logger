@@ -20,7 +20,9 @@ namespace YYHEggEgg.Logger
     public static class ConsoleWrapper
     {
         private const int MaxWriteBatchSize = 128;
-        private const int MaxKeyBatchSize = 64;
+        private const int MaxReadKeyBatchSize = 4096;
+        private static readonly long InputOutputFairnessStopwatchTicks =
+            Math.Max(1, Stopwatch.Frequency / 20);
         private static readonly object InitializationLock = new();
         private static readonly object InputStateLock = new();
         private static readonly object WriteQueueLock = new();
@@ -462,6 +464,7 @@ namespace YYHEggEgg.Logger
             {
                 ThrowIfConsoleWritesCompleted();
                 writelines.Enqueue(new PendingConsoleLine(input));
+                MarkConsoleOutputPending();
             }
             SignalUpdate();
         }
@@ -472,6 +475,7 @@ namespace YYHEggEgg.Logger
             {
                 ThrowIfConsoleWritesCompleted();
                 writelines.Enqueue(new PendingConsoleLine(input));
+                MarkConsoleOutputPending();
             }
             SignalUpdate();
         }
@@ -679,23 +683,29 @@ namespace YYHEggEgg.Logger
         }
 
         private static DelayConsole? shared_absconsole;
-        private readonly struct QueuedConsoleKey
+        private readonly struct QueuedConsoleKeyBatch
         {
             public int SessionId { get; }
-            public ConsoleKeyInfo KeyInfo { get; }
+            public ConsoleKeyInfo[] Keys { get; }
+            public int SubmissionIndex { get; }
+            public bool ContainsLineSubmission { get; }
 
-            public QueuedConsoleKey(int sessionId, ConsoleKeyInfo keyInfo)
+            public QueuedConsoleKeyBatch(int sessionId, ConsoleKeyInfo[] keys)
             {
                 SessionId = sessionId;
-                KeyInfo = keyInfo;
+                Keys = keys;
+                SubmissionIndex = Array.FindIndex(keys, IsLineSubmissionKey);
+                ContainsLineSubmission = SubmissionIndex >= 0;
             }
         }
 
-        private static readonly ConcurrentQueue<QueuedConsoleKey> qhandle_consolekeys = new();
+        private static readonly ConcurrentQueue<QueuedConsoleKeyBatch> qhandle_consolekeys = new();
+        private static int _queuedSubmissionSessionId;
         private static KeyHandler? keyHandler;
 
         private static async Task BackgroundReadkey(CancellationToken cancellationToken)
         {
+            var keyBuffer = new ConsoleKeyInfo[MaxReadKeyBatchSize];
             int failureDelay = 15;
             while (!cancellationToken.IsCancellationRequested)
             {
@@ -717,23 +727,48 @@ namespace YYHEggEgg.Logger
                     }
 
                     var console = shared_absconsole;
-                    if (console == null || !console.TryReadKey(out ConsoleKeyInfo keyInfo))
+                    if (console == null)
+                    {
+                        await Task.Delay(15, cancellationToken).ConfigureAwait(false);
+                        continue;
+                    }
+
+                    int keyCount = console.ReadAvailableKeys(keyBuffer,
+                        IsInputBatchBoundary);
+                    if (keyCount == 0)
                     {
                         await Task.Delay(15, cancellationToken).ConfigureAwait(false);
                         continue;
                     }
 
                     failureDelay = 15;
-                    if (keyInfo.Modifiers == ConsoleModifiers.Control && keyInfo.Key == ConsoleKey.C)
+                    int ctrlCIndex = Array.FindIndex(keyBuffer, 0, keyCount,
+                        static keyInfo => keyInfo.Modifiers == ConsoleModifiers.Control &&
+                            keyInfo.Key == ConsoleKey.C);
+                    int queuedKeyCount = ctrlCIndex >= 0 ? ctrlCIndex : keyCount;
+                    if (queuedKeyCount > 0 &&
+                        Volatile.Read(ref _activeReadSessionId) == readSessionId)
                     {
+                        var queuedKeys = new ConsoleKeyInfo[queuedKeyCount];
+                        Array.Copy(keyBuffer, queuedKeys, queuedKeyCount);
+                        var queuedBatch = new QueuedConsoleKeyBatch(readSessionId, queuedKeys);
+                        qhandle_consolekeys.Enqueue(queuedBatch);
+                        if (queuedBatch.ContainsLineSubmission)
+                            Volatile.Write(ref _queuedSubmissionSessionId, readSessionId);
+                        SignalUpdate();
+                    }
+
+                    if (ctrlCIndex >= 0)
+                    {
+                        // Ctrl+C must remain observable as soon as the terminal
+                        // delivers it, even when earlier pasted text has not
+                        // reached the update worker yet.
                         ShutdownRequest_Callback();
                         continue;
                     }
-                    if (Volatile.Read(ref _activeReadSessionId) != readSessionId)
-                        continue;
-                    qhandle_consolekeys.Enqueue(new QueuedConsoleKey(readSessionId, keyInfo));
-                    SignalUpdate();
-                    if (IsLineSubmissionKey(keyInfo))
+
+                    if (queuedKeyCount > 0 &&
+                        IsLineSubmissionKey(keyBuffer[queuedKeyCount - 1]))
                     {
                         // Do not pre-read pasted/type-ahead characters into the
                         // session whose Enter key is already queued. The update
@@ -768,6 +803,10 @@ namespace YYHEggEgg.Logger
             }
         }
 
+        private static bool IsInputBatchBoundary(ConsoleKeyInfo keyInfo) =>
+            (keyInfo.Modifiers == ConsoleModifiers.Control && keyInfo.Key == ConsoleKey.C) ||
+            IsLineSubmissionKey(keyInfo);
+
         private readonly struct PendingConsoleLine
         {
             public string? Text { get; }
@@ -787,6 +826,22 @@ namespace YYHEggEgg.Logger
         }
 
         private static readonly ConcurrentQueue<PendingConsoleLine> writelines = new();
+        private static long _firstPendingConsoleOutputTimestamp;
+
+        private static void MarkConsoleOutputPending()
+        {
+            Interlocked.CompareExchange(ref _firstPendingConsoleOutputTimestamp,
+                Stopwatch.GetTimestamp(), 0);
+        }
+
+        private static void StartNextConsoleOutputFairnessWindow()
+        {
+            lock (WriteQueueLock)
+            {
+                Volatile.Write(ref _firstPendingConsoleOutputTimestamp,
+                    writelines.IsEmpty ? 0 : Stopwatch.GetTimestamp());
+            }
+        }
 
         internal static volatile bool _clearup_completed;
 
@@ -910,6 +965,33 @@ namespace YYHEggEgg.Logger
                         bool haveKeysToHandle = reading && observedReadSessionId != 0 &&
                             !qhandle_consolekeys.IsEmpty;
                         bool haveInputCancellation = !PendingInputCancellations.IsEmpty;
+                        bool needInputRefresh = inputStateChanged || readingChanged ||
+                            readSessionChanged;
+
+                        if (needProgressUpdate)
+                        {
+                            MarkConsoleOutputPending();
+                        }
+
+                        long now = Stopwatch.GetTimestamp();
+                        long pendingConsoleOutputSince = Volatile.Read(
+                            ref _firstPendingConsoleOutputTimestamp);
+
+                        // Once an Enter batch is queued, finish every earlier
+                        // batch from the same session before yielding to output.
+                        // This preserves a paste followed immediately by Enter
+                        // as one submitted line even under sustained logging.
+                        bool submissionPending = observedReadSessionId != 0 &&
+                            Volatile.Read(ref _queuedSubmissionSessionId) ==
+                                observedReadSessionId;
+                        bool consoleOutputBudgetExpired = pendingConsoleOutputSince != 0 &&
+                            now - pendingConsoleOutputSince >=
+                                InputOutputFairnessStopwatchTicks;
+                        bool deferConsoleOutputForInput = needProgressUpdate &&
+                            haveKeysToHandle && (submissionPending ||
+                            !consoleOutputBudgetExpired);
+                        bool handleConsoleOutput = needProgressUpdate &&
+                            !deferConsoleOutputForInput;
 
                         if (!curHandleWritelines && !haveKeysToHandle &&
                             !inputStateChanged && !readingChanged && !readSessionChanged &&
@@ -925,6 +1007,7 @@ namespace YYHEggEgg.Logger
                         if (!_interactiveConsole)
                         {
                             ProcessWriteBatch();
+                            StartNextConsoleOutputFairnessWindow();
                             renderedInputRevision = inputState.revision;
                             handledPersistAreaRevision = persistAreaState.revision;
                             pre_reading = reading;
@@ -941,23 +1024,9 @@ namespace YYHEggEgg.Logger
                         // snapshot that woke us. A cancellation can arrive
                         // after the snapshot while a new read session starts.
                         if (ProcessPendingInputCancellations(ref keyHandlerSessionId))
-                            pre_reading = false;
-
-                        if (reading && keyHandler != null &&
-                            (curHandleWritelines || inputStateChanged || needProgressUpdate))
                         {
-                            lock (KeyHandlerLock)
-                            {
-                                try
-                                {
-                                    if (IsReading)
-                                        keyHandler?.ClearWrittingStatus();
-                                }
-                                catch (Exception ex) when (IsRecoverableConsoleException(ex))
-                                {
-                                    console.Resync();
-                                }
-                            }
+                            pre_reading = false;
+                            continue;
                         }
 
                         if (!reading && pre_reading && keyHandler != null)
@@ -972,137 +1041,160 @@ namespace YYHEggEgg.Logger
                                 {
                                     console.Resync();
                                 }
+                                keyHandler = null;
+                                keyHandlerSessionId = 0;
                             }
                         }
 
-                        if (persistAreaChanged)
-                            _cachedProgressInfo = null;
-                        if (needProgressUpdate)
-                            ClearProgressBar();
-                        if (curHandleWritelines)
-                            ProcessWriteBatch();
-                        console.Resync();
-                        if (needProgressUpdate && persistAreaState.renderer != null)
-                            RenderProgressBar(persistAreaState.renderer,
-                                persistAreaChanged || progressDue);
-                        handledPersistAreaRevision = persistAreaState.revision;
+                        // Input configuration changes must apply before the
+                        // next key. Log and persistent-area output, in contrast,
+                        // may wait briefly while an already queued paste drains.
+                        if (handleConsoleOutput || needInputRefresh)
+                        {
+                            // The idle handler created at initialization has no
+                            // read session and may point at output written since
+                            // then. Only erase a rectangle owned by a live read.
+                            if (reading && keyHandler != null && keyHandlerSessionId != 0)
+                            {
+                                lock (KeyHandlerLock)
+                                {
+                                    try
+                                    {
+                                        if (IsReading)
+                                            keyHandler?.ClearWrittingStatus();
+                                    }
+                                    catch (Exception ex) when (IsRecoverableConsoleException(ex))
+                                    {
+                                        console.Resync();
+                                    }
+                                }
+                            }
 
-                        if (reading)
+                            if (handleConsoleOutput)
+                            {
+                                if (persistAreaChanged)
+                                    _cachedProgressInfo = null;
+                                ClearProgressBar();
+                                if (curHandleWritelines)
+                                    ProcessWriteBatch();
+                                console.Resync();
+                                if (persistAreaState.renderer != null)
+                                    RenderProgressBar(persistAreaState.renderer,
+                                        persistAreaChanged || progressDue);
+                                handledPersistAreaRevision = persistAreaState.revision;
+                                // The next group of pending output gets a fresh
+                                // fairness window after this bounded write pass.
+                                StartNextConsoleOutputFairnessWindow();
+                            }
+
+                            if (reading)
+                            {
+                                lock (KeyHandlerLock)
+                                {
+                                    if (IsReading)
+                                    {
+                                        int readSessionId = Volatile.Read(ref _activeReadSessionId);
+                                        if (readSessionId != 0)
+                                        {
+                                            bool createdForSession = EnsureKeyHandlerForSession(
+                                                console, readSessionId, inputState.prefix,
+                                                inputState.handler, ref keyHandlerSessionId);
+                                            if (!createdForSession && keyHandler != null)
+                                            {
+                                                RecoverKeyHandlerAfterExternalOutput(
+                                                    console, inputState.prefix,
+                                                    inputState.handler);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            renderedInputRevision = inputState.revision;
+                            pre_reading = reading;
+                            preReadSessionId = observedReadSessionId;
+                            if (CanCompleteShutdown())
+                                break;
+                        }
+
+                        if (reading && haveKeysToHandle)
                         {
                             lock (KeyHandlerLock)
                             {
                                 if (IsReading)
                                 {
                                     int readSessionId = Volatile.Read(ref _activeReadSessionId);
-                                    if (readSessionId == 0)
+                                    if (readSessionId != 0)
                                     {
-                                        renderedInputRevision = inputState.revision;
-                                        pre_reading = reading;
-                                        preReadSessionId = observedReadSessionId;
-                                        continue;
-                                    }
+                                        EnsureKeyHandlerForSession(console, readSessionId,
+                                            inputState.prefix, inputState.handler,
+                                            ref keyHandlerSessionId);
 
-                                    bool createdForSession = false;
-                                    if (keyHandler == null || keyHandlerSessionId != readSessionId)
-                                    {
-                                        if (keyHandler != null)
+                                        if (keyHandler != null &&
+                                            TryDequeueInputBatch(readSessionId,
+                                                out var queuedBatch))
                                         {
-                                            try
+                                            int keyCount = queuedBatch.Keys.Length;
+                                            int handledKeyCount = queuedBatch.ContainsLineSubmission
+                                                ? queuedBatch.SubmissionIndex
+                                                : keyCount;
+                                            if (handledKeyCount > 0)
                                             {
-                                                // Drafts and queued keys belong to exactly one
-                                                // read session. Never carry an abandoned draft
-                                                // into a newer caller.
-                                                keyHandler.CancelInput();
+                                                keyHandler.HandleBatch(
+                                                    new ArraySegment<ConsoleKeyInfo>(
+                                                        queuedBatch.Keys, 0, handledKeyCount));
                                             }
-                                            catch (Exception ex) when (IsRecoverableConsoleException(ex))
-                                            {
-                                                console.Resync();
-                                            }
-                                        }
 
-                                        keyHandler = new(console, lines,
-                                            inputState.handler, inputState.prefix);
-                                        keyHandlerSessionId = readSessionId;
-                                        createdForSession = true;
-                                    }
-
-                                    if (!createdForSession &&
-                                        (curHandleWritelines || inputStateChanged ||
-                                        !pre_reading || readSessionChanged || needProgressUpdate))
-                                    {
-                                        bool recovered = false;
-                                        for (int attempt = 0; attempt < 2 && !recovered; attempt++)
-                                        {
-                                            try
+                                            if (queuedBatch.ContainsLineSubmission && IsReading &&
+                                                Interlocked.CompareExchange(
+                                                    ref _activeReadSessionId, 0,
+                                                    readSessionId) == readSessionId)
                                             {
-                                                keyHandler = KeyHandler.RecoverWrittingStatus(
-                                                    inputState.prefix, keyHandler, inputState.handler);
-                                                recovered = true;
-                                            }
-                                            catch (Exception ex) when (IsRecoverableConsoleException(ex))
-                                            {
-                                                console.Resync();
-                                            }
-                                        }
-                                    }
-                                    renderedInputRevision = inputState.revision;
-
-                                    int handledKeys = 0;
-                                    while (handledKeys++ < MaxKeyBatchSize &&
-                                        qhandle_consolekeys.TryDequeue(out var queuedKey))
-                                    {
-                                        if (queuedKey.SessionId != readSessionId)
-                                            continue;
-                                        ConsoleKeyInfo keyInfo = queuedKey.KeyInfo;
-                                        if (!IsLineSubmissionKey(keyInfo))
-                                        {
-                                            keyHandler.Handle(keyInfo);
-                                            continue;
-                                        }
-
-                                        if (IsReading && Interlocked.CompareExchange(
-                                            ref _activeReadSessionId, 0, readSessionId) == readSessionId)
-                                        {
-                                            string completedText = keyHandler.Text;
-                                            try
-                                            {
-                                                keyHandler.MoveCursorToEndForSubmit();
-                                                console.WriteLine(string.Empty);
-                                            }
-                                            catch (Exception ex)
-                                            {
-                                                ReportBackgroundException(ex,
-                                                    "Submitting interactive input failed to update the terminal.");
-                                                if (IsRecoverableConsoleException(ex))
+                                                string completedText = keyHandler.Text;
+                                                try
                                                 {
-                                                    try
+                                                    keyHandler.MoveCursorToEndForSubmit();
+                                                    console.WriteLine(string.Empty);
+                                                }
+                                                catch (Exception ex)
+                                                {
+                                                    ReportBackgroundException(ex,
+                                                        "Submitting interactive input failed to update the terminal.");
+                                                    if (IsRecoverableConsoleException(ex))
                                                     {
-                                                        console.Resync();
-                                                    }
-                                                    catch (Exception recoverEx)
-                                                    {
-                                                        ReportBackgroundException(recoverEx,
-                                                            "Submitting interactive input failed to resynchronize the terminal.");
+                                                        try
+                                                        {
+                                                            console.Resync();
+                                                        }
+                                                        catch (Exception recoverEx)
+                                                        {
+                                                            ReportBackgroundException(recoverEx,
+                                                                "Submitting interactive input failed to resynchronize the terminal.");
+                                                        }
                                                     }
                                                 }
+                                                readqueue.Enqueue(new CompletedReadLine(
+                                                    readSessionId, completedText));
+                                                // Stop consuming terminal input until the caller
+                                                // starts the next session. Buffered type-ahead is
+                                                // then tagged with that new session instead of the
+                                                // line that has already completed.
+                                                keyHandler = null;
+                                                keyHandlerSessionId = 0;
+                                                Interlocked.CompareExchange(
+                                                    ref _queuedSubmissionSessionId, 0,
+                                                    readSessionId);
                                             }
-                                            readqueue.Enqueue(new CompletedReadLine(
-                                                readSessionId, completedText));
-                                            // Stop consuming terminal input until the caller
-                                            // starts the next session. Buffered type-ahead is
-                                            // then tagged with that new session instead of the
-                                            // line that has already completed.
-                                            keyHandler = null;
-                                            keyHandlerSessionId = 0;
+                                            else if (queuedBatch.ContainsLineSubmission)
+                                            {
+                                                Interlocked.CompareExchange(
+                                                    ref _queuedSubmissionSessionId, 0,
+                                                    readSessionId);
+                                            }
                                         }
-                                        break;
                                     }
                                 }
                             }
-                        }
-                        else
-                        {
-                            renderedInputRevision = inputState.revision;
                         }
 
                         pre_reading = reading;
@@ -1151,6 +1243,73 @@ namespace YYHEggEgg.Logger
             }
         }
 
+        private static bool EnsureKeyHandlerForSession(DelayConsole console,
+            int readSessionId, string inputPrefix, IAutoCompleteHandler? autoCompleteHandler,
+            ref int keyHandlerSessionId)
+        {
+            if (keyHandler != null && keyHandlerSessionId == readSessionId)
+                return false;
+
+            if (keyHandler != null && keyHandlerSessionId != 0)
+            {
+                try
+                {
+                    // Drafts and queued keys belong to exactly one read
+                    // session. Never carry an abandoned draft into a newer one.
+                    keyHandler.CancelInput();
+                }
+                catch (Exception ex) when (IsRecoverableConsoleException(ex))
+                {
+                    console.Resync();
+                }
+            }
+
+            keyHandler = new KeyHandler(console, lines, autoCompleteHandler, inputPrefix);
+            keyHandlerSessionId = readSessionId;
+            return true;
+        }
+
+        private static void RecoverKeyHandlerAfterExternalOutput(DelayConsole console,
+            string inputPrefix, IAutoCompleteHandler? autoCompleteHandler)
+        {
+            if (keyHandler == null)
+                return;
+
+            for (int attempt = 0; attempt < 2; attempt++)
+            {
+                try
+                {
+                    keyHandler.RecoverWrittingStatus(inputPrefix, autoCompleteHandler);
+                    return;
+                }
+                catch (Exception ex) when (IsRecoverableConsoleException(ex))
+                {
+                    console.Resync();
+                }
+            }
+        }
+
+        private static bool TryDequeueInputBatch(int readSessionId,
+            out QueuedConsoleKeyBatch queuedBatch)
+        {
+            while (qhandle_consolekeys.TryDequeue(out queuedBatch))
+            {
+                if (queuedBatch.SessionId == readSessionId)
+                {
+                    return true;
+                }
+
+                if (queuedBatch.ContainsLineSubmission)
+                {
+                    Interlocked.CompareExchange(ref _queuedSubmissionSessionId, 0,
+                        queuedBatch.SessionId);
+                }
+            }
+
+            queuedBatch = default;
+            return false;
+        }
+
         private static void ProcessWriteBatch()
         {
             int handled = 0;
@@ -1189,6 +1348,8 @@ namespace YYHEggEgg.Logger
             while (PendingInputCancellations.TryDequeue(out int cancelledSessionId))
             {
                 haveCancellation = true;
+                Interlocked.CompareExchange(ref _queuedSubmissionSessionId, 0,
+                    cancelledSessionId);
                 if (cancelledSessionId != 0 && cancelledSessionId == keyHandlerSessionId)
                     cancelCurrentHandler = true;
             }
@@ -1258,6 +1419,7 @@ namespace YYHEggEgg.Logger
                     _persistAreaRenderer = value;
                     Interlocked.Increment(ref _persistAreaRevision);
                 }
+                MarkConsoleOutputPending();
                 SignalUpdate();
             }
         }

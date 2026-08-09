@@ -113,6 +113,28 @@ internal sealed class DelayConsole : IConsole
         }
     }
 
+    /// <summary>
+    /// Drains only keys which have already reached the terminal input queue.
+    /// Keeping the complete drain under the console-operation lock prevents a
+    /// cursor query on Unix from interleaving with a read-key protocol.
+    /// </summary>
+    public int ReadAvailableKeys(Span<ConsoleKeyInfo> destination,
+        Func<ConsoleKeyInfo, bool>? stopAfterKey)
+    {
+        lock (_consoleOpLock)
+        {
+            int count = 0;
+            while (count < destination.Length && Console.KeyAvailable)
+            {
+                ConsoleKeyInfo keyInfo = Console.ReadKey(intercept: true);
+                destination[count++] = keyInfo;
+                if (stopAfterKey?.Invoke(keyInfo) == true)
+                    break;
+            }
+            return count;
+        }
+    }
+
     private void ThrowIfDesync()
     {
         if (_tmpCursor_desync)

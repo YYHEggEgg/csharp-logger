@@ -1,6 +1,5 @@
 using Cyjb;
 using Internal.ReadLine.Abstractions;
-using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 using TextCopy;
@@ -24,29 +23,59 @@ namespace Internal.ReadLine
         private int _completionLength;
         private int _completionsIndex;
         private readonly IConsole Console2;
-        private readonly string _prompt;
-        private readonly IAutoCompleteHandler? _autoCompleteHandler;
+        private string _prompt;
+        private IAutoCompleteHandler? _autoCompleteHandler;
         private char? _pendingHighSurrogate;
         private int _renderOriginLeft;
         private int _renderOriginTop;
         private int _renderedUsableWidth;
+        // Only this rectangle is still addressable after a terminal has
+        // scrolled a long input line.  Do not derive it from the complete
+        // logical input: ConPTY commonly exposes a buffer no taller than its
+        // window, so older rows cease to have usable coordinates.
+        private int _renderVisibleTop;
+        private int _renderVisibleRows;
+        private int _renderVisibleFirstColumn;
+        private bool _renderStateValid;
+        private bool _renderWarningActive;
 
         /// <summary>
         /// Raised when the user presses Control+C (^C).
         /// </summary>
         public event Action? EOFSent;
 
-        private readonly struct DisplayPosition
+        private readonly struct RenderedRow
         {
-            public DisplayPosition(int line, int column)
+            public RenderedRow(int start, int end)
             {
-                Line = line;
-                Column = column;
+                Start = start;
+                End = end;
             }
 
-            public int Line { get; }
-            public int Column { get; }
+            public int Start { get; }
+            public int End { get; }
         }
+
+        private readonly struct ViewportContent
+        {
+            public ViewportContent(string display, int cursorIndex, int startColumn)
+            {
+                Display = display;
+                CursorIndex = cursorIndex;
+                StartColumn = startColumn;
+            }
+
+            public string Display { get; }
+            public int CursorIndex { get; }
+            public int StartColumn { get; }
+        }
+
+        // Console.BufferHeight can describe a large scrollback buffer rather
+        // than the visible window. Keep recovery independent of that value so
+        // a log write can never replay an arbitrarily long command.
+        private const int MaximumViewportRows = 64;
+        private const int MaximumViewportCharacters = 16 * 1024;
+        private const int ViewportBoundaryContext = 256;
 
         private int UsableWidth => Math.Max(1, Console2.BufferWidth - 1);
 
@@ -107,25 +136,6 @@ namespace Internal.ReadLine
             }
         }
 
-        private DisplayPosition CalculateDisplayPosition(string text, int textIndex,
-            int usableWidth)
-        {
-            if (textIndex < 0 || textIndex > text.Length ||
-                !CharUtil.IsTextElementBoundary(text, textIndex))
-            {
-                throw new ArgumentOutOfRangeException(nameof(textIndex));
-            }
-
-            int line = 0;
-            // The origin may be exactly at the reserved rightmost column. In
-            // that case the first visible text element deliberately starts on
-            // the next row instead of pretending the cursor was one cell left.
-            int column = Math.Clamp(_renderOriginLeft, 0, usableWidth);
-            AdvanceText(ref line, ref column, _prompt, _prompt.Length, usableWidth);
-            AdvanceText(ref line, ref column, text, textIndex, usableWidth);
-            return new DisplayPosition(line, column);
-        }
-
         /// <summary>
         /// Writes complete text elements and batches all elements that fit on
         /// the same row into one console write.  This avoids both splitting a
@@ -176,143 +186,350 @@ namespace Internal.ReadLine
             }
         }
 
-        private int GetOriginTop(string oldText, int oldCursor, int currentCursorTop,
-            int usableWidth)
+        private List<RenderedRow> BuildRenderedRows(string display, int usableWidth,
+            int initialColumn)
         {
-            DisplayPosition cursor = CalculateDisplayPosition(oldText, oldCursor, usableWidth);
-            int originTop = currentCursorTop - cursor.Line;
-            if (originTop < 0)
+            List<RenderedRow> rows = new();
+            int column = Math.Clamp(initialColumn, 0, usableWidth);
+            int rowStart = 0;
+            int[] starts = StringInfo.ParseCombiningCharacters(display);
+            for (int i = 0; i < starts.Length; i++)
             {
-                throw new ArgumentOutOfRangeException(nameof(currentCursorTop));
+                int start = starts[i];
+                int end = i + 1 < starts.Length ? starts[i + 1] : display.Length;
+                int elementWidth = Math.Min(
+                    CharUtil.TextElementWidth(display, start, end - start), usableWidth);
+                if (elementWidth > 0 && column + elementWidth > usableWidth)
+                {
+                    rows.Add(new RenderedRow(rowStart, start));
+                    rowStart = start;
+                    column = 0;
+                }
+
+                column += elementWidth;
+                if (elementWidth > 0 && column >= usableWidth)
+                {
+                    rows.Add(new RenderedRow(rowStart, end));
+                    rowStart = end;
+                    column = 0;
+                }
             }
-            return originTop;
+            rows.Add(new RenderedRow(rowStart, display.Length));
+            return rows;
         }
 
-        private void ClearRenderedRows(string oldText, int originTop, int renderedUsableWidth)
+        private static int GetRowForIndex(IReadOnlyList<RenderedRow> rows, int index)
         {
-            DisplayPosition renderedEnd = CalculateDisplayPosition(
-                oldText, oldText.Length, renderedUsableWidth);
-            int usableWidth = UsableWidth;
-            DisplayPosition currentEnd = CalculateDisplayPosition(
-                oldText, oldText.Length, usableWidth);
-            int lastLine = Math.Max(renderedEnd.Line, currentEnd.Line);
-            lastLine = Math.Min(lastLine,
-                Math.Max(0, Console2.BufferHeight - 1 - originTop));
-
-            // Include the cursor row.  In particular, an input whose display
-            // width is exactly BufferWidth-1 has advanced to the next row.
-            // When the buffer width changed, clear both the old layout and the
-            // potentially reflowed new layout so neither widening nor shrinking
-            // can leave ghost rows behind.
-            for (int line = 0; line <= lastLine; line++)
+            for (int row = 0; row < rows.Count; row++)
             {
-                int startColumn = line == 0 ? _renderOriginLeft : 0;
+                RenderedRow current = rows[row];
+                if (index < current.End || row == rows.Count - 1)
+                {
+                    return row;
+                }
+                if (index == current.End &&
+                    (row + 1 >= rows.Count || rows[row + 1].Start != index))
+                {
+                    return row;
+                }
+            }
+            return rows.Count - 1;
+        }
+
+        private static int GetColumnInRow(string display, RenderedRow row, int index,
+            int rowIndex, int usableWidth, int initialColumn)
+        {
+            int length = Math.Clamp(index - row.Start, 0, row.End - row.Start);
+            int line = 0;
+            int column = rowIndex == 0
+                ? Math.Clamp(initialColumn, 0, usableWidth)
+                : 0;
+            if (length > 0)
+            {
+                string part = display.Substring(row.Start, length);
+                AdvanceText(ref line, ref column, part, part.Length, usableWidth);
+            }
+            return Math.Clamp(column, 0, usableWidth);
+        }
+
+        private int GetViewportRowLimit()
+        {
+            return Math.Min(Math.Max(1, Console2.BufferHeight), MaximumViewportRows);
+        }
+
+        private int FindViewportStart(int desiredStart)
+        {
+            if (desiredStart <= 0)
+            {
+                return 0;
+            }
+
+            int textLength = _text.Length;
+            if (desiredStart >= textLength)
+            {
+                return textLength;
+            }
+
+            int sampleStart = Math.Max(0, desiredStart - ViewportBoundaryContext);
+            int sampleEnd = Math.Min(textLength,
+                desiredStart + ViewportBoundaryContext);
+            string sample = _text.ToString(sampleStart, sampleEnd - sampleStart);
+            int target = desiredStart - sampleStart;
+            foreach (int boundary in StringInfo.ParseCombiningCharacters(sample))
+            {
+                if (boundary >= target)
+                {
+                    return sampleStart + boundary;
+                }
+            }
+
+            // A pathological single text element can be longer than the
+            // context window. Do not let it turn recovery into a full-line
+            // scan; begin after the inspected slice instead.
+            return sampleEnd;
+        }
+
+        private int FindViewportEnd(int contentStart, int desiredEnd)
+        {
+            int textLength = _text.Length;
+            if (desiredEnd >= textLength)
+            {
+                return textLength;
+            }
+
+            desiredEnd = Math.Clamp(desiredEnd, contentStart, textLength);
+            int sampleEnd = Math.Min(textLength,
+                desiredEnd + ViewportBoundaryContext);
+            string sample = _text.ToString(contentStart, sampleEnd - contentStart);
+            int result = contentStart;
+            foreach (int boundary in StringInfo.ParseCombiningCharacters(sample))
+            {
+                int absoluteBoundary = contentStart + boundary;
+                if (absoluteBoundary > desiredEnd)
+                {
+                    break;
+                }
+                result = absoluteBoundary;
+            }
+            return result;
+        }
+
+        private ViewportContent BuildViewportContent(int requestedCursor,
+            int usableWidth, int rowLimit)
+        {
+            int textLength = _text.Length;
+            requestedCursor = Math.Clamp(requestedCursor, 0, textLength);
+            int maxContentLength = (int)Math.Clamp(
+                (long)usableWidth * rowLimit * 2, 256, MaximumViewportCharacters);
+
+            int contentStart = 0;
+            int contentEnd = textLength;
+            if (textLength > maxContentLength)
+            {
+                int beforeCursor = maxContentLength / 2;
+                int afterCursor = maxContentLength - beforeCursor;
+                int desiredStart = Math.Max(0, requestedCursor - beforeCursor);
+                int desiredEnd = Math.Min(textLength, requestedCursor + afterCursor);
+                if (desiredStart == 0)
+                {
+                    desiredEnd = Math.Min(textLength, maxContentLength);
+                }
+                else if (desiredEnd == textLength)
+                {
+                    desiredStart = Math.Max(0, textLength - maxContentLength);
+                }
+
+                contentStart = FindViewportStart(desiredStart);
+                if (contentStart > requestedCursor)
+                {
+                    contentStart = requestedCursor;
+                }
+                contentEnd = FindViewportEnd(contentStart, desiredEnd);
+                if (contentEnd < requestedCursor)
+                {
+                    contentEnd = requestedCursor;
+                }
+            }
+
+            bool omittedLeadingText = contentStart > 0;
+            bool omittedTrailingText = contentEnd < textLength;
+            string prefix = omittedLeadingText ? "..." : _prompt;
+            string display = prefix + _text.ToString(contentStart,
+                contentEnd - contentStart);
+            if (omittedTrailingText)
+            {
+                display += "...";
+            }
+
+            return new ViewportContent(display,
+                prefix.Length + requestedCursor - contentStart,
+                omittedLeadingText ? 0 : Math.Clamp(_renderOriginLeft, 0, usableWidth));
+        }
+
+        private void ClearRenderedRows()
+        {
+            if (!_renderStateValid || _renderVisibleRows <= 0)
+            {
+                return;
+            }
+
+            int usableWidth = UsableWidth;
+            int height = Math.Max(1, Console2.BufferHeight);
+            int top = Math.Clamp(_renderVisibleTop, 0, height - 1);
+            int rowCount = Math.Min(_renderVisibleRows,
+                Math.Min(height - top, MaximumViewportRows));
+            for (int row = 0; row < rowCount; row++)
+            {
+                int startColumn = row == 0 ? _renderVisibleFirstColumn : 0;
                 startColumn = Math.Clamp(startColumn, 0, usableWidth);
-                Console2.SetCursorPosition(startColumn, originTop + line);
+                Console2.SetCursorPosition(startColumn, top + row);
                 int clearLength = usableWidth - startColumn;
                 if (clearLength > 0)
                 {
                     Console2.Write(new string(' ', clearLength));
                 }
             }
-        }
 
-        private void SetCursorForText(string text, int cursor, int originTop,
-            int usableWidth)
-        {
-            DisplayPosition target = CalculateDisplayPosition(text, cursor, usableWidth);
-            Console2.SetCursorPosition(target.Column, originTop + target.Line);
+            _renderStateValid = false;
+            _renderVisibleRows = 0;
+            Console2.SetCursorPosition(0, top);
             Console2.Flush();
-            _renderOriginTop = originTop;
         }
 
-        private void RedrawInput(string oldText, int oldCursor, int oldConsoleTop)
+        /// <summary>
+        /// Rebuilds a bounded window around the editing cursor. The logical
+        /// line may be arbitrarily long, but recovery only parses and writes a
+        /// small tail/viewport that remains practical after terminal scrolling.
+        /// </summary>
+        private void RenderViewport(int requestedCursor)
         {
-            bool widthChanged = UsableWidth != _renderedUsableWidth;
-            int originTop = widthChanged
-                ? _renderOriginTop
-                : GetOriginTop(oldText, oldCursor, oldConsoleTop, _renderedUsableWidth);
-            ClearRenderedRows(oldText, originTop, _renderedUsableWidth);
             int usableWidth = UsableWidth;
-            Console2.SetCursorPosition(_renderOriginLeft, originTop);
+            int height = Math.Max(1, Console2.BufferHeight);
+            int rowLimit = GetViewportRowLimit();
+            ViewportContent viewport = BuildViewportContent(requestedCursor,
+                usableWidth, rowLimit);
+            List<RenderedRow> rows = BuildRenderedRows(viewport.Display,
+                usableWidth, viewport.StartColumn);
+            int cursorRow = GetRowForIndex(rows, viewport.CursorIndex);
+            int firstRow = Math.Clamp(cursorRow - rowLimit / 2, 0,
+                Math.Max(0, rows.Count - rowLimit));
+            int lastRow = Math.Min(rows.Count - 1, firstRow + rowLimit - 1);
+
+            int startTop = _renderStateValid
+                ? _renderVisibleTop
+                : Console2.CursorTop;
+            startTop = Math.Clamp(startTop, 0, height - 1);
+            ClearRenderedRows();
+
+            int startColumn = firstRow == 0 ? viewport.StartColumn : 0;
+            Console2.SetCursorPosition(startColumn, startTop);
             Console2.Flush();
 
-            WriteRenderedText(_prompt, usableWidth);
-            WriteRenderedText(_text.ToString(), usableWidth);
+            for (int row = firstRow; row <= lastRow; row++)
+            {
+                RenderedRow range = rows[row];
+                if (range.End > range.Start)
+                {
+                    Console2.Write(viewport.Display.Substring(range.Start,
+                        range.End - range.Start));
+                }
+                if (row < lastRow)
+                {
+                    Console2.WriteLine(string.Empty);
+                }
+            }
 
-            DisplayPosition newEnd = CalculateDisplayPosition(
-                _text.ToString(), _text.Length, usableWidth);
+            int visibleRows = lastRow - firstRow + 1;
+            int expectedEndTop = startTop + visibleRows - 1;
             int observedEndTop = Console2.CursorTop;
-            int expectedEndTop = originTop + newEnd.Line;
-            if (observedEndTop != expectedEndTop)
-            {
-                // Account for a terminal scroll while rendering at the bottom.
-                originTop += observedEndTop - expectedEndTop;
-            }
-            if (originTop < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(originTop));
-            }
+            int scrollRows = Math.Max(0, expectedEndTop - observedEndTop);
+            int baseTop = Math.Max(0, startTop - scrollRows);
+            int cursorVisibleRow = cursorRow - firstRow;
+            int cursorTop = Math.Clamp(baseTop + cursorVisibleRow, 0, height - 1);
+            int cursorColumn = GetColumnInRow(viewport.Display, rows[cursorRow],
+                viewport.CursorIndex, cursorRow, usableWidth, viewport.StartColumn);
+            Console2.SetCursorPosition(cursorColumn, cursorTop);
+            Console2.Flush();
 
+            _renderOriginTop = baseTop;
             _renderedUsableWidth = usableWidth;
-            SetCursorForText(_text.ToString(), _cursorPos, originTop, usableWidth);
+            _renderVisibleTop = baseTop;
+            _renderVisibleRows = Math.Min(visibleRows, height - baseTop);
+            _renderVisibleFirstColumn = scrollRows == 0 && firstRow == 0
+                ? startColumn
+                : 0;
+            _renderStateValid = true;
+            _renderWarningActive = false;
         }
 
-        private void AppendRenderedInput(string oldText, int oldCursor,
-            string currentText, int oldConsoleTop)
+        private void RedrawInput()
         {
-            int usableWidth = UsableWidth;
-            if (usableWidth != _renderedUsableWidth)
+            RenderViewport(_cursorPos);
+        }
+
+        private void AppendRenderedInput(string appendedText)
+        {
+            if (appendedText.Length == 0)
             {
-                RedrawInput(oldText, oldCursor, oldConsoleTop);
+                return;
+            }
+            if (!_renderStateValid || UsableWidth != _renderedUsableWidth)
+            {
+                RenderViewport(_cursorPos);
                 return;
             }
 
-            int originTop = GetOriginTop(
-                oldText, oldCursor, oldConsoleTop, _renderedUsableWidth);
-            WriteRenderedText(currentText.Substring(oldText.Length), usableWidth);
+            int usableWidth = UsableWidth;
+            int previousLeft = Math.Clamp(Console2.CursorLeft, 0, usableWidth);
+            int previousTop = Console2.CursorTop;
+            int rowAdvance = 0;
+            int column = previousLeft;
+            AdvanceText(ref rowAdvance, ref column, appendedText,
+                appendedText.Length, usableWidth);
+            WriteRenderedText(appendedText, usableWidth);
 
-            DisplayPosition end = CalculateDisplayPosition(
-                currentText, currentText.Length, usableWidth);
-            int expectedEndTop = originTop + end.Line;
-            if (Console2.CursorTop != expectedEndTop)
+            // The terminal is authoritative about scroll position. Keeping a
+            // bounded tail is enough for clearing/recovery; never attempt to
+            // seek back to the logical prompt after it has scrolled away.
+            int height = Math.Max(1, Console2.BufferHeight);
+            int rowLimit = GetViewportRowLimit();
+            int previousRows = Math.Max(1, _renderVisibleRows);
+            int visibleRows = Math.Min(rowLimit, previousRows + rowAdvance);
+            int expectedEndTop = previousTop + rowAdvance;
+            int scrollRows = Math.Max(0, expectedEndTop - Console2.CursorTop);
+            _renderVisibleRows = Math.Min(visibleRows, height);
+            _renderVisibleTop = Math.Max(0, Console2.CursorTop - _renderVisibleRows + 1);
+            if (scrollRows > 0 || previousRows + rowAdvance > rowLimit)
             {
-                originTop += Console2.CursorTop - expectedEndTop;
-            }
-            if (originTop < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(originTop));
+                _renderVisibleFirstColumn = 0;
             }
             _renderedUsableWidth = usableWidth;
-            SetCursorForText(currentText, _cursorPos, originTop, usableWidth);
+            _renderWarningActive = false;
         }
 
         private void EmergencyRedraw()
         {
             try
             {
-                Console2.TryClear();
-                _renderOriginLeft = Math.Clamp(Console2.CursorLeft, 0, UsableWidth);
-                _renderOriginTop = Console2.CursorTop;
-                int usableWidth = UsableWidth;
-                WriteRenderedText(_prompt, usableWidth);
-                WriteRenderedText(_text.ToString(), usableWidth);
-
-                DisplayPosition end = CalculateDisplayPosition(
-                    _text.ToString(), _text.Length, usableWidth);
-                int originTop = Console2.CursorTop - end.Line;
-                if (originTop < 0)
-                {
-                    originTop = 0;
-                }
-                _renderedUsableWidth = usableWidth;
-                SetCursorForText(_text.ToString(), _cursorPos, originTop, usableWidth);
+                Console2.Resync();
+                RenderViewport(_cursorPos);
             }
             catch
             {
-                // There is no further safe cursor operation when even the
-                // emergency rebuild fails (for example after terminal close).
+                // There is no safe cursor operation when even a resync fails
+                // (for example after the terminal has been closed).
+                _renderStateValid = false;
             }
+        }
+
+        private void TryLogRenderWarning(Exception ex, string prompt)
+        {
+            if (_renderWarningActive)
+            {
+                return;
+            }
+            _renderWarningActive = true;
+            TryLogWarning(ex, prompt);
         }
 
         private static void TryLogWarning(Exception ex, string prompt)
@@ -514,25 +731,39 @@ namespace Internal.ReadLine
             _pendingHighSurrogate = null;
         }
 
-        private void WriteString(string str)
+        private void InsertSanitizedText(string sanitized)
         {
-            string sanitized = SanitizeInput(str);
             if (sanitized.Length == 0)
             {
                 return;
             }
 
-            _text.Insert(_cursorPos, sanitized);
+            if (_cursorPos == _text.Length)
+            {
+                _text.Append(sanitized);
+            }
+            else
+            {
+                _text.Insert(_cursorPos, sanitized);
+            }
             _cursorPos += sanitized.Length;
             _cursorLimit = _text.Length;
-            string currentText = _text.ToString();
-            if (!CharUtil.IsTextElementBoundary(currentText, _cursorPos))
+            // Appending leaves the cursor at the end of the text, which is
+            // always a text-element boundary. Avoid copying the complete line
+            // for every native-paste batch just to establish that fact.
+            if (_cursorPos != _cursorLimit)
             {
-                // Inserting a joiner/modifier between existing elements can
-                // merge them.  Never leave the cursor inside the merged cluster.
-                _cursorPos = CharUtil.NextTextElementIndex(currentText, _cursorPos);
+                string currentText = _text.ToString();
+                if (!CharUtil.IsTextElementBoundary(currentText, _cursorPos))
+                {
+                    // Inserting a joiner/modifier between existing elements can
+                    // merge them. Never leave the cursor inside the merged cluster.
+                    _cursorPos = CharUtil.NextTextElementIndex(currentText, _cursorPos);
+                }
             }
         }
+
+        private void WriteString(string str) => InsertSanitizedText(SanitizeInput(str));
 
         private void WriteChar() => WriteChar(_keyInfo.KeyChar);
 
@@ -822,12 +1053,6 @@ namespace Internal.ReadLine
             _renderOriginLeft = Math.Clamp(Console2.CursorLeft, 0, UsableWidth);
             _renderOriginTop = Console2.CursorTop;
             _renderedUsableWidth = UsableWidth;
-            WriteRenderedText(_prompt, _renderedUsableWidth);
-            Console2.Flush();
-
-            DisplayPosition promptEnd = CalculateDisplayPosition(
-                string.Empty, 0, _renderedUsableWidth);
-            _renderOriginTop = Math.Max(0, Console2.CursorTop - promptEnd.Line);
 
             _keyActions["LeftArrow"] = MoveCursorLeft;
             _keyActions["Home"] = MoveCursorHome;
@@ -886,6 +1111,8 @@ namespace Internal.ReadLine
             _keyActions["Shift, ControlV"] = PasteClipboard;
             _keyActions["Alt, ControlV"] = PasteClipboard;
             _keyActions["ControlC"] = () => EOFSent?.Invoke();
+
+            RenderViewport(0);
         }
 
         private void HandleAutoComplete()
@@ -960,31 +1187,144 @@ namespace Internal.ReadLine
             ResetAutoComplete();
         }
 
-        public void Handle(ConsoleKeyInfo keyInfo)
+        private void AppendKeyCharacter(StringBuilder pendingText, char value)
         {
-            _keyInfo = keyInfo;
-            string keyInput = BuildKeyInput();
-
-            Action? action = null;
-            // Printable Ctrl+Alt input is AltGr text, not a shortcut.  A real
-            // Ctrl+Alt+V still reaches the paste action because its KeyChar is
-            // a control/NUL value on supported consoles.
-            if (!IsAltGrText(keyInfo))
+            if (char.IsHighSurrogate(value))
             {
-                _keyActions.TryGetValue(keyInput, out action);
+                _pendingHighSurrogate = value;
+                return;
             }
 
-            bool writeCharacter = action == null && !BlockKey(keyInfo);
-            if (action == null && !writeCharacter)
+            if (char.IsLowSurrogate(value))
             {
+                if (_pendingHighSurrogate is char high)
+                {
+                    pendingText.Append(high);
+                    pendingText.Append(value);
+                }
                 _pendingHighSurrogate = null;
                 return;
             }
 
-            bool completionKey = keyInput is "Tab" or "ShiftTab";
-            if (IsInAutoCompleteMode() && !completionKey)
+            _pendingHighSurrogate = null;
+            if (IsPotentialTextUnit(value))
             {
-                ResetAutoComplete();
+                pendingText.Append(value);
+            }
+        }
+
+        private bool FlushPendingText(StringBuilder pendingText)
+        {
+            if (pendingText.Length == 0)
+            {
+                return false;
+            }
+
+            string sanitized = SanitizeInput(pendingText.ToString());
+            pendingText.Clear();
+            if (sanitized.Length == 0)
+            {
+                return false;
+            }
+            InsertSanitizedText(sanitized);
+            return true;
+        }
+
+        private void ValidateCursorState(string text)
+        {
+            _cursorLimit = _text.Length;
+            if (_cursorPos < 0 || _cursorPos > _cursorLimit ||
+                !CharUtil.IsTextElementBoundary(text, _cursorPos))
+            {
+                throw new InvalidOperationException(
+                    "A key action produced an invalid text cursor state.");
+            }
+        }
+
+        private bool TryHandleAppendOnlyTextBatch(IReadOnlyList<ConsoleKeyInfo> keyInfos)
+        {
+            if (_cursorPos != _cursorLimit || IsInAutoCompleteMode())
+            {
+                return false;
+            }
+
+            foreach (ConsoleKeyInfo keyInfo in keyInfos)
+            {
+                if (!IsPotentialTextUnit(keyInfo.KeyChar))
+                {
+                    return false;
+                }
+
+                // Keep the general path for registered shortcuts while
+                // leaving normal Shift/Alt/layout text on this allocation-light
+                // native-paste route. AltGr remains text by definition.
+                if (!IsAltGrText(keyInfo) && keyInfo.Modifiers != 0)
+                {
+                    _keyInfo = keyInfo;
+                    if (_keyActions.ContainsKey(BuildKeyInput()))
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            StringBuilder pendingText = new(keyInfos.Count);
+            foreach (ConsoleKeyInfo keyInfo in keyInfos)
+            {
+                AppendKeyCharacter(pendingText, keyInfo.KeyChar);
+            }
+
+            if (pendingText.Length == 0)
+            {
+                try
+                {
+                    Console2.Flush();
+                }
+                catch (Exception ex)
+                {
+                    TryLogRenderWarning(ex,
+                        "Flushing the console after native terminal input failed.");
+                    EmergencyRedraw();
+                }
+                return true;
+            }
+
+            string sanitized = SanitizeInput(pendingText.ToString());
+            if (sanitized.Length == 0)
+            {
+                return true;
+            }
+
+            InsertSanitizedText(sanitized);
+            try
+            {
+                AppendRenderedInput(sanitized);
+            }
+            catch (Exception ex)
+            {
+                TryLogRenderWarning(ex,
+                    "Rendering native terminal input failed; rebuilding its visible input window.");
+                EmergencyRedraw();
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Handles queued terminal input as one transaction. Consecutive
+        /// printable keys are inserted and rendered together; navigation and
+        /// editor commands preserve their original ordering as batch bounds.
+        /// </summary>
+        internal void HandleBatch(IReadOnlyList<ConsoleKeyInfo> keyInfos)
+        {
+            ArgumentNullException.ThrowIfNull(keyInfos);
+            if (keyInfos.Count == 0)
+            {
+                return;
+            }
+
+            if (TryHandleAppendOnlyTextBatch(keyInfos))
+            {
+                return;
             }
 
             string oldText = _text.ToString();
@@ -995,29 +1335,83 @@ namespace Internal.ReadLine
             char? oldPendingHighSurrogate = _pendingHighSurrogate;
             int oldConsoleLeft = Console2.CursorLeft;
             int oldConsoleTop = Console2.CursorTop;
+            bool appendOnly = oldCursor == oldText.Length;
+            bool changed = false;
+            StringBuilder pendingText = new();
+            string? failedKey = null;
 
             try
             {
-                if (!writeCharacter)
+                foreach (ConsoleKeyInfo keyInfo in keyInfos)
                 {
-                    _pendingHighSurrogate = null;
-                }
-                (action ?? WriteChar).Invoke();
+                    _keyInfo = keyInfo;
+                    string keyInput = BuildKeyInput();
+                    failedKey = keyInput;
+                    Action? action = null;
+                    // Printable Ctrl+Alt input is AltGr text, not a shortcut.
+                    if (!IsAltGrText(keyInfo))
+                    {
+                        _keyActions.TryGetValue(keyInput, out action);
+                    }
 
-                _cursorLimit = _text.Length;
-                string currentText = _text.ToString();
-                if (_cursorPos < 0 || _cursorPos > _cursorLimit ||
-                    !CharUtil.IsTextElementBoundary(currentText, _cursorPos))
-                {
-                    throw new InvalidOperationException(
-                        "A key action produced an invalid text cursor state.");
+                    bool writeCharacter = action == null && !BlockKey(keyInfo);
+                    if (action == null && !writeCharacter)
+                    {
+                        if (FlushPendingText(pendingText))
+                        {
+                            changed = true;
+                        }
+                        _pendingHighSurrogate = null;
+                        continue;
+                    }
+
+                    bool completionKey = keyInput is "Tab" or "ShiftTab";
+                    if (IsInAutoCompleteMode() && !completionKey)
+                    {
+                        if (FlushPendingText(pendingText))
+                        {
+                            changed = true;
+                        }
+                        ResetAutoComplete();
+                        appendOnly = false;
+                    }
+
+                    if (writeCharacter)
+                    {
+                        if (_cursorPos != _text.Length)
+                        {
+                            appendOnly = false;
+                        }
+                        AppendKeyCharacter(pendingText, keyInfo.KeyChar);
+                        continue;
+                    }
+
+                    if (FlushPendingText(pendingText))
+                    {
+                        changed = true;
+                    }
+                    _pendingHighSurrogate = null;
+                    // Any command can replace text with an equally long value
+                    // (history and completion are common examples). Treat it
+                    // as a render boundary instead of relying on length alone.
+                    appendOnly = false;
+                    action!.Invoke();
                 }
+
+                if (FlushPendingText(pendingText))
+                {
+                    changed = true;
+                }
+
+                string newTextForValidation = _text.ToString();
+                ValidateCursorState(newTextForValidation);
             }
             catch (Exception ex)
             {
                 RestoreState(oldText, oldCursor, oldHistoryIndex, oldHistoryDraft,
                     oldHistoryDraftCursor, oldPendingHighSurrogate);
-                TryLogWarning(ex, $"The key action for {keyInput} failed and was rolled back.");
+                string keyDescription = failedKey ?? _keyInfo.Key.ToString();
+                TryLogWarning(ex, $"The key action for {keyDescription} failed and was rolled back.");
 
                 if (Console2.CursorLeft != oldConsoleLeft || Console2.CursorTop != oldConsoleTop)
                 {
@@ -1027,8 +1421,13 @@ namespace Internal.ReadLine
             }
 
             string newText = _text.ToString();
+            if (!changed)
+            {
+                changed = oldCursor != _cursorPos || !string.Equals(oldText, newText,
+                    StringComparison.Ordinal);
+            }
             bool renderWidthChanged = UsableWidth != _renderedUsableWidth;
-            if (oldText == newText && oldCursor == _cursorPos && !renderWidthChanged)
+            if (!changed && oldText == newText && oldCursor == _cursorPos && !renderWidthChanged)
             {
                 try
                 {
@@ -1036,7 +1435,7 @@ namespace Internal.ReadLine
                 }
                 catch (Exception ex)
                 {
-                    TryLogWarning(ex, "Flushing the console after a key action failed.");
+                    TryLogRenderWarning(ex, "Flushing the console after a key action failed.");
                     EmergencyRedraw();
                 }
                 return;
@@ -1044,49 +1443,36 @@ namespace Internal.ReadLine
 
             try
             {
-                if (renderWidthChanged)
+                if (!renderWidthChanged && appendOnly && _cursorPos == newText.Length &&
+                    newText.Length >= oldText.Length)
                 {
-                    RedrawInput(oldText, oldCursor, oldConsoleTop);
-                }
-                else if (oldText == newText)
-                {
-                    int originTop = GetOriginTop(
-                        oldText, oldCursor, oldConsoleTop, _renderedUsableWidth);
-                    SetCursorForText(
-                        newText, _cursorPos, originTop, _renderedUsableWidth);
-                }
-                else if (oldCursor == oldText.Length &&
-                    _cursorPos == newText.Length &&
-                    newText.StartsWith(oldText, StringComparison.Ordinal) &&
-                    CharUtil.IsTextElementBoundary(newText, oldText.Length))
-                {
-                    AppendRenderedInput(oldText, oldCursor, newText, oldConsoleTop);
+                    AppendRenderedInput(newText.Substring(oldText.Length));
                 }
                 else
                 {
-                    RedrawInput(oldText, oldCursor, oldConsoleTop);
+                    RedrawInput();
                 }
             }
             catch (Exception ex)
             {
                 ResetAutoComplete();
-                TryLogWarning(ex, "Redrawing the console input area failed; rebuilding it.");
+                TryLogRenderWarning(ex,
+                    "Redrawing the console input area failed; rebuilding its visible input window.");
                 EmergencyRedraw();
             }
         }
+
+        public void Handle(ConsoleKeyInfo keyInfo) => HandleBatch(new[] { keyInfo });
 
         /// <summary>
         /// Clears the current input area while retaining this instance's state.
         /// </summary>
         internal void ClearWrittingStatus()
         {
-            string text = _text.ToString();
-            int originTop = UsableWidth != _renderedUsableWidth
-                ? _renderOriginTop
-                : GetOriginTop(text, _cursorPos, Console2.CursorTop,
-                    _renderedUsableWidth);
-            ClearRenderedRows(text, originTop, _renderedUsableWidth);
-            Console2.SetCursorPosition(0, originTop);
+            int top = _renderStateValid ? _renderVisibleTop : Console2.CursorTop;
+            ClearRenderedRows();
+            Console2.SetCursorPosition(0, Math.Clamp(top, 0,
+                Math.Max(1, Console2.BufferHeight) - 1));
             Console2.Flush();
         }
 
@@ -1097,28 +1483,24 @@ namespace Internal.ReadLine
         /// </summary>
         internal void MoveCursorToEndForSubmit()
         {
-            string text = _text.ToString();
-            int oldCursor = _cursorPos;
-            int oldConsoleTop = Console2.CursorTop;
-            _cursorPos = _cursorLimit = text.Length;
+            bool alreadyAtEnd = _cursorPos == _cursorLimit && _renderStateValid &&
+                UsableWidth == _renderedUsableWidth;
+            _cursorPos = _cursorLimit = _text.Length;
 
             try
             {
-                if (UsableWidth != _renderedUsableWidth)
+                if (alreadyAtEnd)
                 {
-                    RedrawInput(text, oldCursor, oldConsoleTop);
+                    Console2.Flush();
                 }
                 else
                 {
-                    int originTop = GetOriginTop(
-                        text, oldCursor, oldConsoleTop, _renderedUsableWidth);
-                    SetCursorForText(
-                        text, _cursorPos, originTop, _renderedUsableWidth);
+                    RenderViewport(_cursorPos);
                 }
             }
             catch (Exception ex)
             {
-                TryLogWarning(ex, "Moving the console cursor for input submission failed.");
+                TryLogRenderWarning(ex, "Moving the console cursor for input submission failed.");
                 EmergencyRedraw();
             }
         }
@@ -1149,62 +1531,28 @@ namespace Internal.ReadLine
                 _renderOriginLeft = Math.Clamp(Console2.CursorLeft, 0, UsableWidth);
                 _renderOriginTop = Console2.CursorTop;
                 _renderedUsableWidth = UsableWidth;
+                _renderStateValid = false;
+                _renderVisibleRows = 0;
             }
         }
 
-        internal static KeyHandler RecoverWrittingStatus(string prompt,
-            KeyHandler previous_stat, IAutoCompleteHandler? autoCompleteHandler)
+        /// <summary>
+        /// Restores this handler after console output occupied its visible
+        /// rectangle. Keeping the same instance also applies a changed input
+        /// configuration without copying the complete logical command.
+        /// </summary>
+        internal void RecoverWrittingStatus(string prompt,
+            IAutoCompleteHandler? autoCompleteHandler)
         {
-            KeyHandler keyHandler = new(previous_stat.Console2,
-                previous_stat._history, autoCompleteHandler, prompt);
-
-            string restoredText = SanitizeInput(previous_stat.Text);
-            keyHandler._text = new StringBuilder(restoredText);
-            keyHandler._cursorLimit = restoredText.Length;
-            keyHandler._cursorPos = Math.Clamp(previous_stat._cursorPos, 0, restoredText.Length);
-            if (!CharUtil.IsTextElementBoundary(restoredText, keyHandler._cursorPos))
+            bool autoCompleteHandlerChanged = !ReferenceEquals(
+                _autoCompleteHandler, autoCompleteHandler);
+            _prompt = SanitizeInput(prompt);
+            _autoCompleteHandler = autoCompleteHandler;
+            if (autoCompleteHandlerChanged)
             {
-                keyHandler._cursorPos = CharUtil.PreviousTextElementIndex(
-                    restoredText, keyHandler._cursorPos);
+                ResetAutoComplete();
             }
-
-            keyHandler._historyIndex = Math.Clamp(previous_stat._historyIndex,
-                0, previous_stat._history.Count);
-            keyHandler._historyDraft = previous_stat._historyDraft == null
-                ? null
-                : SanitizeInput(previous_stat._historyDraft);
-            keyHandler._historyDraftCursor = Math.Clamp(
-                previous_stat._historyDraftCursor, 0,
-                keyHandler._historyDraft?.Length ?? 0);
-            keyHandler._pendingHighSurrogate = previous_stat._pendingHighSurrogate;
-
-            if (autoCompleteHandler != null &&
-                ReferenceEquals(previous_stat._autoCompleteHandler, autoCompleteHandler) &&
-                previous_stat.IsInAutoCompleteMode())
-            {
-                keyHandler._completions = previous_stat._completions;
-                keyHandler._completionsIndex = previous_stat._completionsIndex;
-                keyHandler._completionStart = previous_stat._completionStart;
-                keyHandler._completionLength = previous_stat._completionLength;
-            }
-
-            int usableWidth = keyHandler.UsableWidth;
-            keyHandler._renderedUsableWidth = usableWidth;
-            keyHandler.WriteRenderedText(restoredText, usableWidth);
-            DisplayPosition end = keyHandler.CalculateDisplayPosition(
-                restoredText, restoredText.Length, usableWidth);
-            int originTop = keyHandler.Console2.CursorTop - end.Line;
-            if (originTop < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(originTop));
-            }
-            keyHandler.SetCursorForText(
-                restoredText, keyHandler._cursorPos, originTop, usableWidth);
-
-            Debug.Assert(keyHandler._cursorPos >= 0 &&
-                keyHandler._cursorPos <= keyHandler._cursorLimit);
-            Debug.Assert(keyHandler._cursorLimit == keyHandler._text.Length);
-            return keyHandler;
+            RenderViewport(_cursorPos);
         }
     }
 }

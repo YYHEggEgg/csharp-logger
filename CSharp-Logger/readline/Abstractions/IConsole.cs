@@ -12,6 +12,13 @@ namespace Internal.ReadLine.Abstractions
         /// 在 Unix 平台上互斥，需要加锁。
         /// </summary>
         bool KeyAvailable { get; }
+        /// <summary>
+        /// Reads keys that are already available without waiting for new
+        /// terminal input. The callback is evaluated after each key and can
+        /// end the batch while retaining that key in <paramref name="destination"/>.
+        /// </summary>
+        int ReadAvailableKeys(Span<ConsoleKeyInfo> destination,
+            Func<ConsoleKeyInfo, bool>? stopAfterKey);
         void SetCursorPosition(int left, int top);
         // void SetBufferSize(int width, int height);
         void Write(char value);

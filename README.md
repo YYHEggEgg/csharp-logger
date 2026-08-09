@@ -25,6 +25,7 @@ You can download it on [nuget.org](https://www.nuget.org) by searching [EggEgg.C
 
 ### v7.0.0
 
+- Fixed the issue where manually pasting a very large command in a modern terminal could make input increasingly sluggish, repeatedly clear the input area, lose the prompt among log output, or delay the Enter key until the command appeared incomplete.
 - Fixed the issue where, after log-file initialization failed, a retry could leave the console or logger in a stale state; redirected standard streams could still enter interactive mode; a console background failure could stop later input/output; or the final log lines could be missing when the process exited.
 - Fixed the issue where continuous log output made the input area unresponsive, caused the prompt to disappear or move to the wrong position, displayed messages out of order, or allowed cancellation of an old read to clear a newly started input.
 - Fixed the issue where cancelling `ReadLineAsync` could consume the next redirected line, input could be read before a caller requested it, pressing Enter after moving the cursor could submit the wrong text, or a pasted following line could be lost.
